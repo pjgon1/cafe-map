@@ -65,6 +65,10 @@ input,textarea{outline:none}
 .pin .nm{margin-top:3px;font-size:12px;background:var(--bg);color:var(--ink);padding:2px 8px;border-radius:999px;border:1px solid var(--line);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .pin.fav .ring{border-color:var(--heartt)}
 .pin.fav .tip{border-top-color:var(--heartt)}
+.pin.wish .ring{border-style:dashed;border-color:var(--sub);background:var(--bg)}
+.pin.wish .ring>div{background:var(--soft);color:var(--softt);font-size:20px}
+.pin.wish .tip{border-top-color:var(--sub)}
+.pin.wish .nm{border-style:dashed}
 .tempPin{display:flex;flex-direction:column;align-items:center}
 .tempPin .dot{width:22px;height:22px;border-radius:50%;background:var(--acc);border:4px solid var(--frame);box-shadow:0 0 0 6px color-mix(in srgb,var(--acc) 25%,transparent)}
 .mePin{width:18px;height:18px;border-radius:50%;background:#3B82F6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.2)}
@@ -87,6 +91,8 @@ input,textarea{outline:none}
 .rowsb{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .tag{display:inline-block;font-size:12px;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--softt);margin:0 4px 4px 0}
 .tag.heart{background:var(--heart);color:var(--heartt)}
+.tag.wish{background:transparent;color:var(--sub);border:1px dashed var(--sub)}
+.btn.wishbtn{background:var(--bg);color:var(--ink);border:1.5px dashed var(--sub)}
 .score{flex:none;background:var(--soft);color:var(--softt);font-size:13px;padding:6px 10px;border-radius:999px;white-space:nowrap}
 .note{background:var(--note);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .note .meta{font-size:12px;color:var(--sub);margin-bottom:4px;white-space:normal}
@@ -525,6 +531,8 @@ function updateLabels(){
 function passFilter(c, f){
   if (f === '전체') return true;
   if (f === '♥ 또 갈래') return !!c.fav;
+  if (f === '다녀온 곳') return !c.wish;
+  if (f === '☆ 가보고 싶은 곳') return !!c.wish;
   return (c.tags||[]).includes(f);
 }
 async function refreshPins(){
@@ -536,9 +544,9 @@ async function refreshPins(){
     const st = cafeStats(c);
     const cover = c.coverPhotoId || st.photos[0];
     const el = document.createElement('div');
-    el.className = 'pin' + (c.fav ? ' fav' : '') + (c.id === selectedId ? ' sel' : '');
+    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '') + (c.id === selectedId ? ' sel' : '');
     const url = cover ? await getPhotoURL(cover) : '';
-    el.innerHTML = `<div class="ring"><div style="${url?`background-image:url('${url}')`:''}">${url?'':ICON_CUP}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
+    el.innerHTML = `<div class="ring"><div style="${url?`background-image:url('${url}')`:''}">${url?'':(c.wish?'☆':ICON_CUP)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); openSheet(c.id); });
     const o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.lat, c.lng), content: el, yAnchor: 1, clickable: true, zIndex: c.id===selectedId?5:2 });
     o.setMap(map); o._el = el;
@@ -571,7 +579,7 @@ function locate(pan=true){
 }
 function renderChips(){
   const used = new Set(cafes.flatMap(c => c.tags||[]));
-  const list = ['전체','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
+  const list = ['전체','다녀온 곳','☆ 가보고 싶은 곳','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
   if (!list.includes(mapFilter)) mapFilter = '전체';
   $('#mapChips').innerHTML = list.map(t => `<button class="chip ${t===mapFilter?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
 }
@@ -608,10 +616,10 @@ async function openSheet(id){
       <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
       ${st.rating ? `<div class="score">★ ${st.rating.toFixed(1)}</div>` : ''}
     </div>
-    <div style="margin-top:10px">${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
-    ${lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
+    <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가보고 싶은 곳</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    ${c.wish && !lv ? `<div class="note" style="margin-top:8px;color:var(--sub)">아직 안 가본 곳이에요.${c.memo?'<br>'+esc(c.memo):''}</div>` : lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
     <div class="btnrow">
-      <button class="btn" data-act="visit">방문 기록 추가</button>
+      <button class="btn" data-act="visit">${c.wish ? '가봤어요! 기록 남기기' : '방문 기록 추가'}</button>
       <button class="btn ghost" data-act="detail">자세히 보기</button>
     </div>
     <div class="linkrow">
@@ -641,7 +649,8 @@ $('#sheet').onclick = e => {
   const act = b.dataset.act;
   if (act === 'visit') openVisitEditor(selectedId);
   if (act === 'detail') openDetail(selectedId);
-  if (act === 'saveNew') saveNewFromPlace();
+  if (act === 'saveNew') saveNewFromPlace(false);
+  if (act === 'saveWish') saveNewFromPlace(true);
   if (act === 'openMine') openSheet(b.dataset.id);
 };
 const shortAddr = c => (c.roadAddress || c.address || '').split(' ').slice(1,4).join(' ') || '주소 없음';
@@ -680,7 +689,7 @@ function doSearch(){
       const isCafe = /카페|커피|디저트|베이커리|제과/.test(p.category_name);
       return `<button class="res" data-i="${i}" style="width:100%;text-align:left">
         <div class="ic">${isCafe ? '☕' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'}</div>
-        <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${mine?'<span class="mine">기록됨</span>':''}</div>
+        <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${mine?`<span class="mine">${mine.wish?'가볼 곳':'기록됨'}</span>`:''}</div>
         <div class="ad">${esc(p.road_address_name || p.address_name)}</div>
         <div class="cat">${esc((p.category_name||'').split(' > ').slice(-2).join(' · '))}</div></div>
         <div class="dist">${fmtDist(d)}</div></button>`;
@@ -724,7 +733,7 @@ function pickPlace(p, fromTap){
     <div class="title">${esc(c.name)}</div>
     <div class="subt">${esc(c.roadAddress || c.address)}</div>
     ${c.category ? `<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>` : ''}
-    <div class="btnrow"><button class="btn" data-act="saveNew">여기 기록하기</button></div>
+    <div class="btnrow"><button class="btn" data-act="saveNew">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-act="saveWish">☆ 가보고 싶어요</button></div>
     <div class="linkrow">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
@@ -742,9 +751,9 @@ function manualAdd(name){
     openCafeEditor(null, pendingPlace);
   });
 }
-async function saveNewFromPlace(){
+async function saveNewFromPlace(wish){
   if (!pendingPlace) return;
-  openCafeEditor(null, pendingPlace);
+  openCafeEditor(null, { ...pendingPlace, wish: !!wish });
 }
 $('#btnAdd').onclick = () => { qEl.focus(); };
 
@@ -759,6 +768,7 @@ function openCafeEditor(id, seed){
   $('#cBody').innerHTML = `
     <label class="f">카페 이름</label><input class="inp" id="cName" value="${esc(c.name)}" placeholder="카페 이름">
     <label class="f">주소</label><input class="inp" id="cAddr" value="${esc(c.roadAddress || c.address)}" placeholder="주소">
+    <div class="toggle"><div>☆ 가보고 싶은 곳<div class="small">아직 안 가본 곳이에요. 다녀와서 기록을 남기면 자동으로 꺼져요</div></div><button class="sw ${c.wish?'on':''}" id="cWish" aria-label="가보고 싶은 곳"></button></div>
     <div class="toggle"><div>♥ 또 갈래<div class="small">다시 가고 싶은 곳은 핀이 하트 색으로 바뀌어요</div></div><button class="sw ${c.fav?'on':''}" id="cFav" aria-label="또 갈래"></button></div>
     <label class="f">어떤 곳이에요?</label>
     <div class="tagpick" id="cTags">${TAGS.map(t => `<button class="chip ${c.tags.includes(t)?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
@@ -766,6 +776,7 @@ function openCafeEditor(id, seed){
     <textarea class="inp" id="cMemo" placeholder="자유롭게 적어두세요" style="min-height:80px">${esc(c.memo)}</textarea>
     ${id ? `<div class="sec"><button class="btn danger" id="cDel" style="width:100%">이 카페 기록 전체 삭제</button></div>` : ''}`;
   $('#cFav').onclick = e => e.currentTarget.classList.toggle('on');
+  $('#cWish').onclick = e => e.currentTarget.classList.toggle('on');
   $('#cTags').onclick = e => { const b = e.target.closest('.chip'); if (b) b.classList.toggle('on'); };
   if (id) $('#cDel').onclick = () => deleteCafe(id);
   openPage('pCafe');
@@ -777,6 +788,7 @@ $('#cSave').onclick = async () => {
   const addr = $('#cAddr').value.trim();
   if (addr !== (c.roadAddress || c.address)) { c.roadAddress = addr; }
   c.fav = $('#cFav').classList.contains('on');
+  c.wish = $('#cWish').classList.contains('on');
   c.tags = [...document.querySelectorAll('#cTags .chip.on')].map(b => b.dataset.t);
   c.memo = $('#cMemo').value.trim();
   c.updatedAt = Date.now(); c.dirty = true;
@@ -784,7 +796,8 @@ $('#cSave').onclick = async () => {
   const i = cafes.findIndex(x => x.id === c.id); if (i >= 0) cafes[i] = c; else cafes.push(c);
   const wasNew = editingCafe.isNew;
   closePage('pCafe'); removeTemp(); await refreshAll();
-  if (wasNew) { toast('카페를 지도에 꽂았어요'); openSheet(c.id); openVisitEditor(c.id); }
+  if (wasNew && c.wish) { toast('가보고 싶은 곳에 저장했어요'); openSheet(c.id); }
+  else if (wasNew) { toast('카페를 지도에 꽂았어요'); openSheet(c.id); openVisitEditor(c.id); }
   else { toast('저장했어요'); if (isOpen('pDetail')) openDetail(c.id, true); }
 };
 async function deleteCafe(id){
@@ -858,7 +871,9 @@ $('#vSave').onclick = async () => {
   } catch (err) { loading(false); toast('저장 공간이 부족하거나 사진을 읽지 못했어요'); return; }
   loading(false);
   const i = visits.findIndex(x => x.id === v.id); if (i >= 0) visits[i] = v; else visits.push(v);
-  closePage('pVisit'); await refreshAll(); toast('기록했어요');
+  const wc = cafes.find(x => x.id === v.cafeId); let moved = false;
+  if (wc && wc.wish) { wc.wish = false; wc.updatedAt = Date.now(); wc.dirty = true; await DB.put('cafes', wc); moved = true; Sync.soon(); }
+  closePage('pVisit'); await refreshAll(); toast(moved ? '다녀온 곳으로 옮겼어요' : '기록했어요');
   if (isOpen('pDetail')) openDetail(v.cafeId, true); else if (selectedId === v.cafeId) openSheet(v.cafeId);
 };
 async function deleteVisit(id){
@@ -898,7 +913,7 @@ async function openDetail(id, keep){
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(c.roadAddress || c.address || '')}</div>
       ${c.category?`<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>`:''}</div>
       ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}</div>`:''}</div>
-    <div style="margin-top:12px">${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가보고 싶은 곳</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
     <div class="linkrow" style="margin-top:12px">
@@ -953,7 +968,7 @@ try { sortBy = localStorage.getItem('sortBy') || 'recent'; } catch {}
 function renderSort(){
   $('#sortSeg').innerHTML = SORTS.map(([k,n]) => `<button class="chip ${k===sortBy?'on':''}" data-k="${k}">${n}</button>`).join('');
   const used = new Set(cafes.flatMap(c => c.tags||[]));
-  const tags = ['전체','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
+  const tags = ['전체','다녀온 곳','☆ 가보고 싶은 곳','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
   if (!tags.includes(listFilter)) listFilter = '전체';
   $('#listChips').innerHTML = tags.map(t => `<button class="chip ${t===listFilter?'on':''}" data-t="${esc(t)}" style="font-size:12px;padding:5px 10px">${esc(t)}</button>`).join('');
 }
@@ -986,9 +1001,9 @@ async function renderList(){
     const cover = c.coverPhotoId || st.photos[0]; const url = cover ? await getPhotoURL(cover) : '';
     return `<button class="item" data-id="${c.id}" style="width:100%;text-align:left">
       <div class="thumbpol" style="transform:rotate(${hashRot(c.id,0)}deg)"><div style="${url?`background-image:url('${url}')`:''}">${url?'':ICON_CUP}</div></div>
-      <div class="info"><div class="nm">${c.fav?'<span style="color:var(--heartt)">♥</span> ':''}${esc(c.name)}</div>
+      <div class="info"><div class="nm">${c.wish?'<span style="color:var(--sub)">☆</span> ':c.fav?'<span style="color:var(--heartt)">♥</span> ':''}${esc(c.name)}</div>
       <div class="ad">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''}</div>
-      <div class="mini">${st.rating?`<b>★ ${st.rating.toFixed(1)}</b>`:''}<span>방문 기록 ${st.count}개</span>${st.last?`<span>${fmtDate(st.last)}</span>`:''}</div></div></button>`;
+      <div class="mini">${st.rating?`<b>★ ${st.rating.toFixed(1)}</b>`:''}<span>${c.wish && !st.count ? '가보고 싶은 곳' : `방문 기록 ${st.count}개`}</span>${st.last?`<span>${fmtDate(st.last)}</span>`:''}</div></div></button>`;
   }));
   $('#list').innerHTML = html.join('');
 }
