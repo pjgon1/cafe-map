@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#FFFDF9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="카페지도">
+<meta name="apple-mobile-web-app-title" content="커피로그">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>카페지도</title>
+<title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
@@ -1263,7 +1263,7 @@ $('#btnExport').onclick = async () => {
     const strip = o => { const { dirty, ...r } = o; return r; };
     const data = { app: 'cafe-map', version: 1, exportedAt: new Date().toISOString(), cafes: cafes.map(strip), visits: visits.map(strip), photos };
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `카페지도-백업-${todayStr()}.json`;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `커피로그-백업-${todayStr()}.json`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     toast('백업 파일을 저장했어요');
   } catch { toast('백업을 만들지 못했어요'); }
@@ -1273,7 +1273,7 @@ $('#btnImport').onclick = () => $('#importFile').click();
 $('#importFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   let data; try { data = JSON.parse(await f.text()); } catch { toast('백업 파일을 읽지 못했어요'); return; }
-  if (data.app !== 'cafe-map') { toast('카페지도 백업 파일이 아니에요'); return; }
+  if (data.app !== 'cafe-map') { toast('커피로그 백업 파일이 아니에요'); return; }
   if (!await ask(`카페 ${data.cafes.length}곳, 방문 ${data.visits.length}번 기록을 불러올까요?\n같은 기록은 백업 내용으로 덮어써요.`, '불러오기')) return;
   loading(true, '불러오는 중…');
   try {
@@ -1799,7 +1799,7 @@ function aiText(){
   const favs = vis.filter(c => c.fav).map(c => c.name).join(', ');
   const span = vs.length ? `${vs[vs.length - 1].date} ~ ${vs[0].date}` : '';
   const L = [];
-  L.push(`# 내 카페 기록 (카페지도 앱에서 내보냄 · ${todayStr()})`, '');
+  L.push(`# 내 카페 기록 (커피로그 앱에서 내보냄 · ${todayStr()})`, '');
   L.push('아래는 내가 다녀온 카페와 방문 기록이야. 이걸 바탕으로 내 취향을 파악해서 **아직 안 가본 카페**를 추천해줘.');
   L.push('- "다녀온 카페"와 "가볼래 목록"에 있는 곳은 추천에서 빼줘.');
   L.push('- 내가 자주 가는 동네 근처 위주로 추천하고, 지금도 영업 중인지 확인할 수 있으면 확인해줘.');
@@ -1849,7 +1849,7 @@ function dlText(name, text, type){ const a = document.createElement('a'); a.href
 $('#btnAiCopy').onclick = async () => {
   const t = aiText();
   try { await navigator.clipboard.writeText(t); toast('복사했어요. AI 채팅창에 붙여넣어 주세요'); }
-  catch { dlText(`카페지도-AI용-${todayStr()}.md`, t, 'text/markdown'); toast('복사가 안 돼서 파일로 저장했어요'); }
+  catch { dlText(`커피로그-AI용-${todayStr()}.md`, t, 'text/markdown'); toast('복사가 안 돼서 파일로 저장했어요'); }
 };
 const AI_ASK = '아래는 내 카페 기록이야. 내 취향에 맞는 아직 안 가본 카페를 추천해줘. 이미 간 곳이랑 가볼래 목록은 빼고, 곳마다 추천 이유도 알려줘.';
 async function openAi(site){
@@ -1867,8 +1867,8 @@ async function openAi(site){
 }
 $('#btnAiGpt').onclick = () => openAi('gpt');
 $('#btnAiClaude').onclick = () => openAi('claude');
-$('#btnAiFile').onclick = () => { dlText(`카페지도-AI용-${todayStr()}.md`, aiText(), 'text/markdown'); toast('파일을 저장했어요'); };
-$('#btnAiCsv').onclick = () => { dlText(`카페지도-기록표-${todayStr()}.csv`, aiCsv(), 'text/csv'); toast('표 파일을 저장했어요'); };
+$('#btnAiFile').onclick = () => { dlText(`커피로그-AI용-${todayStr()}.md`, aiText(), 'text/markdown'); toast('파일을 저장했어요'); };
+$('#btnAiCsv').onclick = () => { dlText(`커피로그-기록표-${todayStr()}.csv`, aiCsv(), 'text/csv'); toast('표 파일을 저장했어요'); };
 
 /* =========================================================
    오늘 어디 갈까
@@ -2058,7 +2058,7 @@ async function startShareView(){
   if (!data) { $('#mapTop').insertAdjacentHTML('afterbegin', `<div class="sharetop"><div class="tt"><b>링크를 찾을 수 없어요</b><span>지워졌거나 잘못된 링크예요</span></div></div>`); return; }
   shareData = data;
   const list = (data.data?.cafes || []).map((c, i) => ({ ...c, id: 'sh' + i }));
-  document.title = data.title + ' · 카페지도';
+  document.title = data.title + ' · 커피로그';
   $('#mapTop').insertAdjacentHTML('afterbegin', `<div class="sharetop"><div class="tt"><b>${esc(data.title)}</b><span>카페 ${list.length}곳${data.data?.owner ? ' · ' + esc(data.data.owner) + '님이 공유' : ''}</span></div><button id="sOpenList">목록</button></div>`);
   if (!map) return;
   const b = new kakao.maps.LatLngBounds();
