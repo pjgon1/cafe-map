@@ -503,7 +503,7 @@ function initMap(){
       let level = 5; try { level = JSON.parse(localStorage.getItem('mapView'))?.level || 5; } catch {}
       map = new kakao.maps.Map($('#map'), { center, level });
       places = new kakao.maps.services.Places();
-      kakao.maps.event.addListener(map, 'click', () => { closeSheet(); });
+      kakao.maps.event.addListener(map, 'click', e => onMapTap(e.latLng));
       kakao.maps.event.addListener(map, 'idle', () => {
         const c = map.getCenter();
         try { localStorage.setItem('mapView', JSON.stringify({lat:c.getLat(), lng:c.getLng(), level:map.getLevel()})); } catch {}
@@ -616,7 +616,7 @@ async function openSheet(id){
     </div>
     <div class="linkrow">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
-      <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
+      <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">${Date.now() - (c.createdAt || 0) < 10 * 60 * 1000 && !/네이버지도/.test(c.memo || '') ? '네이버지도에도 저장 ☆' : '네이버지도'}</a>
     </div>`;
   $('#sheet').classList.add('open');
   $('#sheet').scrollTop = 0;
@@ -689,12 +689,31 @@ function doSearch(){
     $('#manualAdd').onclick = () => manualAdd(q);
   }, opt);
 }
+// 지도에서 카페·식당 아이콘을 누르면, 누른 자리 바로 아래 장소를 찾아 카드로 보여줌
+let tapSeq = 0;
+async function onMapTap(ll){
+  if ($('#sheet').classList.contains('open')) { closeSheet(); return; }
+  if (!places || !$('#results').classList.contains('hidden')) return;
+  const seq = ++tapSeq;
+  // 지도 확대 정도에 따라 찾는 반경을 조절 (멀리 보면 넓게)
+  const lv = map.getLevel(), radius = lv <= 2 ? 15 : lv <= 3 ? 25 : lv <= 4 ? 40 : 0;
+  if (!radius) { toast('지도를 조금 더 확대한 뒤 눌러주세요'); return; }
+  const opt = { x: ll.getLng(), y: ll.getLat(), radius, sort: kakao.maps.services.SortBy.DISTANCE };
+  const found = [];
+  for (const code of ['CE7', 'FD6']) {
+    found.push(...await new Promise(res => places.categorySearch(code, (d, st) => res(st === kakao.maps.services.Status.OK ? d : []), opt)));
+  }
+  if (seq !== tapSeq) return;
+  if (!found.length) return;
+  found.sort((a, b) => (+a.distance) - (+b.distance));
+  pickPlace(found[0], true);
+}
 function removeTemp(){ if (tempOverlay) { tempOverlay.setMap(null); tempOverlay = null; } pendingPlace = null; }
-function pickPlace(p){
+function pickPlace(p, fromTap){
   $('#results').classList.add('hidden'); $('#qClear').classList.add('hidden'); qEl.blur();
   const mine = cafes.find(c => c.kakaoId === p.id);
   const ll = new kakao.maps.LatLng(+p.y, +p.x);
-  map.setLevel(Math.min(map.getLevel(), 3)); map.setCenter(ll);
+  if (!fromTap) { map.setLevel(Math.min(map.getLevel(), 3)); map.setCenter(ll); }
   if (mine) { openSheet(mine.id); return; }
   closeSheet();
   pendingPlace = { kakaoId: p.id, name: p.place_name, address: p.address_name, roadAddress: p.road_address_name, lat: +p.y, lng: +p.x, kakaoUrl: p.place_url, phone: p.phone, category: p.category_name };
