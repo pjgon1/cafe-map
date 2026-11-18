@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=53197b8a3f18075ca99a32c87ef13c91&libraries=services&autoload=false"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#FFFDF9;--ink:#2A2522;--sub:#8A817A;--acc:#6F4E37;--onacc:#fff;--soft:#F3EBE3;--softt:#6F4E37;
@@ -197,6 +198,14 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 .setrow{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;text-align:left;font-size:15px}
 .setrow svg{width:22px;height:22px;color:var(--acc);flex:none}
 .setrow small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
+.acct{background:var(--note);border-radius:16px;padding:16px}
+.acct .who{display:flex;align-items:center;gap:12px}
+.acct .av{width:44px;height:44px;border-radius:50%;background:var(--soft) center/cover;flex:none;display:flex;align-items:center;justify-content:center;color:var(--softt);font-size:20px}
+.acct .st{font-size:12px;color:var(--sub);margin-top:3px}
+.btn.kakaologin{background:#FEE500;color:#191600}
+.syncdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#3BB273;margin-right:5px;vertical-align:1px}
+.syncdot.off{background:var(--sub)}
+.syncdot.err{background:#D9534F}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:var(--note);border-radius:14px;padding:12px;text-align:center}
 .stat b{display:block;font-size:22px;font-weight:700;color:var(--acc)}
@@ -266,13 +275,14 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
   <div class="scroll">
     <div class="pagehead"><h1>설정</h1></div>
     <div style="padding:0 18px 30px">
-      <div class="sec" style="margin-top:12px"><h3>내 기록</h3><div class="stats" id="stats"></div></div>
+      <div class="sec" style="margin-top:12px"><h3>계정</h3><div class="acct" id="acct"></div></div>
+      <div class="sec"><h3>내 기록</h3><div class="stats" id="stats"></div></div>
       <div class="sec"><h3>색 테마</h3><div class="themes" id="themes"></div></div>
       <div class="sec"><h3>백업</h3>
         <button class="setrow" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><div>백업 파일 저장<small>사진까지 전부 한 파일로 내려받아요</small></div></button>
         <button class="setrow" id="btnImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg><div>백업 파일 불러오기<small>다른 폰이나 브라우저로 옮길 때</small></div></button>
         <input type="file" id="importFile" accept="application/json,.json" class="hidden">
-        <p class="small" style="line-height:1.7;margin-top:12px">기록은 이 폰의 브라우저 안에 저장돼요. 브라우저 데이터를 지우거나 폰을 바꾸기 전에 백업 파일을 꼭 저장해 두세요.</p>
+        <p class="small" style="line-height:1.7;margin-top:12px">카카오로 로그인하면 기록과 사진이 서버에 같이 저장돼서 다른 폰이나 PC에서도 보여요. 로그인하지 않으면 이 기기 브라우저 안에만 저장되니 백업 파일을 꼭 저장해 두세요.</p>
         <p class="small" id="storageInfo"></p>
       </div>
     </div>
@@ -371,11 +381,14 @@ function ask(msg, okText='확인', danger=false){
 const DB = {
   db: null,
   open(){ return new Promise((res, rej) => {
-    const r = indexedDB.open('cafe-map', 1);
-    r.onupgradeneeded = () => { const d = r.result;
-      d.createObjectStore('cafes', {keyPath:'id'});
-      const v = d.createObjectStore('visits', {keyPath:'id'}); v.createIndex('cafeId','cafeId');
-      d.createObjectStore('photos', {keyPath:'id'});
+    const r = indexedDB.open('cafe-map', 2);
+    r.onupgradeneeded = (e) => { const d = r.result;
+      if (e.oldVersion < 1) {
+        d.createObjectStore('cafes', {keyPath:'id'});
+        const v = d.createObjectStore('visits', {keyPath:'id'}); v.createIndex('cafeId','cafeId');
+        d.createObjectStore('photos', {keyPath:'id'});
+      }
+      if (e.oldVersion < 2) d.createObjectStore('tomb', {keyPath:'id'}); // 지운 기록 (서버에 알려줄 목록)
     };
     r.onsuccess = () => { this.db = r.result; res(); };
     r.onerror = () => rej(r.error);
@@ -388,7 +401,9 @@ const DB = {
   get(store, id){ return this.tx(store, 'readonly', s => s.get(id)); },
   put(store, obj){ return this.tx(store, 'readwrite', s => s.put(obj)); },
   del(store, id){ return this.tx(store, 'readwrite', s => s.delete(id)); },
+  clear(store){ return this.tx(store, 'readwrite', s => s.clear()); },
 };
+async function tomb(kind, id, extra){ try { await DB.put('tomb', { id: kind + ':' + id, kind, rid: id, ...(extra||{}) }); } catch {} }
 
 let cafes = [], visits = [];
 const photoURL = new Map(); // photoId -> {full, thumb}
@@ -398,11 +413,38 @@ async function loadAll(){
 }
 async function getPhotoURL(id, kind='thumb'){
   if (!id) return '';
-  if (!photoURL.has(id)) {
-    const p = await DB.get('photos', id); if (!p) return '';
-    photoURL.set(id, { full: URL.createObjectURL(p.full), thumb: URL.createObjectURL(p.thumb || p.full) });
-  }
-  return photoURL.get(id)[kind];
+  let rec = photoURL.get(id);
+  if (rec && rec[kind]) return rec[kind];
+  let p = await DB.get('photos', id);
+  if (!p || !(p[kind] || (kind === 'thumb' && p.full))) p = await fetchRemotePhoto(id, kind, p);
+  if (!p) return '';
+  rec = photoURL.get(id) || {};
+  if (p.full && !rec.full) rec.full = URL.createObjectURL(p.full);
+  if (p.thumb && !rec.thumb) rec.thumb = URL.createObjectURL(p.thumb);
+  if (!rec.thumb && rec.full) rec.thumb = rec.full;
+  photoURL.set(id, rec);
+  return rec[kind] || rec.thumb || rec.full || '';
+}
+// 이 기기에 없는 사진은 서버에서 받아와 저장 (다른 기기에서 찍은 사진)
+const photoFetching = new Map();
+function fetchRemotePhoto(id, kind, existing){
+  if (!sb || !session) return Promise.resolve(existing);
+  const key = id + ':' + kind;
+  if (photoFetching.has(key)) return photoFetching.get(key);
+  const job = (async () => {
+    try {
+      const path = `${session.user.id}/${id}${kind === 'thumb' ? '_t' : ''}.jpg`;
+      const { data, error } = await sb.storage.from('photos').download(path);
+      if (error || !data) return existing;
+      const cur = (await DB.get('photos', id)) || { id };
+      cur[kind] = data; cur.uploaded = true;
+      await DB.put('photos', cur);
+      return cur;
+    } catch { return existing; }
+    finally { photoFetching.delete(key); }
+  })();
+  photoFetching.set(key, job);
+  return job;
 }
 const visitsOf = cid => visits.filter(v => v.cafeId === cid).sort((a,b) => (b.date||'').localeCompare(a.date||'') || b.createdAt - a.createdAt);
 function cafeStats(c){
@@ -423,7 +465,7 @@ async function shrink(file, max, q){
 async function savePhoto(file){
   const id = uid();
   const full = await shrink(file, 1600, .84), thumb = await shrink(file, 360, .8);
-  await DB.put('photos', {id, full, thumb});
+  await DB.put('photos', {id, full, thumb, uploaded: false});
   return id;
 }
 
@@ -718,8 +760,8 @@ $('#cSave').onclick = async () => {
   c.fav = $('#cFav').classList.contains('on');
   c.tags = [...document.querySelectorAll('#cTags .chip.on')].map(b => b.dataset.t);
   c.memo = $('#cMemo').value.trim();
-  c.updatedAt = Date.now();
-  await DB.put('cafes', c);
+  c.updatedAt = Date.now(); c.dirty = true;
+  await DB.put('cafes', c); Sync.soon();
   const i = cafes.findIndex(x => x.id === c.id); if (i >= 0) cafes[i] = c; else cafes.push(c);
   const wasNew = editingCafe.isNew;
   closePage('pCafe'); removeTemp(); await refreshAll();
@@ -729,8 +771,11 @@ $('#cSave').onclick = async () => {
 async function deleteCafe(id){
   const c = cafes.find(x => x.id === id);
   if (!await ask(`'${c.name}' 기록을 전부 지울까요?\n방문 기록과 사진도 함께 지워지고 되돌릴 수 없어요.`, '삭제', true)) return;
-  for (const v of visitsOf(id)) { for (const p of v.photoIds||[]) await DB.del('photos', p); await DB.del('visits', v.id); }
-  await DB.del('cafes', id);
+  for (const v of visitsOf(id)) {
+    for (const p of v.photoIds||[]) { await DB.del('photos', p); photoURL.delete(p); await tomb('photo', p); }
+    await DB.del('visits', v.id); await tomb('visit', v.id, { cafeId: id });
+  }
+  await DB.del('cafes', id); await tomb('cafe', id); Sync.soon();
   cafes = cafes.filter(x => x.id !== id); visits = visits.filter(v => v.cafeId !== id);
   closePage('pCafe'); closePage('pDetail'); closeSheet(); await refreshAll(); toast('삭제했어요');
 }
@@ -788,9 +833,9 @@ $('#vSave').onclick = async () => {
   if (ev.newPhotos.length) loading(true, `사진 ${ev.newPhotos.length}장 저장 중…`);
   try {
     for (const p of ev.newPhotos) { v.photoIds.push(await savePhoto(p.file)); URL.revokeObjectURL(p.url); }
-    for (const id of ev.removed) { await DB.del('photos', id); photoURL.delete(id); }
-    v.updatedAt = Date.now();
-    await DB.put('visits', v);
+    for (const id of ev.removed) { await DB.del('photos', id); photoURL.delete(id); await tomb('photo', id); }
+    v.updatedAt = Date.now(); v.dirty = true;
+    await DB.put('visits', v); Sync.soon();
   } catch (err) { loading(false); toast('저장 공간이 부족하거나 사진을 읽지 못했어요'); return; }
   loading(false);
   const i = visits.findIndex(x => x.id === v.id); if (i >= 0) visits[i] = v; else visits.push(v);
@@ -800,8 +845,9 @@ $('#vSave').onclick = async () => {
 async function deleteVisit(id){
   if (!await ask('이 방문 기록을 지울까요?\n사진도 함께 지워져요.', '삭제', true)) return;
   const v = visits.find(x => x.id === id);
-  for (const p of v.photoIds||[]) { await DB.del('photos', p); photoURL.delete(p); }
-  await DB.del('visits', id); visits = visits.filter(x => x.id !== id);
+  for (const p of v.photoIds||[]) { await DB.del('photos', p); photoURL.delete(p); await tomb('photo', p); }
+  await DB.del('visits', id); await tomb('visit', id, { cafeId: v.cafeId }); Sync.soon();
+  visits = visits.filter(x => x.id !== id);
   closePage('pVisit'); await refreshAll(); toast('삭제했어요');
   if (isOpen('pDetail')) openDetail(v.cafeId, true);
 }
@@ -933,6 +979,7 @@ $('#list').onclick = e => { const b = e.target.closest('.item'); if (b) openDeta
    설정: 통계, 백업
    ========================================================= */
 async function renderSettings(){
+  renderAccount();
   const photos = visits.reduce((s,v) => s + (v.photoIds||[]).length, 0);
   $('#stats').innerHTML = `<div class="stat"><b>${cafes.length}</b><span>카페</span></div><div class="stat"><b>${visits.length}</b><span>방문</span></div><div class="stat"><b>${photos}</b><span>사진</span></div>`;
   renderThemes();
@@ -945,8 +992,9 @@ $('#btnExport').onclick = async () => {
   try {
     const ps = await DB.all('photos');
     const photos = [];
-    for (const p of ps) photos.push({ id: p.id, full: await blobToB64(p.full), thumb: p.thumb ? await blobToB64(p.thumb) : null });
-    const data = { app: 'cafe-map', version: 1, exportedAt: new Date().toISOString(), cafes, visits, photos };
+    for (const p of ps) { if (!p.full && !p.thumb) continue; photos.push({ id: p.id, full: p.full ? await blobToB64(p.full) : null, thumb: p.thumb ? await blobToB64(p.thumb) : null }); }
+    const strip = o => { const { dirty, ...r } = o; return r; };
+    const data = { app: 'cafe-map', version: 1, exportedAt: new Date().toISOString(), cafes: cafes.map(strip), visits: visits.map(strip), photos };
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `카페지도-백업-${todayStr()}.json`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -962,13 +1010,165 @@ $('#importFile').onchange = async e => {
   if (!await ask(`카페 ${data.cafes.length}곳, 방문 ${data.visits.length}번 기록을 불러올까요?\n같은 기록은 백업 내용으로 덮어써요.`, '불러오기')) return;
   loading(true, '불러오는 중…');
   try {
-    for (const p of data.photos) await DB.put('photos', { id: p.id, full: await b64ToBlob(p.full), thumb: p.thumb ? await b64ToBlob(p.thumb) : null });
-    for (const c of data.cafes) await DB.put('cafes', c);
-    for (const v of data.visits) await DB.put('visits', v);
+    for (const p of data.photos) { const rec = { id: p.id, uploaded: false }; if (p.full) rec.full = await b64ToBlob(p.full); if (p.thumb) rec.thumb = await b64ToBlob(p.thumb); await DB.put('photos', rec); }
+    for (const c of data.cafes) await DB.put('cafes', { ...c, dirty: true, updatedAt: c.updatedAt || Date.now() });
+    for (const v of data.visits) await DB.put('visits', { ...v, dirty: true, updatedAt: v.updatedAt || Date.now() });
+    Sync.soon();
     photoURL.clear(); await loadAll(); await refreshAll(); toast('불러왔어요');
   } catch { toast('불러오는 중 문제가 생겼어요'); }
   loading(false);
 };
+
+
+/* =========================================================
+   로그인 + 동기화 (Supabase)
+   - 기록은 항상 이 기기에 먼저 저장하고, 로그인돼 있으면 서버와 맞춤
+   - 서버에는 내 계정 기록만 보이도록 권한이 걸려 있음
+   ========================================================= */
+const SB_URL = 'https://wqzndhwuylzpgauoldpv.supabase.co';
+const SB_KEY = 'sb_publishable_wWm5yjFWWvo0U2v9n4NglQ_X2RrFYjP'; // 공개용 키 (브라우저에 넣어도 되는 키)
+let sb = null, session = null;
+const syncState = { running: false, again: false, timer: null, last: null, error: '' };
+try { syncState.last = localStorage.getItem('lastSyncAt'); } catch {}
+
+const Sync = {
+  async init(){
+    if (!window.supabase) return;
+    sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' } });
+    try { const { data } = await sb.auth.getSession(); session = data.session; } catch {}
+    if (/[?&](code|error)=/.test(location.search) || location.hash.includes('access_token')) history.replaceState(null, '', location.pathname);
+    sb.auth.onAuthStateChange((ev, s) => {
+      const before = session?.user?.id; session = s; renderAccount();
+      if (s && s.user.id !== before) Sync.run(true);
+    });
+  },
+  async login(){
+    if (!sb) { toast('인터넷 연결을 확인해 주세요'); return; }
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: location.origin + location.pathname } });
+    if (error) toast('로그인을 시작하지 못했어요');
+  },
+  async logout(){
+    if (!sb || !session) return;
+    if (!await ask('로그아웃할까요?\n이 기기에 있는 기록은 지워지고, 다시 로그인하면 서버에서 불러와요.', '로그아웃', true)) return;
+    loading(true, '마지막으로 올리는 중…');
+    await Sync.run();
+    const pending = (await DB.all('cafes')).some(c => c.dirty !== false) || (await DB.all('visits')).some(v => v.dirty !== false) || (await DB.all('tomb')).length || (await DB.all('photos')).some(p => !p.uploaded && p.full);
+    loading(false);
+    if (pending && !await ask('아직 서버에 못 올린 기록이 있어요.\n지금 로그아웃하면 그 기록은 사라져요. 그래도 할까요?', '그래도 로그아웃', true)) return;
+    try { await sb.auth.signOut(); } catch {}
+    for (const st of ['cafes', 'visits', 'photos', 'tomb']) await DB.clear(st);
+    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:')).forEach(k => localStorage.removeItem(k)); localStorage.removeItem('lastSyncAt'); } catch {}
+    photoURL.clear(); session = null; syncState.last = null;
+    await loadAll(); closeSheet(); await refreshAll(); renderAccount(); toast('로그아웃했어요');
+  },
+  soon(){ if (!session) return; clearTimeout(syncState.timer); syncState.timer = setTimeout(() => Sync.run(), 1200); },
+  async run(isFirst){
+    if (!sb || !session) return;
+    if (syncState.running) { syncState.again = true; return; }
+    syncState.running = true; syncState.error = ''; renderAccount();
+    let changed = false;
+    try {
+      const me = session.user.id;
+      const strip = o => { const { dirty, ...r } = o; return r; };
+      // 1) 아직 안 올린 사진 올리기
+      for (const p of await DB.all('photos')) {
+        if (p.uploaded || !p.full) continue;
+        let r = await sb.storage.from('photos').upload(`${me}/${p.id}.jpg`, p.full, { upsert: true, contentType: 'image/jpeg' });
+        if (r.error) throw r.error;
+        if (p.thumb) { r = await sb.storage.from('photos').upload(`${me}/${p.id}_t.jpg`, p.thumb, { upsert: true, contentType: 'image/jpeg' }); if (r.error) throw r.error; }
+        const cur = await DB.get('photos', p.id); if (cur) { cur.uploaded = true; await DB.put('photos', cur); }
+      }
+      // 2) 바뀐 카페, 방문 기록 올리기
+      for (const [store, toRow] of [
+        ['cafes',  c => ({ user_id: me, id: c.id, data: strip(c), deleted: false })],
+        ['visits', v => ({ user_id: me, id: v.id, cafe_id: v.cafeId, data: strip(v), deleted: false })],
+      ]) {
+        const dirty = (await DB.all(store)).filter(x => x.dirty !== false);
+        for (let i = 0; i < dirty.length; i += 200) {
+          const chunk = dirty.slice(i, i + 200);
+          const { error } = await sb.from(store).upsert(chunk.map(toRow));
+          if (error) throw error;
+          for (const x of chunk) { const cur = await DB.get(store, x.id); if (cur && (cur.updatedAt || 0) === (x.updatedAt || 0)) { cur.dirty = false; await DB.put(store, cur); } }
+        }
+      }
+      // 3) 지운 것 알리기
+      for (const t of await DB.all('tomb')) {
+        if (t.kind === 'photo') { await sb.storage.from('photos').remove([`${me}/${t.rid}.jpg`, `${me}/${t.rid}_t.jpg`]); }
+        else {
+          const row = { user_id: me, id: t.rid, data: {}, deleted: true };
+          if (t.kind === 'visit') row.cafe_id = t.cafeId || '';
+          const { error } = await sb.from(t.kind === 'cafe' ? 'cafes' : 'visits').upsert(row);
+          if (error) throw error;
+        }
+        await DB.del('tomb', t.id);
+      }
+      // 4) 다른 기기에서 바뀐 것 받아오기
+      const key = 'lastPull:' + me;
+      let since = '1970-01-01T00:00:00+00:00'; try { since = localStorage.getItem(key) || since; } catch {}
+      let newest = since;
+      for (const store of ['cafes', 'visits']) {
+        let from = since;
+        for (;;) {
+          const { data, error } = await sb.from(store).select('id,data,deleted,updated_at').gt('updated_at', from).order('updated_at').limit(500);
+          if (error) throw error;
+          for (const row of data) {
+            if (await applyRemote(store, row)) changed = true;
+            if (row.updated_at > newest) newest = row.updated_at;
+          }
+          if (data.length < 500) break;
+          from = data[data.length - 1].updated_at;
+        }
+      }
+      try { localStorage.setItem(key, newest); } catch {}
+      syncState.last = new Date().toISOString(); try { localStorage.setItem('lastSyncAt', syncState.last); } catch {}
+    } catch (e) {
+      syncState.error = navigator.onLine === false ? '인터넷 연결이 없어요' : '서버와 맞추지 못했어요';
+      console.warn('sync', e);
+    }
+    syncState.running = false;
+    if (changed) { await loadAll(); await refreshAll(); if (isOpen('pDetail') && detailId) openDetail(detailId, true); }
+    renderAccount();
+    if (syncState.again) { syncState.again = false; Sync.run(); }
+  },
+};
+async function applyRemote(store, row){
+  const local = await DB.get(store, row.id);
+  if (row.deleted) {
+    if (!local) return false;
+    await DB.del(store, row.id);
+    if (store === 'visits') for (const p of local.photoIds || []) { await DB.del('photos', p); photoURL.delete(p); }
+    return true;
+  }
+  const remote = row.data || {};
+  if (local && local.dirty !== false && (local.updatedAt || 0) > (remote.updatedAt || 0)) return false; // 이 기기 것이 더 최신
+  await DB.put(store, { ...remote, id: row.id, dirty: false });
+  return true;
+}
+function renderAccount(){
+  const el = $('#acct'); if (!el) return;
+  if (!sb) { el.innerHTML = '<div class="small">로그인 기능을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>'; return; }
+  if (!session) {
+    el.innerHTML = `<div style="font-size:15px;line-height:1.6">카카오로 로그인하면 폰, PC 어디서든<br>같은 기록과 사진을 볼 수 있어요.</div>
+      <button class="btn kakaologin" id="btnLogin" style="width:100%;margin-top:12px">카카오로 로그인</button>`;
+    $('#btnLogin').onclick = () => Sync.login();
+    return;
+  }
+  const m = session.user.user_metadata || {};
+  const name = m.name || m.full_name || m.nickname || m.user_name || m.preferred_username || '카카오 사용자';
+  const pic = m.avatar_url || m.picture || '';
+  const t = syncState.last ? new Date(syncState.last) : null;
+  const when = t ? `${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}` : '';
+  const status = syncState.running ? '<span class="syncdot"></span>맞추는 중…'
+    : syncState.error ? `<span class="syncdot err"></span>${esc(syncState.error)}`
+    : when ? `<span class="syncdot"></span>${when}에 동기화됨` : '<span class="syncdot off"></span>아직 동기화 전';
+  el.innerHTML = `<div class="who"><div class="av" style="${pic ? `background-image:url('${esc(pic)}')` : ''}">${pic ? '' : '☕'}</div>
+      <div style="min-width:0"><div style="font-size:16px">${esc(name)}</div><div class="st">${status}</div></div></div>
+    <div class="btnrow"><button class="btn ghost" id="btnSync">지금 동기화</button><button class="btn ghost" id="btnLogout">로그아웃</button></div>`;
+  $('#btnSync').onclick = () => Sync.run();
+  $('#btnLogout').onclick = () => Sync.logout();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') Sync.run(); });
+window.addEventListener('online', () => Sync.run());
 
 /* =========================================================
    화면 전환
@@ -1018,12 +1218,21 @@ async function refreshAll(){
   let th = 'coffee'; try { th = localStorage.getItem('theme') || 'coffee'; } catch {}
   applyTheme(th);
   try { await DB.open(); await loadAll(); } catch { toast('이 브라우저에서는 저장이 안 돼요'); }
+  await Sync.init();
   try { navigator.storage?.persist?.(); } catch {}
   await initMap();
   await refreshPins();
   renderSort();
   if (cafes.length && !localStorage.getItem('mapView')) fitAll();
   locate(false);
+  if (session) Sync.run();
+  else if (sb) {
+    let seen = false; try { seen = !!localStorage.getItem('loginAsked'); } catch {}
+    if (!seen) {
+      try { localStorage.setItem('loginAsked', '1'); } catch {}
+      if (await ask('카카오로 로그인하면 폰, PC 어디서든\n같은 기록과 사진을 볼 수 있어요.\n(나중에 설정 탭에서도 할 수 있어요)', '카카오로 로그인')) Sync.login();
+    }
+  }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
