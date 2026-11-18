@@ -1606,7 +1606,7 @@ function snapNearby(){
   const got = [];
   let left = 2;
   const done = () => { if (--left) return; const seen = new Set(); snapRows(mine, got.filter(x => !seen.has(x.id) && seen.add(x.id)).sort((a, b) => +a.distance - +b.distance).slice(0, 8)); };
-  for (const cat of ['CE7', 'FD6']) places.categorySearch(cat, (r, st) => { if (st === kakao.maps.services.Status.OK) got.push(...(cat === 'FD6' ? r.slice(0, 4) : r)); done(); }, { location: ll, radius: 250, sort: kakao.maps.services.SortBy.DISTANCE });
+  for (const cat of ['CE7', 'FD6']) places.categorySearch(cat, (r, st) => { if (st === kakao.maps.services.Status.OK) got.push(...(cat === 'FD6' ? r.filter(x => /카페|디저트|제과|베이커리|간식|도넛|아이스크림|떡|빙수|차,/.test(x.category_name)) : r)); done(); }, { location: ll, radius: 250, sort: kakao.maps.services.SortBy.DISTANCE });
 }
 function snapSearch(q){
   const mine = cafes.filter(c => c.name.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
