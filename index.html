@@ -983,17 +983,23 @@ function showTab(t){
 $('#tabbar').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
 const pageStack = [];
 let ignorePop = 0;
-function openPage(id){ $('#'+id).classList.add('open'); if (!pageStack.includes(id)) { pageStack.push(id); history.pushState({p:id}, ''); } }
+// 열린 화면이 하나라도 있으면 브라우저 기록에 한 칸만 쌓아서 뒤로가기로 닫히게 함
+function openPage(id){
+  $('#'+id).classList.add('open');
+  if (!pageStack.includes(id)) { if (!pageStack.length) history.pushState({m:1}, ''); pageStack.push(id); }
+}
 function closePage(id, fromPop){
   $('#'+id).classList.remove('open');
-  const i = pageStack.indexOf(id); if (i >= 0) { pageStack.splice(i, 1); if (!fromPop) { ignorePop++; history.back(); } }
+  const i = pageStack.indexOf(id);
+  if (i >= 0) { pageStack.splice(i, 1); if (!fromPop && !pageStack.length) { ignorePop++; history.back(); } }
 }
 const isOpen = id => $('#'+id).classList.contains('open');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closePage(b.dataset.close));
 window.addEventListener('popstate', () => {
   if (ignorePop > 0) { ignorePop--; return; }
-  if (!$('#viewer').classList.contains('hidden')) { $('#viewer').classList.add('hidden'); history.pushState({}, ''); return; }
-  const top = pageStack[pageStack.length - 1]; if (top) closePage(top, true);
+  if (!$('#viewer').classList.contains('hidden')) { $('#viewer').classList.add('hidden'); if (pageStack.length) history.pushState({m:1}, ''); return; }
+  const top = pageStack[pageStack.length - 1];
+  if (top) { closePage(top, true); if (pageStack.length) history.pushState({m:1}, ''); }
 });
 async function refreshAll(){
   await refreshPins();
