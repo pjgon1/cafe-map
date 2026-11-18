@@ -613,7 +613,7 @@ function passFilter(c, f){
   if (f === '전체') return true;
   if (f === '♥ 또 갈래') return !!c.fav;
   if (f === '다녀온 곳') return !c.wish;
-  if (f === '☆ 가보고 싶은 곳') return !!c.wish;
+  if (f === '☆ 가볼래') return !!c.wish;
   return (c.tags||[]).includes(f);
 }
 async function refreshPins(){
@@ -660,7 +660,7 @@ function locate(pan=true){
 }
 function renderChips(){
   const used = new Set(cafes.flatMap(c => c.tags||[]));
-  const list = ['전체','다녀온 곳','☆ 가보고 싶은 곳','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
+  const list = ['전체','다녀온 곳','☆ 가볼래','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
   if (!list.includes(mapFilter)) mapFilter = '전체';
   $('#mapChips').innerHTML = list.map(t => `<button class="chip ${t===mapFilter?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
 }
@@ -697,7 +697,7 @@ async function openSheet(id){
       <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
       ${st.rating ? `<div class="score">★ ${st.rating.toFixed(1)}</div>` : ''}
     </div>
-    <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가보고 싶은 곳</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.wish && !lv ? `<div class="note" style="margin-top:8px;color:var(--sub)">아직 안 가본 곳이에요.${c.memo?'<br>'+esc(c.memo):''}</div>` : lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
     <div class="btnrow">
       <button class="btn" data-act="visit">${c.wish ? '가봤어요! 기록 남기기' : '방문 기록 추가'}</button>
@@ -815,7 +815,7 @@ function pickPlace(p, fromTap){
     <div class="title">${esc(c.name)}</div>
     <div class="subt">${esc(c.roadAddress || c.address)}</div>
     ${c.category ? `<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>` : ''}
-    <div class="btnrow"><button class="btn" data-act="saveNew">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-act="saveWish">☆ 가보고 싶어요</button></div>
+    <div class="btnrow"><button class="btn" data-act="saveNew">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-act="saveWish">☆ 가볼래</button></div>
     <div class="linkrow">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
@@ -850,7 +850,7 @@ function openCafeEditor(id, seed){
   $('#cBody').innerHTML = `
     <label class="f">카페 이름</label><input class="inp" id="cName" value="${esc(c.name)}" placeholder="카페 이름">
     <label class="f">주소</label><input class="inp" id="cAddr" value="${esc(c.roadAddress || c.address)}" placeholder="주소">
-    <div class="toggle"><div>☆ 가보고 싶은 곳<div class="small">아직 안 가본 곳이에요. 다녀와서 기록을 남기면 자동으로 꺼져요</div></div><button class="sw ${c.wish?'on':''}" id="cWish" aria-label="가보고 싶은 곳"></button></div>
+    <div class="toggle"><div>☆ 가볼래<div class="small">아직 안 가본 곳이에요. 다녀와서 기록을 남기면 자동으로 꺼져요</div></div><button class="sw ${c.wish?'on':''}" id="cWish" aria-label="가볼래"></button></div>
     <div class="toggle"><div>♥ 또 갈래<div class="small">다시 가고 싶은 곳은 핀이 하트 색으로 바뀌어요</div></div><button class="sw ${c.fav?'on':''}" id="cFav" aria-label="또 갈래"></button></div>
     <label class="f">어떤 곳이에요?</label>
     <div class="tagpick" id="cTags">${TAGS.map(t => `<button class="chip ${c.tags.includes(t)?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
@@ -878,7 +878,7 @@ $('#cSave').onclick = async () => {
   const i = cafes.findIndex(x => x.id === c.id); if (i >= 0) cafes[i] = c; else cafes.push(c);
   const wasNew = editingCafe.isNew;
   closePage('pCafe'); removeTemp(); await refreshAll();
-  if (wasNew && c.wish) { toast('가보고 싶은 곳에 저장했어요'); openSheet(c.id); }
+  if (wasNew && c.wish) { toast('가볼래에 저장했어요'); openSheet(c.id); }
   else if (wasNew) { toast('카페를 지도에 꽂았어요'); openSheet(c.id); openVisitEditor(c.id); }
   else { toast('저장했어요'); if (isOpen('pDetail')) openDetail(c.id, true); }
 };
@@ -995,7 +995,7 @@ async function openDetail(id, keep){
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(c.roadAddress || c.address || '')}</div>
       ${c.category?`<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>`:''}</div>
       ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}</div>`:''}</div>
-    <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가보고 싶은 곳</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
     <div class="linkrow" style="margin-top:12px">
@@ -1050,7 +1050,7 @@ try { sortBy = localStorage.getItem('sortBy') || 'recent'; } catch {}
 function renderSort(){
   $('#sortSeg').innerHTML = SORTS.map(([k,n]) => `<button class="chip ${k===sortBy?'on':''}" data-k="${k}">${n}</button>`).join('');
   const used = new Set(cafes.flatMap(c => c.tags||[]));
-  const tags = ['전체','다녀온 곳','☆ 가보고 싶은 곳','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
+  const tags = ['전체','다녀온 곳','☆ 가볼래','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
   if (!tags.includes(listFilter)) listFilter = '전체';
   $('#listChips').innerHTML = tags.map(t => `<button class="chip ${t===listFilter?'on':''}" data-t="${esc(t)}" style="font-size:12px;padding:5px 10px">${esc(t)}</button>`).join('');
 }
@@ -1085,7 +1085,7 @@ async function renderList(){
       <div class="thumbpol" style="transform:rotate(${hashRot(c.id,0)}deg)"><div style="${url?`background-image:url('${url}')`:''}">${url?'':ICON_CUP}</div></div>
       <div class="info"><div class="nm">${c.wish?'<span style="color:var(--sub)">☆</span> ':c.fav?'<span style="color:var(--heartt)">♥</span> ':''}${esc(c.name)}</div>
       <div class="ad">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''}</div>
-      <div class="mini">${st.rating?`<b>★ ${st.rating.toFixed(1)}</b>`:''}<span>${c.wish && !st.count ? '가보고 싶은 곳' : `방문 기록 ${st.count}개`}</span>${st.last?`<span>${fmtDate(st.last)}</span>`:''}</div></div></button>`;
+      <div class="mini">${st.rating?`<b>★ ${st.rating.toFixed(1)}</b>`:''}<span>${c.wish && !st.count ? '가볼래' : `방문 기록 ${st.count}개`}</span>${st.last?`<span>${fmtDate(st.last)}</span>`:''}</div></div></button>`;
   }));
   $('#list').innerHTML = html.join('');
 }
@@ -1413,7 +1413,7 @@ function openPick(){
   const chips = (arr, cur, key) => arr.map(([v,n]) => `<button class="chip ${cur===v?'on':''}" data-${key}="${v}">${n}</button>`).join('');
   $('#pickBody').innerHTML = `
     <label class="f" style="margin-top:4px">어디서 고를까?</label>
-    <div class="tagpick">${chips([['전체','전체'],['다녀온 곳','다녀온 곳'],['가보고 싶은 곳','☆ 가보고 싶은 곳'],['또 갈래','♥ 또 갈래']], pickOpt.scope, 'sc')}</div>
+    <div class="tagpick">${chips([['전체','전체'],['다녀온 곳','다녀온 곳'],['가볼래','☆ 가볼래'],['또 갈래','♥ 또 갈래']], pickOpt.scope, 'sc')}</div>
     <label class="f">얼마나 가까이?</label>
     <div class="tagpick">${chips([[0,'상관없음'],[0.5,'500m'],[1,'1km'],[3,'3km'],[10,'10km']], pickOpt.dist, 'ds')}</div>
     ${used.length ? `<label class="f">이런 곳이면 좋겠어 (여러 개 고르면 다 맞는 곳만)</label><div class="tagpick" id="pickTags">${used.map(t => `<button class="chip ${pickOpt.tags.includes(t)?'on':''}" data-tg="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
@@ -1433,7 +1433,7 @@ async function doPick(){
   if (pickOpt.dist && !myPos) { toast('내 위치를 확인하는 중…'); await locate(false); if (!myPos) { $('#pickRes').innerHTML = `<div class="pickres">위치를 못 받아서 거리 조건을 쓸 수 없어요.<br><span class="small">"상관없음"으로 바꾸거나 위치 권한을 허용해 주세요.</span></div>`; return; } }
   let cand = cafes.filter(c => {
     if (pickOpt.scope === '다녀온 곳' && c.wish) return false;
-    if (pickOpt.scope === '가보고 싶은 곳' && !c.wish) return false;
+    if (pickOpt.scope === '가볼래' && !c.wish) return false;
     if (pickOpt.scope === '또 갈래' && !c.fav) return false;
     if (pickOpt.tags.some(t => !(c.tags||[]).includes(t))) return false;
     if (pickOpt.dist && distKm(myPos, c) > pickOpt.dist) return false;
@@ -1481,7 +1481,7 @@ function openShareMaker(){
     <div class="toggle"><div>후기랑 메뉴 같이 보여주기</div><button class="sw on" id="shRev" aria-label="후기 포함"></button></div>
     <div class="toggle"><div>사진 한 장씩 같이 보여주기</div><button class="sw on" id="shPh" aria-label="사진 포함"></button></div>
     <label class="f">빠르게 고르기</label>
-    <div class="tagpick" id="shQuick">${['전체','다녀온 곳','☆ 가보고 싶은 곳','♥ 또 갈래', ...used].map(t => `<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}<button class="chip" data-q="__none">선택 해제</button></div>
+    <div class="tagpick" id="shQuick">${['전체','다녀온 곳','☆ 가볼래','♥ 또 갈래', ...used].map(t => `<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}<button class="chip" data-q="__none">선택 해제</button></div>
     <label class="f">카페 고르기 <span id="shCount"></span></label>
     <div class="listsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="shQ" type="search" placeholder="이름, 동네로 찾기"></div>
     <div id="shList"></div>`;
@@ -1602,7 +1602,7 @@ function shareSheet(c, pan){
   $('#sheet').innerHTML = `<div class="grab"></div>
     ${c.thumb ? `<div class="pols" style="height:150px"><div class="pol" style="left:0;top:4px;transform:rotate(-3deg)"><div style="background-image:url('${c.thumb}')"></div></div></div>` : ''}
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(shortAddr(c))}${c.category ? ' · ' + esc(c.category.split(' > ').pop()) : ''}</div></div>${c.rating ? `<div class="score">★ ${c.rating.toFixed(1)}</div>` : ''}</div>
-    <div style="margin-top:10px">${c.wish ? '<span class="tag wish">☆ 가보고 싶은 곳</span>' : ''}${c.fav ? '<span class="tag heart">♥ 또 갈래</span>' : ''}${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:10px">${c.wish ? '<span class="tag wish">☆ 가볼래</span>' : ''}${c.fav ? '<span class="tag heart">♥ 또 갈래</span>' : ''}${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.review || c.menu ? `<div class="note" style="margin-top:8px">${c.menu ? `<div class="meta">${esc(c.menu)}</div>` : ''}${esc(c.review || '')}</div>` : ''}
     <div class="linkrow" style="margin-top:14px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
