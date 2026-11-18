@@ -1038,6 +1038,7 @@ $('#vSave').onclick = async () => {
   const i = visits.findIndex(x => x.id === v.id); if (i >= 0) visits[i] = v; else visits.push(v);
   const wc = cafes.find(x => x.id === v.cafeId); let moved = false;
   if (wc && wc.wish) { wc.wish = false; wc.updatedAt = Date.now(); wc.dirty = true; await DB.put('cafes', wc); moved = true; Sync.soon(); }
+  if (moved) { try { localStorage.setItem('wishDone', (+localStorage.getItem('wishDone') || 0) + 1); } catch {} }
   closePage('pVisit'); await refreshAll(); toast(moved ? '♪ 다녀왔어로 옮겼어요' : '기록했어요');
   if (isOpen('pDetail')) openDetail(v.cafeId, true); else if (selectedId === v.cafeId) openSheet(v.cafeId);
 };
@@ -1644,18 +1645,27 @@ function stampData(){
     visits: vd.length, cafes: byCafe.size, same: max(byCafe), area: max(areas), areas: areas.size,
     photos: vd.reduce((s, v) => s + (v.photoIds || []).length, 0), reviews: vd.filter(v => (v.review || '').length >= 10).length,
     menus: menus.size, month: max(months), five: vd.filter(v => v.rating === 5).length + cafes.filter(c => +c.myRating === 5).length,
-    wish: cafes.filter(c => c.wish).length, fav: cafes.filter(c => c.fav).length
+    wish: cafes.filter(c => c.wish).length, fav: cafes.filter(c => c.fav).length,
+    weekend: vd.filter(v => v.date && [0, 6].includes(new Date(v.date + 'T00:00').getDay())).length,
+    streak: (() => { const ds = [...new Set(vd.map(v => v.date).filter(Boolean))].sort(); let best = ds.length ? 1 : 0, run = 1; for (let i = 1; i < ds.length; i++) { run = (new Date(ds[i] + 'T00:00') - new Date(ds[i - 1] + 'T00:00')) === 864e5 ? run + 1 : 1; best = Math.max(best, run); } return best; })(),
+    flex: vd.filter(v => +v.price >= 30000).length,
+    favMenu: (() => { const m = new Map(); vd.forEach(v => (v.menu || '').split(/[,，·\/+]|\s{2,}/).map(x => x.trim()).filter(Boolean).forEach(x => m.set(x, (m.get(x) || 0) + 1))); return max(m); })(),
+    bomb: vd.reduce((mx, v) => Math.max(mx, (v.photoIds || []).length), 0),
+    destiny: (() => { let log = []; try { log = JSON.parse(localStorage.getItem('pickLog') || '[]'); } catch {} return vd.filter(v => log.some(p => p.id === v.cafeId && v.createdAt >= p.t && v.createdAt - p.t < 7 * 864e5)).length; })(),
+    wishDone: +(localStorage.getItem('wishDone') || 0)
   };
 }
 const STAMPS = [
   ['v1', '첫 기록', '방문 기록 1개', 'visits', 1], ['v10', '기록 열 장', '방문 기록 10개', 'visits', 10], ['v30', '기록 서른 장', '방문 기록 30개', 'visits', 30], ['v100', '기록 백 장', '방문 기록 100개', 'visits', 100],
-  ['c5', '카페 다섯 곳', '서로 다른 카페 5곳', 'cafes', 5], ['c15', '카페 열다섯 곳', '서로 다른 카페 15곳', 'cafes', 15], ['c30', '카페 서른 곳', '서로 다른 카페 30곳', 'cafes', 30], ['c50', '카페 쉰 곳', '서로 다른 카페 50곳', 'cafes', 50],
+  ['c50', '카페 쉰 곳', '서로 다른 카페 50곳', 'cafes', 50], ['c70', '카페 일흔 곳', '서로 다른 카페 70곳', 'cafes', 70], ['c100', '카페 백 곳', '서로 다른 카페 100곳', 'cafes', 100], ['c150', '카페 백오십 곳', '서로 다른 카페 150곳', 'cafes', 150],
   ['r3', '단골 입문', '같은 카페 3번', 'same', 3], ['r5', '단골', '같은 카페 5번', 'same', 5], ['r10', '찐단골', '같은 카페 10번', 'same', 10],
   ['a5', '동네 탐험가', '한 동네에서 5곳', 'area', 5], ['as3', '마실러', '3개 동네 방문', 'areas', 3], ['as8', '여기저기', '8개 동네 방문', 'areas', 8],
   ['p10', '찰칵', '사진 10장', 'photos', 10], ['p50', '사진가', '사진 50장', 'photos', 50],
   ['rv5', '후기 성실러', '후기 5개 쓰기', 'reviews', 5], ['rv20', '카페 평론가', '후기 20개 쓰기', 'reviews', 20],
   ['m15', '메뉴 수집가', '서로 다른 메뉴 15가지', 'menus', 15], ['mo5', '카페 중독', '한 달에 5번 방문', 'month', 5],
-  ['f1', '인생 카페', '별점 5점 주기', 'five', 1], ['fv3', '또 갈래', '♥ 또 갈래 3곳', 'fav', 3], ['w5', '위시리스트', '☆ 가볼래 5곳 저장', 'wish', 5]
+  ['f1', '인생 카페', '별점 5점 주기', 'five', 1], ['fv3', '또 갈래', '♥ 또 갈래 3곳', 'fav', 3], ['w5', '위시리스트', '☆ 가볼래 5곳 저장', 'wish', 5],
+  ['we5', '주말엔 카페', '토·일요일에 5번 방문', 'weekend', 5], ['st3', '사흘 연속 출근', '3일 연속 카페 가기', 'streak', 3], ['fx', '오늘은 플렉스', '한 번에 3만 원 이상', 'flex', 1],
+  ['fm5', '최애 메뉴', '같은 메뉴 5번 먹기', 'favMenu', 5], ['bb5', '사진 폭탄', '한 번에 사진 5장', 'bomb', 5], ['ds1', '운명대로', '🎲로 뽑힌 곳에 가기', 'destiny', 1], ['wd1', '드디어 가봤다', '☆ 가볼래였던 곳 방문', 'wishDone', 1]
 ];
 function stampEarned(){
   let saved = []; try { saved = JSON.parse(localStorage.getItem('stamps') || '[]'); } catch {}
@@ -1746,6 +1756,7 @@ async function doPickInner(){
   let r = Math.random() * w.reduce((a,b) => a+b, 0), c = cand[0];
   for (let i = 0; i < cand.length; i++) { r -= w[i]; if (r <= 0) { c = cand[i]; break; } }
   lastPickId = c.id;
+  try { const log = JSON.parse(localStorage.getItem('pickLog') || '[]'); log.push({ id: c.id, t: Date.now() }); localStorage.setItem('pickLog', JSON.stringify(log.slice(-30))); } catch {}
   const st = cafeStats(c);
   const ids = [coverOf(c, st), ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
   const urlsP = Promise.all(ids.map(i => getPhotoURL(i)));
