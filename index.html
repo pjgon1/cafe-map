@@ -34,6 +34,46 @@ input,textarea{outline:none}
 .view{position:fixed;inset:0;bottom:calc(64px + var(--safe-b));overflow:hidden}
 .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;height:100%}
 #tabbar{position:fixed;left:0;right:0;bottom:0;height:calc(64px + var(--safe-b));padding-bottom:var(--safe-b);background:var(--bg);border-top:1px solid var(--line);display:flex;z-index:30}
+.headbtns{display:flex;gap:8px;margin-top:10px}
+.headbtns .chip{background:var(--soft);color:var(--softt);border-color:transparent}
+.album h4{margin:22px 0 10px;font-size:15px;font-weight:700}
+.album h4 small{font-weight:400;color:var(--sub);font-size:12px;margin-left:6px}
+.albumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px}
+.albumgrid .pol{position:relative;padding:5px 5px 18px}
+.albumgrid .pol>div:first-child{width:100%;height:auto;aspect-ratio:1/1.05}
+.albumgrid .pol .cap{font-size:10px;bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.pernav{display:flex;align-items:center;justify-content:space-between;margin:6px 0 14px}
+.pernav .lbl{font-size:18px;font-weight:700}
+.pernav .iconbtn{background:var(--note)}
+.bars .row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px}
+.bars .row .n{width:38%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .row .b{flex:1;height:10px;border-radius:5px;background:var(--note);overflow:hidden}
+.bars .row .b i{display:block;height:100%;background:var(--acc);border-radius:5px}
+.bars .row .v{width:44px;text-align:right;color:var(--sub);font-size:12px}
+.mres{display:block;width:100%;text-align:left;padding:13px 2px;border-bottom:1px solid var(--line)}
+.mres .t{display:flex;justify-content:space-between;gap:8px;font-size:15px}
+.mres .s{font-size:12px;color:var(--sub);margin-top:3px}
+.mres .r{font-size:13px;margin-top:5px;line-height:1.5;color:var(--ink);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pickres{background:var(--note);border-radius:18px;padding:16px;margin-top:18px;text-align:center}
+.pickres .pols{margin:0 auto 4px;width:300px;max-width:100%}
+.ckrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 2px;border-bottom:1px solid var(--line)}
+.ckrow .ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;color:var(--onacc);font-size:14px}
+.ckrow.on .ck{background:var(--acc);border-color:var(--acc)}
+.ckrow .nm{flex:1;min-width:0;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ckrow .ad{font-size:12px;color:var(--sub)}
+.linkbox{background:var(--note);border-radius:12px;padding:12px 14px;font-size:14px;word-break:break-all;margin-top:10px}
+.shrow{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line)}
+.shrow .info{flex:1;min-width:0}
+.shrow .info b{display:block;font-weight:400;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shrow .info span{font-size:12px;color:var(--sub)}
+.shrow button{font-size:13px;color:var(--softt);background:var(--soft);padding:7px 11px;border-radius:999px}
+.sharetop{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:16px;padding:10px 14px;box-shadow:0 2px 10px rgba(0,0,0,.10);border:1px solid var(--line)}
+.sharetop .tt{flex:1;min-width:0}
+.sharetop .tt b{display:block;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sharetop .tt span{font-size:12px;color:var(--sub)}
+.sharetop button{font-size:13px;background:var(--acc);color:var(--onacc);padding:8px 12px;border-radius:999px;flex:none}
+body.sharemode #tabbar,body.sharemode #btnAdd,body.sharemode #btnPick,body.sharemode .searchbar,body.sharemode #mapChips{display:none!important}
+body.sharemode .view{bottom:0}
 #tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;color:var(--sub)}
 #tabbar button.on{color:var(--acc)}
 #tabbar svg{width:24px;height:24px}
@@ -253,6 +293,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
     <div class="chips" id="mapChips"></div>
   </div>
   <div class="mapbtns" id="mapBtns" style="bottom:20px">
+    <button class="roundbtn" id="btnPick" aria-label="오늘 어디 갈까"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1.1" fill="currentColor"/><circle cx="15" cy="15" r="1.1" fill="currentColor"/><circle cx="15" cy="9" r="1.1" fill="currentColor"/><circle cx="9" cy="15" r="1.1" fill="currentColor"/></svg></button>
     <button class="roundbtn" id="btnFit" aria-label="내 카페 전체 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
     <button class="roundbtn" id="btnMe" aria-label="내 위치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7.5"/></svg></button>
     <button class="roundbtn add" id="btnAdd" aria-label="카페 추가"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -263,7 +304,8 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 <!-- 목록 탭 -->
 <section class="view hidden" id="v-list">
   <div class="scroll" id="listScroll">
-    <div class="pagehead"><h1>내 카페 기록</h1><p id="listCount"></p></div>
+    <div class="pagehead"><h1>내 카페 기록</h1><p id="listCount"></p>
+      <div class="headbtns"><button class="chip" id="lPick">🎲 오늘 어디 갈까</button><button class="chip" id="lShare">🔗 공유 링크 만들기</button></div></div>
     <div class="listtools">
       <div class="listsearch">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -277,6 +319,15 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 </section>
 
 <!-- 설정 탭 -->
+<!-- 기록 탭 -->
+<section class="view hidden" id="v-rec">
+  <div class="scroll" id="recScroll">
+    <div class="pagehead"><h1>모아보기</h1></div>
+    <div class="listtools"><div class="seg" id="recSeg"></div></div>
+    <div id="recBody" style="padding:0 18px 40px"></div>
+  </div>
+</section>
+
 <section class="view hidden" id="v-set">
   <div class="scroll">
     <div class="pagehead"><h1>설정</h1></div>
@@ -284,6 +335,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
       <div class="sec" style="margin-top:12px"><h3>계정</h3><div class="acct" id="acct"></div></div>
       <div class="sec"><h3>내 기록</h3><div class="stats" id="stats"></div></div>
       <div class="sec"><h3>색 테마</h3><div class="themes" id="themes"></div></div>
+      <div class="sec"><h3>내 공유 링크</h3><div id="shareList"></div></div>
       <div class="sec"><h3>백업</h3>
         <button class="setrow" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><div>백업 파일 저장<small>사진까지 전부 한 파일로 내려받아요</small></div></button>
         <button class="setrow" id="btnImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg><div>백업 파일 불러오기<small>다른 폰이나 브라우저로 옮길 때</small></div></button>
@@ -298,8 +350,37 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 <nav id="tabbar">
   <button data-tab="map" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>지도</button>
   <button data-tab="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>목록</button>
+  <button data-tab="rec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="M7 5V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3"/><path d="M3 15l4-4 4 4 2-2 4 4"/></svg>모아보기</button>
   <button data-tab="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>설정</button>
 </nav>
+
+<!-- 오늘 어디 갈까 -->
+<div class="page" id="pPick">
+  <div class="bar">
+    <button class="iconbtn" data-close="pPick" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="t">오늘 어디 갈까</div><div style="width:40px"></div>
+  </div>
+  <div class="body" id="pickBody"></div>
+</div>
+
+<!-- 공유 링크 만들기 -->
+<div class="page" id="pShare">
+  <div class="bar">
+    <button class="iconbtn" data-close="pShare" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="t">공유 링크 만들기</div><div style="width:40px"></div>
+  </div>
+  <div class="body" id="shBody"></div>
+  <div class="savebar"><button class="btn" id="shMake" style="width:100%">링크 만들기</button></div>
+</div>
+
+<!-- 공유 목록 보기 (링크 받은 사람용) -->
+<div class="page" id="pSList">
+  <div class="bar">
+    <button class="iconbtn" data-close="pSList" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="t" id="sListTitle">목록</div><div style="width:40px"></div>
+  </div>
+  <div class="body" id="sListBody" style="padding:0"></div>
+</div>
 
 <!-- 카페 상세 -->
 <div class="page" id="pDetail">
@@ -701,6 +782,7 @@ function doSearch(){
 // 지도에서 카페·식당 아이콘을 누르면, 누른 자리 바로 아래 장소를 찾아 카드로 보여줌
 let tapSeq = 0;
 async function onMapTap(ll){
+  if (SHARE_ID) { closeSheet(); return; }
   if ($('#sheet').classList.contains('open')) { closeSheet(); return; }
   if (!places || !$('#results').classList.contains('hidden')) return;
   const seq = ++tapSeq;
@@ -1014,6 +1096,7 @@ $('#list').onclick = e => { const b = e.target.closest('.item'); if (b) openDeta
    ========================================================= */
 async function renderSettings(){
   renderAccount();
+  renderShares();
   const photos = visits.reduce((s,v) => s + (v.photoIds||[]).length, 0);
   $('#stats').innerHTML = `<div class="stat"><b>${cafes.length}</b><span>카페</span></div><div class="stat"><b>${visits.length}</b><span>방문 기록</span></div><div class="stat"><b>${photos}</b><span>사진</span></div>`;
   renderThemes();
@@ -1204,6 +1287,332 @@ function renderAccount(){
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') Sync.run(); });
 window.addEventListener('online', () => Sync.run());
 
+
+/* =========================================================
+   모아보기 탭: 앨범 / 결산 / 메뉴로 찾기
+   ========================================================= */
+let recMode = 'album';
+const nowD = new Date();
+const statPer = { y: nowD.getFullYear(), m: nowD.getMonth() + 1, year: false };
+const cafeById = id => cafes.find(c => c.id === id);
+const areaOf = c => { const p = (c?.address || c?.roadAddress || '').split(' '); return p.length >= 3 ? p[1] + ' ' + p[2] : (p[1] || '기타'); };
+function renderRec(){
+  const modes = [['album','앨범'],['stats','결산'],['menu','메뉴로 찾기']];
+  $('#recSeg').innerHTML = modes.map(([k,n]) => `<button class="chip ${k===recMode?'on':''}" data-k="${k}">${n}</button>`).join('');
+  if (recMode === 'album') renderAlbum();
+  if (recMode === 'stats') renderStats();
+  if (recMode === 'menu') renderMenu();
+}
+$('#recSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; recMode = b.dataset.k; renderRec(); $('#recScroll').scrollTop = 0; };
+
+// 앨범: 찍은 사진을 날짜순 폴라로이드로
+async function renderAlbum(){
+  const body = $('#recBody');
+  const vs = [...visits].filter(v => (v.photoIds||[]).length).sort((a,b) => (b.date||'').localeCompare(a.date||'') || b.createdAt - a.createdAt);
+  const items = [];
+  for (const v of vs) { const c = cafeById(v.cafeId); for (const p of v.photoIds) items.push({ id: p, cap: (c?.name || '') + (v.date ? ' · ' + fmtDate(v.date) : ''), date: v.date || '', cafe: c?.name || '' }); }
+  if (!items.length) { body.innerHTML = `<div class="empty"><div class="big">📷</div>방문 기록에 사진을 넣으면<br>여기 폴라로이드로 모여요.</div>`; return; }
+  const groups = new Map();
+  for (const it of items) { const k = it.date ? it.date.slice(0,7) : '날짜 모름'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it); }
+  let html = '<div class="album">';
+  for (const [k, arr] of groups) {
+    const label = k === '날짜 모름' ? k : `${+k.slice(0,4)}년 ${+k.slice(5,7)}월`;
+    const cells = await Promise.all(arr.map(async (it, i) => `<div class="pol" data-ph="${it.id}" style="transform:rotate(${hashRot(it.id,i)}deg)"><div style="background-image:url('${await getPhotoURL(it.id)}')"></div><div class="cap">${esc(it.cafe)}</div></div>`));
+    html += `<h4>${label}<small>${arr.length}장</small></h4><div class="albumgrid">${cells.join('')}</div>`;
+  }
+  body.innerHTML = html + '</div>';
+  body.onclick = e => { const ph = e.target.closest('[data-ph]'); if (ph) openViewer(items, ph.dataset.ph); };
+}
+
+// 결산: 월별 / 연도별
+function renderStats(){
+  const body = $('#recBody');
+  const inPer = v => { if (!v.date) return false; const y = +v.date.slice(0,4), m = +v.date.slice(5,7); return statPer.year ? y === statPer.y : (y === statPer.y && m === statPer.m); };
+  const vs = visits.filter(inPer);
+  const label = statPer.year ? `${statPer.y}년` : `${statPer.y}년 ${statPer.m}월`;
+  const nav = `<div class="pernav"><button class="iconbtn" data-nav="-1" aria-label="이전">‹</button><div class="lbl">${label}</div><button class="iconbtn" data-nav="1" aria-label="다음">›</button></div>
+    <div class="seg" style="padding-top:0"><button class="chip ${!statPer.year?'on':''}" data-per="m">월별</button><button class="chip ${statPer.year?'on':''}" data-per="y">연도별</button></div>`;
+  if (!vs.length) {
+    body.innerHTML = nav + `<div class="empty" style="padding-top:30px">이 기간엔 방문 기록이 없어요.<br><span class="small">날짜를 넣은 방문 기록만 결산에 잡혀요.</span></div>`;
+  } else {
+    const spent = vs.reduce((s,v) => s + (+v.price||0), 0);
+    const photos = vs.reduce((s,v) => s + (v.photoIds||[]).length, 0);
+    const byCafe = new Map(); vs.forEach(v => byCafe.set(v.cafeId, (byCafe.get(v.cafeId)||0) + 1));
+    const top = [...byCafe].sort((a,b) => b[1]-a[1]).slice(0,5);
+    const rated = new Map(); vs.filter(v => v.rating).forEach(v => { const r = rated.get(v.cafeId) || [0,0]; r[0] += v.rating; r[1]++; rated.set(v.cafeId, r); });
+    const best = [...rated].map(([id,[s,n]]) => [id, s/n]).sort((a,b) => b[1]-a[1]).slice(0,5);
+    const byArea = new Map(); vs.forEach(v => { const a = areaOf(cafeById(v.cafeId)); byArea.set(a, (byArea.get(a)||0) + 1); });
+    const areas = [...byArea].sort((a,b) => b[1]-a[1]).slice(0,8);
+    const firstVisit = new Map(); [...visits].filter(v => v.date).sort((a,b) => a.date.localeCompare(b.date)).forEach(v => { if (!firstVisit.has(v.cafeId)) firstVisit.set(v.cafeId, v); });
+    const newOnes = [...firstVisit.values()].filter(inPer).length;
+    const bars = (rows, fmt) => { const mx = Math.max(...rows.map(r => r[1])); return `<div class="bars">${rows.map(([n,v]) => `<div class="row"><div class="n">${esc(n)}</div><div class="b"><i style="width:${Math.max(6, v/mx*100)}%"></i></div><div class="v">${fmt(v)}</div></div>`).join('')}</div>`; };
+    body.innerHTML = nav + `
+      <div class="stats" style="grid-template-columns:repeat(2,1fr);margin-top:6px">
+        <div class="stat"><b>${vs.length}</b><span>방문 기록</span></div>
+        <div class="stat"><b>${byCafe.size}</b><span>간 카페 (새로 ${newOnes}곳)</span></div>
+        <div class="stat"><b>${spent ? spent.toLocaleString('ko-KR') : '-'}</b><span>쓴 돈 (원)</span></div>
+        <div class="stat"><b>${photos}</b><span>찍은 사진</span></div>
+      </div>
+      <div class="sec"><h3>제일 많이 간 곳</h3>${bars(top.map(([id,n]) => [cafeById(id)?.name || '?', n]), v => v + '번')}</div>
+      ${best.length ? `<div class="sec"><h3>별점 TOP ${best.length}</h3>${bars(best.map(([id,r]) => [cafeById(id)?.name || '?', r]), v => '★ ' + v.toFixed(1))}</div>` : ''}
+      <div class="sec"><h3>동네별</h3>${bars(areas, v => v + '번')}</div>`;
+  }
+  body.onclick = e => {
+    const n = e.target.closest('[data-nav]');
+    if (n) { const d = +n.dataset.nav; if (statPer.year) statPer.y += d; else { statPer.m += d; if (statPer.m < 1) { statPer.m = 12; statPer.y--; } if (statPer.m > 12) { statPer.m = 1; statPer.y++; } } renderStats(); return; }
+    const pr = e.target.closest('[data-per]'); if (pr) { statPer.year = pr.dataset.per === 'y'; renderStats(); }
+  };
+}
+
+// 메뉴로 찾기
+function menuEntries(){
+  const out = [];
+  for (const v of visits) {
+    if (!v.menu) continue;
+    const c = cafeById(v.cafeId); if (!c) continue;
+    for (const m of v.menu.split(/[,，·\/+]|\s{2,}/).map(x => x.trim()).filter(Boolean)) out.push({ m, v, c });
+  }
+  return out;
+}
+function renderMenu(){
+  const body = $('#recBody');
+  body.innerHTML = `<div class="listsearch" style="margin-top:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="mq" type="search" placeholder="아인슈페너, 크로플, 소금빵…"></div><div id="mres"></div>`;
+  const draw = () => {
+    const q = $('#mq').value.trim().toLowerCase();
+    const all = menuEntries();
+    if (!all.length) { $('#mres').innerHTML = `<div class="empty">방문 기록에 "뭐 먹었어요?"를 적으면<br>메뉴별로 비교할 수 있어요.</div>`; return; }
+    if (!q) {
+      const freq = new Map(); all.forEach(e => freq.set(e.m, (freq.get(e.m)||0) + 1));
+      const tops = [...freq].sort((a,b) => b[1]-a[1]).slice(0,24);
+      $('#mres').innerHTML = `<div class="sec" style="margin-top:18px"><h3>자주 먹은 메뉴</h3><div class="tagpick">${tops.map(([m,n]) => `<button class="chip" data-m="${esc(m)}">${esc(m)} <span style="opacity:.6">${n}</span></button>`).join('')}</div></div>`;
+      return;
+    }
+    const hits = all.filter(e => e.m.toLowerCase().includes(q)).sort((a,b) => (b.v.rating||0) - (a.v.rating||0) || (b.v.date||'').localeCompare(a.v.date||''));
+    if (!hits.length) { $('#mres').innerHTML = `<div class="empty">'${esc(q)}' 먹은 기록이 없어요.</div>`; return; }
+    const nCafe = new Set(hits.map(h => h.c.id)).size;
+    $('#mres').innerHTML = `<p class="small" style="margin:14px 0 4px">${nCafe}곳 · ${hits.length}번 먹음 · 별점 높은 순</p>` + hits.map(h => `<button class="mres" data-id="${h.c.id}">
+        <div class="t"><span>${esc(h.c.name)}</span><span style="color:#F2A93B">${h.v.rating ? stars(h.v.rating) : ''}</span></div>
+        <div class="s">${esc(h.m)}${h.v.price ? ' · ' + won(h.v.price) : ''}${h.v.date ? ' · ' + fmtDate(h.v.date) : ''}</div>
+        ${h.v.review ? `<div class="r">${esc(h.v.review)}</div>` : ''}</button>`).join('');
+  };
+  $('#mq').oninput = draw;
+  body.onclick = e => {
+    const m = e.target.closest('[data-m]'); if (m) { $('#mq').value = m.dataset.m; draw(); return; }
+    const r = e.target.closest('.mres'); if (r) openDetail(r.dataset.id);
+  };
+  draw();
+}
+
+/* =========================================================
+   오늘 어디 갈까
+   ========================================================= */
+const pickOpt = { scope: '전체', dist: 0, tags: [] };
+let lastPickId = null;
+function openPick(){
+  const used = [...new Set(cafes.flatMap(c => c.tags||[]))];
+  const chips = (arr, cur, key) => arr.map(([v,n]) => `<button class="chip ${cur===v?'on':''}" data-${key}="${v}">${n}</button>`).join('');
+  $('#pickBody').innerHTML = `
+    <label class="f" style="margin-top:4px">어디서 고를까?</label>
+    <div class="tagpick">${chips([['전체','전체'],['다녀온 곳','다녀온 곳'],['가보고 싶은 곳','☆ 가보고 싶은 곳'],['또 갈래','♥ 또 갈래']], pickOpt.scope, 'sc')}</div>
+    <label class="f">얼마나 가까이?</label>
+    <div class="tagpick">${chips([[0,'상관없음'],[0.5,'500m'],[1,'1km'],[3,'3km'],[10,'10km']], pickOpt.dist, 'ds')}</div>
+    ${used.length ? `<label class="f">이런 곳이면 좋겠어 (여러 개 고르면 다 맞는 곳만)</label><div class="tagpick" id="pickTags">${used.map(t => `<button class="chip ${pickOpt.tags.includes(t)?'on':''}" data-tg="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
+    <button class="btn" id="pickGo" style="width:100%;margin-top:22px;padding:15px">🎲 골라줘</button>
+    <div id="pickRes"></div>`;
+  $('#pickBody').onclick = async e => {
+    const sc = e.target.closest('[data-sc]'), ds = e.target.closest('[data-ds]'), tg = e.target.closest('[data-tg]');
+    if (sc) { pickOpt.scope = sc.dataset.sc; sc.parentElement.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === sc)); }
+    if (ds) { pickOpt.dist = +ds.dataset.ds; ds.parentElement.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === ds)); }
+    if (tg) { const t = tg.dataset.tg; tg.classList.toggle('on'); pickOpt.tags = tg.classList.contains('on') ? [...pickOpt.tags, t] : pickOpt.tags.filter(x => x !== t); }
+    if (e.target.closest('#pickGo') || e.target.closest('[data-again]')) await doPick();
+    const go = e.target.closest('[data-goto]'); if (go) { closePage('pPick'); showTab('map'); openSheet(go.dataset.goto); }
+  };
+  openPage('pPick');
+}
+async function doPick(){
+  if (pickOpt.dist && !myPos) { toast('내 위치를 확인하는 중…'); await locate(false); if (!myPos) { $('#pickRes').innerHTML = `<div class="pickres">위치를 못 받아서 거리 조건을 쓸 수 없어요.<br><span class="small">"상관없음"으로 바꾸거나 위치 권한을 허용해 주세요.</span></div>`; return; } }
+  let cand = cafes.filter(c => {
+    if (pickOpt.scope === '다녀온 곳' && c.wish) return false;
+    if (pickOpt.scope === '가보고 싶은 곳' && !c.wish) return false;
+    if (pickOpt.scope === '또 갈래' && !c.fav) return false;
+    if (pickOpt.tags.some(t => !(c.tags||[]).includes(t))) return false;
+    if (pickOpt.dist && distKm(myPos, c) > pickOpt.dist) return false;
+    return true;
+  });
+  if (!cand.length) { $('#pickRes').innerHTML = `<div class="pickres">조건에 맞는 곳이 없어요.<br><span class="small">거리를 넓히거나 태그를 줄여보세요.</span></div>`; return; }
+  const total = cand.length;
+  if (cand.length > 1 && lastPickId) cand = cand.filter(c => c.id !== lastPickId);
+  const w = cand.map(c => 1 + cafeStats(c).rating + (c.fav ? 1.5 : 0) + (c.wish ? 1 : 0));
+  let r = Math.random() * w.reduce((a,b) => a+b, 0), c = cand[0];
+  for (let i = 0; i < cand.length; i++) { r -= w[i]; if (r <= 0) { c = cand[i]; break; } }
+  lastPickId = c.id;
+  const st = cafeStats(c);
+  const ids = [c.coverPhotoId, ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
+  const urls = await Promise.all(ids.map(i => getPhotoURL(i)));
+  const d = myPos ? distKm(myPos, c) : null;
+  const lv = st.lastVisit;
+  $('#pickRes').innerHTML = `<div class="pickres">
+    <div class="small" style="margin-bottom:8px">${total}곳 중에 골랐어요</div>
+    ${ids.length ? polaroids(ids, urls) : '<div style="font-size:40px;margin:6px 0">☕</div>'}
+    <div class="title" style="margin-top:6px">${c.wish ? '<span style="color:var(--sub)">☆</span> ' : ''}${esc(c.name)}</div>
+    <div class="subt">${esc(shortAddr(c))}${d != null ? ' · ' + fmtDist(d) : ''}${st.rating ? ' · ★ ' + st.rating.toFixed(1) : ''}</div>
+    <div style="margin-top:8px">${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+    ${lv && lv.review ? `<div class="note" style="margin-top:6px;text-align:left;background:var(--bg)">${esc(lv.review)}</div>` : ''}
+    <div class="btnrow"><button class="btn" data-goto="${c.id}">지도에서 보기</button><button class="btn ghost" data-again="1">다시 뽑기</button></div>
+    <div class="linkrow"><a class="btn kakao" href="https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${c.lat},${c.lng}" target="_blank" rel="noopener">길찾기</a><a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a></div>
+  </div>`;
+  $('#pickRes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('#btnPick').onclick = openPick;
+$('#lPick').onclick = openPick;
+
+/* =========================================================
+   공유 링크
+   ========================================================= */
+const shSel = new Set();
+const shOpt = { review: true, photo: true, q: '' };
+const myName = () => { const m = session?.user?.user_metadata || {}; return m.name || m.nickname || m.full_name || ''; };
+function openShareMaker(){
+  if (!session) { ask('공유 링크는 로그인해야 만들 수 있어요.\n카카오로 로그인할까요?', '카카오로 로그인').then(ok => ok && Sync.login()); return; }
+  shSel.clear(); shOpt.q = '';
+  const used = [...new Set(cafes.flatMap(c => c.tags||[]))];
+  $('#shBody').innerHTML = `
+    <label class="f" style="margin-top:4px">제목</label><input class="inp" id="shTitle" value="${esc((myName() ? myName() + '의 ' : '') + '카페 리스트')}">
+    <div class="toggle"><div>후기랑 메뉴 같이 보여주기</div><button class="sw on" id="shRev" aria-label="후기 포함"></button></div>
+    <div class="toggle"><div>사진 한 장씩 같이 보여주기</div><button class="sw on" id="shPh" aria-label="사진 포함"></button></div>
+    <label class="f">빠르게 고르기</label>
+    <div class="tagpick" id="shQuick">${['전체','다녀온 곳','☆ 가보고 싶은 곳','♥ 또 갈래', ...used].map(t => `<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}<button class="chip" data-q="__none">선택 해제</button></div>
+    <label class="f">카페 고르기 <span id="shCount"></span></label>
+    <div class="listsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="shQ" type="search" placeholder="이름, 동네로 찾기"></div>
+    <div id="shList"></div>`;
+  $('#shRev').onclick = e => { e.currentTarget.classList.toggle('on'); shOpt.review = e.currentTarget.classList.contains('on'); };
+  $('#shPh').onclick = e => { e.currentTarget.classList.toggle('on'); shOpt.photo = e.currentTarget.classList.contains('on'); };
+  $('#shQ').oninput = e => { shOpt.q = e.target.value.trim().toLowerCase(); drawShList(); };
+  $('#shQuick').onclick = e => { const b = e.target.closest('[data-q]'); if (!b) return; const q = b.dataset.q; if (q === '__none') shSel.clear(); else cafes.filter(c => passFilter(c, q)).forEach(c => shSel.add(c.id)); drawShList(); };
+  $('#shList').onclick = e => { const r = e.target.closest('.ckrow'); if (!r) return; const id = r.dataset.id; shSel.has(id) ? shSel.delete(id) : shSel.add(id); r.classList.toggle('on'); updShCount(); };
+  $('#shMake').disabled = false; $('#shMake').textContent = '링크 만들기'; $('#shMake').onclick = shMakeHandler;
+  drawShList(); openPage('pShare');
+}
+function updShCount(){ $('#shCount').textContent = shSel.size ? `· ${shSel.size}곳 선택` : ''; $('#shMake').textContent = shSel.size ? `${shSel.size}곳으로 링크 만들기` : '링크 만들기'; }
+function drawShList(){
+  const rows = cafes.filter(c => !shOpt.q || [c.name, c.address, c.roadAddress].join(' ').toLowerCase().includes(shOpt.q)).sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  $('#shList').innerHTML = rows.map(c => { const st = cafeStats(c); return `<button class="ckrow ${shSel.has(c.id)?'on':''}" data-id="${c.id}"><span class="ck">✓</span><span class="nm">${c.wish?'☆ ':c.fav?'♥ ':''}${esc(c.name)}<br><span class="ad">${esc(shortAddr(c))}${st.rating?' · ★ '+st.rating.toFixed(1):''}</span></span></button>`; }).join('');
+  updShCount();
+}
+async function thumbData(id){
+  try {
+    const url = await getPhotoURL(id, 'thumb'); if (!url) return '';
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const s = Math.min(1, 260 / Math.max(img.width, img.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(img.width*s); cv.height = Math.round(img.height*s);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', .72);
+  } catch { return ''; }
+}
+$('#shMake').onclick = async () => {
+  if (!shSel.size) { toast('공유할 카페를 골라주세요'); return; }
+  const title = $('#shTitle').value.trim() || '카페 리스트';
+  $('#shMake').disabled = true; loading(true, '링크 만드는 중…');
+  try {
+    const list = [];
+    for (const id of shSel) {
+      const c = cafeById(id); if (!c) continue;
+      const st = cafeStats(c), lv = st.lastVisit;
+      const cover = c.coverPhotoId || st.photos[0];
+      list.push({ name: c.name, lat: c.lat, lng: c.lng, address: c.address || '', roadAddress: c.roadAddress || '', kakaoUrl: c.kakaoUrl || '', category: c.category || '',
+        tags: c.tags || [], fav: !!c.fav, wish: !!c.wish, rating: st.rating ? Math.round(st.rating*10)/10 : 0, count: st.count,
+        review: shOpt.review && lv ? (lv.review || '') : '', menu: shOpt.review && lv ? (lv.menu || '') : '',
+        thumb: shOpt.photo && cover ? await thumbData(cover) : '' });
+    }
+    const id = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+    const { error } = await sb.from('shares').insert({ id, user_id: session.user.id, title, data: { v: 1, owner: myName(), cafes: list } });
+    if (error) throw error;
+    loading(false);
+    const link = `${location.origin}${location.pathname}?s=${id}`;
+    $('#shBody').innerHTML = `<div class="empty" style="padding:30px 10px 10px"><div class="big">🔗</div>링크를 만들었어요.<br><span class="small">받은 사람은 로그인 없이 지도로 볼 수 있어요.</span></div>
+      <div class="linkbox">${esc(link)}</div>
+      <div class="btnrow"><button class="btn" id="shCopy">링크 복사</button>${navigator.share ? '<button class="btn ghost" id="shSend">보내기</button>' : ''}</div>
+      <a class="btn ghost" href="${esc(link)}" target="_blank" rel="noopener" style="margin-top:8px">미리보기</a>
+      <p class="small" style="margin-top:14px;line-height:1.6">설정 탭 "내 공유 링크"에서 언제든 링크를 지울 수 있어요. 지우면 받은 사람도 더 이상 못 봐요.</p>`;
+    $('#shMake').textContent = '닫기'; $('#shMake').disabled = false; $('#shMake').onclick = () => { closePage('pShare'); $('#shMake').onclick = shMakeHandler; };
+    $('#shCopy').onclick = async () => { try { await navigator.clipboard.writeText(link); toast('링크를 복사했어요'); } catch { toast('복사가 안 돼서 길게 눌러 복사해 주세요'); } };
+    if (navigator.share) $('#shSend').onclick = () => navigator.share({ title, text: title, url: link }).catch(() => {});
+  } catch (e) { loading(false); $('#shMake').disabled = false; toast('링크를 만들지 못했어요. 인터넷 연결을 확인해 주세요'); console.warn(e); }
+};
+const shMakeHandler = $('#shMake').onclick;
+$('#lShare').onclick = openShareMaker;
+
+async function renderShares(){
+  const el = $('#shareList'); if (!el) return;
+  if (!sb || !session) { el.innerHTML = '<p class="small">로그인하면 카페 목록을 링크로 공유할 수 있어요.</p>'; return; }
+  const { data, error } = await sb.from('shares').select('id,title,created_at').eq('user_id', session.user.id).order('created_at', { ascending: false });
+  if (error) { el.innerHTML = '<p class="small">불러오지 못했어요.</p>'; return; }
+  el.innerHTML = (data.length ? data.map(s => { const d = new Date(s.created_at); return `<div class="shrow"><div class="info"><b>${esc(s.title)}</b><span>${d.getMonth()+1}월 ${d.getDate()}일 만듦</span></div><button data-cp="${s.id}">복사</button><button data-del="${s.id}">삭제</button></div>`; }).join('') : '<p class="small">아직 만든 링크가 없어요.</p>')
+    + `<button class="btn ghost" id="setShareNew" style="width:100%;margin-top:12px">🔗 새 공유 링크 만들기</button>`;
+  el.onclick = async e => {
+    const cp = e.target.closest('[data-cp]'), del = e.target.closest('[data-del]');
+    if (cp) { try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}?s=${cp.dataset.cp}`); toast('링크를 복사했어요'); } catch { toast('복사하지 못했어요'); } }
+    if (del && await ask('이 공유 링크를 지울까요?\n받은 사람도 더 이상 볼 수 없어요.', '삭제', true)) { await sb.from('shares').delete().eq('id', del.dataset.del); renderShares(); toast('링크를 지웠어요'); }
+    if (e.target.closest('#setShareNew')) openShareMaker();
+  };
+}
+
+/* 링크 받은 사람 화면 (?s=링크번호) */
+const SHARE_ID = new URLSearchParams(location.search).get('s');
+let shareData = null;
+async function startShareView(){
+  document.body.classList.add('sharemode');
+  await initMap();
+  if (!window.supabase) { $('#maperr').classList.remove('hidden'); $('#maperr').textContent = '인터넷 연결을 확인해 주세요.'; return; }
+  const pub = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const { data } = await pub.from('shares').select('title,data,created_at').eq('id', SHARE_ID).maybeSingle();
+  if (!data) { $('#mapTop').insertAdjacentHTML('afterbegin', `<div class="sharetop"><div class="tt"><b>링크를 찾을 수 없어요</b><span>지워졌거나 잘못된 링크예요</span></div></div>`); return; }
+  shareData = data;
+  const list = (data.data?.cafes || []).map((c, i) => ({ ...c, id: 'sh' + i }));
+  document.title = data.title + ' · 카페지도';
+  $('#mapTop').insertAdjacentHTML('afterbegin', `<div class="sharetop"><div class="tt"><b>${esc(data.title)}</b><span>카페 ${list.length}곳${data.data?.owner ? ' · ' + esc(data.data.owner) + '님이 공유' : ''}</span></div><button id="sOpenList">목록</button></div>`);
+  if (!map) return;
+  const b = new kakao.maps.LatLngBounds();
+  for (const c of list) {
+    const el = document.createElement('div');
+    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '');
+    el.innerHTML = `<div class="ring"><div style="${c.thumb ? `background-image:url('${c.thumb}')` : ''}">${c.thumb ? '' : (c.wish ? '☆' : ICON_CUP)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
+    el.addEventListener('click', e => { e.stopPropagation(); shareSheet(c); });
+    const o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.lat, c.lng), content: el, yAnchor: 1, clickable: true, zIndex: 2 });
+    o.setMap(map); o._el = el; overlays.set(c.id, o);
+    b.extend(new kakao.maps.LatLng(c.lat, c.lng));
+  }
+  const fitShare = () => { if (list.length > 1) map.setBounds(b, 90, 40, 60, 40); else if (list.length) { map.setLevel(4); map.setCenter(new kakao.maps.LatLng(list[0].lat, list[0].lng)); } };
+  fitShare(); $('#btnFit').onclick = () => { closeSheet(); fitShare(); };
+  updateLabels();
+  $('#sOpenList').onclick = () => {
+    $('#sListTitle').textContent = data.title;
+    const rows = [...list].sort((a,b) => (b.rating||0) - (a.rating||0) || a.name.localeCompare(b.name, 'ko'));
+    $('#sListBody').innerHTML = rows.map(c => `<button class="item" data-sid="${c.id}" style="width:100%;text-align:left">
+      <div class="thumbpol"><div style="${c.thumb ? `background-image:url('${c.thumb}')` : ''}">${c.thumb ? '' : ICON_CUP}</div></div>
+      <div class="info"><div class="nm">${c.wish ? '☆ ' : c.fav ? '<span style="color:var(--heartt)">♥</span> ' : ''}${esc(c.name)}</div><div class="ad">${esc(shortAddr(c))}</div>
+      <div class="mini">${c.rating ? `<b>★ ${c.rating.toFixed(1)}</b>` : ''}${c.review ? `<span>${esc(c.review.slice(0,28))}${c.review.length > 28 ? '…' : ''}</span>` : ''}</div></div></button>`).join('');
+    $('#sListBody').onclick = e => { const r = e.target.closest('[data-sid]'); if (!r) return; closePage('pSList'); shareSheet(list.find(x => x.id === r.dataset.sid), true); };
+    openPage('pSList');
+  };
+}
+function shareSheet(c, pan){
+  overlays.forEach((o, k) => o._el.classList.toggle('sel', k === c.id));
+  selectedId = c.id;
+  $('#sheet').innerHTML = `<div class="grab"></div>
+    ${c.thumb ? `<div class="pols" style="height:150px"><div class="pol" style="left:0;top:4px;transform:rotate(-3deg)"><div style="background-image:url('${c.thumb}')"></div></div></div>` : ''}
+    <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(shortAddr(c))}${c.category ? ' · ' + esc(c.category.split(' > ').pop()) : ''}</div></div>${c.rating ? `<div class="score">★ ${c.rating.toFixed(1)}</div>` : ''}</div>
+    <div style="margin-top:10px">${c.wish ? '<span class="tag wish">☆ 가보고 싶은 곳</span>' : ''}${c.fav ? '<span class="tag heart">♥ 또 갈래</span>' : ''}${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+    ${c.review || c.menu ? `<div class="note" style="margin-top:8px">${c.menu ? `<div class="meta">${esc(c.menu)}</div>` : ''}${esc(c.review || '')}</div>` : ''}
+    <div class="linkrow" style="margin-top:14px">
+      <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
+      <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
+      <a class="btn ghost" href="https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${c.lat},${c.lng}" target="_blank" rel="noopener">길찾기</a>
+    </div>`;
+  $('#sheet').classList.add('open');
+  requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(c.lat, c.lng); });
+}
+
 /* =========================================================
    화면 전환
    ========================================================= */
@@ -1211,10 +1620,11 @@ let curTab = 'map';
 function showTab(t){
   curTab = t;
   document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  ['map','list','set'].forEach(k => $('#v-'+k).classList.toggle('hidden', k !== t));
+  ['map','list','rec','set'].forEach(k => $('#v-'+k).classList.toggle('hidden', k !== t));
   if (t === 'map' && map) { map.relayout(); }
   if (t === 'list') renderList();
   if (t === 'set') renderSettings();
+  if (t === 'rec') renderRec();
 }
 $('#tabbar').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
 const pageStack = [];
@@ -1243,6 +1653,7 @@ async function refreshAll(){
   await refreshPins();
   if (curTab === 'list') renderList();
   if (curTab === 'set') renderSettings();
+  if (curTab === 'rec') renderRec();
 }
 
 /* =========================================================
@@ -1251,6 +1662,7 @@ async function refreshAll(){
 (async function start(){
   let th = 'coffee'; try { th = localStorage.getItem('theme') || 'coffee'; } catch {}
   applyTheme(th);
+  if (SHARE_ID) { await startShareView(); return; }
   try { await DB.open(); await loadAll(); } catch { toast('이 브라우저에서는 저장이 안 돼요'); }
   await Sync.init();
   try { navigator.storage?.persist?.(); } catch {}
