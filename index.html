@@ -54,6 +54,18 @@ input,textarea{outline:none}
 .mres .t{display:flex;justify-content:space-between;gap:8px;font-size:15px}
 .mres .s{font-size:12px;color:var(--sub);margin-top:3px}
 .mres .r{font-size:13px;margin-top:5px;line-height:1.5;color:var(--ink);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.roundbtn.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.conqinfo{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.10);font-size:13px;max-width:100%}
+.conqinfo b{font-weight:700;color:var(--acc)}
+.conqinfo span{color:var(--sub)}
+.conqinfo small{flex-basis:100%;font-size:10px;color:var(--sub);opacity:.8}
+.nexttry{display:flex;align-items:center;gap:10px;margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--soft);color:var(--softt);font-size:14px}
+.nexttry .lb{flex:none;font-weight:700}
+.nexttry .v{flex:1;min-width:0;color:var(--ink)}
+.nexttry .inp{margin:0;padding:8px 10px}
+.aibtns{display:flex;gap:8px;margin:4px 0 8px}
+.aibtns .btn{flex:1;padding:13px 8px;font-size:14px}
+.nextbar{margin-top:8px;padding:9px 12px;border-radius:12px;background:var(--soft);color:var(--softt);font-size:13px}
 .stampgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px 10px}
 .stamp{display:flex;flex-direction:column;align-items:center;text-align:center}
 .stamp .disc{width:74px;height:74px;border-radius:50%;border:2.5px dashed var(--line);display:flex;align-items:center;justify-content:center;background:var(--note);filter:grayscale(1);opacity:.45}
@@ -89,7 +101,7 @@ input,textarea{outline:none}
 .sharetop .tt b{display:block;font-size:16px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sharetop .tt span{font-size:12px;color:var(--sub)}
 .sharetop button{font-size:13px;background:var(--acc);color:var(--onacc);padding:8px 12px;border-radius:999px;flex:none}
-body.sharemode #tabbar,body.sharemode #btnAdd,body.sharemode #btnPick,body.sharemode #btnSnap,body.sharemode .searchbar,body.sharemode #mapChips{display:none!important}
+body.sharemode #tabbar,body.sharemode #btnAdd,body.sharemode #btnPick,body.sharemode #btnSnap,body.sharemode #btnConq,body.sharemode .searchbar,body.sharemode #mapChips{display:none!important}
 body.sharemode .view{bottom:0}
 #tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;color:var(--sub)}
 #tabbar button.on{color:var(--acc)}
@@ -320,8 +332,10 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
       <button id="qClear" class="hidden" aria-label="검색 닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="chips" id="mapChips"></div>
+    <div class="conqinfo hidden" id="conqInfo"></div>
   </div>
   <div class="mapbtns" id="mapBtns" style="bottom:20px">
+    <button class="roundbtn" id="btnConq" aria-label="동네 정복 지도"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg></button>
     <button class="roundbtn" id="btnSnap" aria-label="사진으로 기록"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button class="roundbtn" id="btnPick" aria-label="오늘 어디 갈까"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1.1" fill="currentColor"/><circle cx="15" cy="15" r="1.1" fill="currentColor"/><circle cx="15" cy="9" r="1.1" fill="currentColor"/><circle cx="9" cy="15" r="1.1" fill="currentColor"/></svg></button>
     <button class="roundbtn" id="btnFit" aria-label="내 카페 전체 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
@@ -366,6 +380,13 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
       <div class="sec"><h3>내 기록</h3><div class="stats" id="stats"></div></div>
       <div class="sec"><h3>색 테마</h3><div class="themes" id="themes"></div></div>
       <div class="sec"><h3>내 공유 링크</h3><div id="shareList"></div></div>
+      <div class="sec"><h3>AI한테 카페 추천받기</h3>
+        <div class="aibtns"><button class="btn" id="btnAiGpt">ChatGPT로 추천받기</button><button class="btn ghost" id="btnAiClaude">Claude로 추천받기</button></div>
+        <p class="small" style="line-height:1.6;margin:0 0 6px">휴대폰에선 공유 창이 떠요. ChatGPT나 Claude 앱을 고르면 내 기록 파일이 첨부된 채로 열려요.</p>
+        <button class="setrow" id="btnAiCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><div>내 기록 복사하기<small>Claude나 GPT 채팅창에 붙여넣으면 취향에 맞는 새 카페를 추천받을 수 있어요</small></div></button>
+        <button class="setrow" id="btnAiFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><div>파일로 저장 (.md)<small>같은 내용을 파일로 받아서 첨부할 때</small></div></button>
+        <button class="setrow" id="btnAiCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg><div>표 파일로 저장 (.csv)<small>방문 기록 전체, 엑셀이나 구글 시트로도 열려요</small></div></button>
+      </div>
       <div class="sec"><h3>백업</h3>
         <button class="setrow" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><div>백업 파일 저장<small>사진까지 전부 한 파일로 내려받아요</small></div></button>
         <button class="setrow" id="btnImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg><div>백업 파일 불러오기<small>다른 폰이나 브라우저로 옮길 때</small></div></button>
@@ -655,7 +676,7 @@ function renderThemes(){
     <div class="sw3"><span style="background:${t.acc}"></span><span style="background:${t.soft}"></span><span style="background:${t.heartt}"></span></div>
     <div class="tn">${t.n}</div></button>`).join('');
 }
-$('#themes').onclick = e => { const b = e.target.closest('.theme'); if (b) { applyTheme(b.dataset.k); refreshPins(); } };
+$('#themes').onclick = e => { const b = e.target.closest('.theme'); if (b) { applyTheme(b.dataset.k); refreshPins(); if (conq.on) drawConquest(); } };
 
 /* =========================================================
    지도
@@ -778,6 +799,7 @@ async function openSheet(id){
       ${st.rating ? `<div class="score">★ ${st.rating.toFixed(1)}</div>` : ''}
     </div>
     <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    ${c.nextTry ? `<div class="nextbar">🍰 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     ${c.wish && !lv ? `<div class="note" style="margin-top:8px;color:var(--sub)">아직 안 가본 곳이에요.${c.memo?'<br>'+esc(c.memo):''}</div>` : lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
     <div class="btnrow">
       <button class="btn" data-act="visit">${c.wish ? '가봤어요! 기록 남기기' : '방문 기록 추가'}</button>
@@ -991,6 +1013,7 @@ async function openVisitEditor(cafeId, visitId, pre){
     <label class="f">이번 방문 별점</label><div class="starpick" id="vStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점">★</button>`).join('')}</div>
     <label class="f">언제 갔어요?</label><input class="inp" type="date" id="vDate" value="${esc(v.date)}">
     <label class="f">뭐 먹었어요?</label><input class="inp" id="vMenu" value="${esc(v.menu)}" placeholder="아인슈페너, 바스크치즈케이크">
+    ${c.nextTry ? `<div class="small" style="margin-top:6px">🍰 다음엔 이거: ${esc(c.nextTry)} <button class="textbtn" id="vUseNext" type="button">메뉴에 넣기</button></div>` : ''}
     <label class="f">얼마 썼어요?</label><input class="inp" id="vPrice" inputmode="numeric" value="${v.price?Number(v.price).toLocaleString('ko-KR'):''}" placeholder="13,500">
     <label class="f">후기</label><textarea class="inp" id="vReview" placeholder="맛, 분위기, 자리, 웨이팅… 생각나는 대로">${esc(v.review)}</textarea>
     ${visitId ? `<div class="sec"><button class="btn danger" id="vDel" style="width:100%">이 방문 기록 삭제</button></div>` : ''}`;
@@ -998,6 +1021,7 @@ async function openVisitEditor(cafeId, visitId, pre){
   $('#vStars').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.n; editingVisit.data.rating = editingVisit.data.rating === n ? 0 : n; setStars(editingVisit.data.rating); };
   $('#vPrice').oninput = e => { const n = e.target.value.replace(/[^\d]/g,''); e.target.value = n ? Number(n).toLocaleString('ko-KR') : ''; };
   if (visitId) $('#vDel').onclick = () => deleteVisit(visitId);
+  if ($('#vUseNext')) $('#vUseNext').onclick = () => { const m = $('#vMenu'); m.value = m.value.trim() ? m.value.trim() + ', ' + c.nextTry : c.nextTry; };
   await renderVisitPhotos();
   openPage('pVisit');
 }
@@ -1038,6 +1062,7 @@ $('#vSave').onclick = async () => {
   const i = visits.findIndex(x => x.id === v.id); if (i >= 0) visits[i] = v; else visits.push(v);
   const wc = cafes.find(x => x.id === v.cafeId); let moved = false;
   if (wc && wc.wish) { wc.wish = false; wc.updatedAt = Date.now(); wc.dirty = true; await DB.put('cafes', wc); moved = true; Sync.soon(); }
+  { const cc = cafes.find(x => x.id === v.cafeId); if (cc && cc.nextTry && v.menu && v.menu.toLowerCase().includes(cc.nextTry.toLowerCase())) { cc.nextTry = ''; cc.updatedAt = Date.now(); cc.dirty = true; await DB.put('cafes', cc); Sync.soon(); } }
   if (moved) { try { localStorage.setItem('wishDone', (+localStorage.getItem('wishDone') || 0) + 1); } catch {} }
   closePage('pVisit'); await refreshAll(); toast(moved ? '♪ 다녀왔어로 옮겼어요' : '기록했어요');
   if (isOpen('pDetail')) openDetail(v.cafeId, true); else if (selectedId === v.cafeId) openSheet(v.cafeId);
@@ -1085,6 +1110,7 @@ async function openDetail(id, keep){
     <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
+    <div class="nexttry" id="dNext"><span class="lb">🍰 다음엔 이거</span><span class="v">${c.nextTry ? esc(c.nextTry) : '<span style="color:var(--sub)">먹어보고 싶은 메뉴를 적어두세요</span>'}</span><button class="textbtn" id="dNextEdit">${c.nextTry ? '수정' : '적기'}</button></div>
     <div class="linkrow" style="margin-top:12px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
@@ -1093,6 +1119,19 @@ async function openDetail(id, keep){
     <div class="sec"><h3>사진 <small>${all.length}장</small></h3>${wall.length?`<div class="wall">${wall.join('')}</div>`:'<div class="emptyPhoto">방문 기록에 사진을 넣으면 여기 폴라로이드로 모여요</div>'}</div>
     <div class="sec"><h3>방문 기록 <button class="textbtn" id="dAddVisit">+ 기록 추가</button></h3>${vhtml.length?vhtml.join(''):'<div class="emptyPhoto">아직 방문 기록이 없어요</div>'}</div>`;
   $('#dAddVisit').onclick = () => openVisitEditor(id);
+  $('#dNextEdit').onclick = () => {
+    $('#dNext').innerHTML = `<span class="lb">🍰</span><input class="inp" id="dNextIn" value="${esc(c.nextTry || '')}" placeholder="바스크치즈케이크, 시즌 라떼…" style="flex:1;min-width:0"><button class="textbtn" id="dNextSave">저장</button>`;
+    const inp = $('#dNextIn'); inp.focus();
+    const save = async () => {
+      const cc = cafes.find(x => x.id === id); if (!cc) return;
+      cc.nextTry = inp.value.trim(); cc.updatedAt = Date.now(); cc.dirty = true;
+      await DB.put('cafes', cc); Sync.soon();
+      toast(cc.nextTry ? '다음에 먹어볼 메뉴를 적어뒀어요' : '메모를 지웠어요');
+      openDetail(id, true);
+    };
+    $('#dNextSave').onclick = save;
+    inp.onkeydown = e => { if (e.key === 'Enter') save(); };
+  };
   $('#dStars').onclick = async e => {
     const b = e.target.closest('button'); if (!b) return;
     const n = +b.dataset.n, cc = cafes.find(x => x.id === id); if (!cc) return;
@@ -1695,6 +1734,142 @@ function renderStamps(){
 }
 
 /* =========================================================
+   동네 정복 지도 (행정동 경계: 통계청 SGIS · vuski/admdongkor, CC BY 4.0)
+   ========================================================= */
+const conq = { on: false, polys: [], data: null };
+async function loadDongs(){
+  if (conq.data) return conq.data;
+  const raw = await fetch('dong.json').then(r => r.json());
+  conq.data = raw.map(d => {
+    const rings = d.r.map(a => { const pts = []; let x = a[0], y = a[1]; pts.push([x / 1e5, y / 1e5]); for (let i = 2; i < a.length; i += 2) { x += a[i]; y += a[i + 1]; pts.push([x / 1e5, y / 1e5]); } return pts; });
+    let x0 = 999, y0 = 999, x1 = -999, y1 = -999;
+    rings.forEach(r => r.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }));
+    return { n: d.n, rings, box: [x0, y0, x1, y1] };
+  });
+  return conq.data;
+}
+function inRing(x, y, r){ let ins = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins; } return ins; }
+function dongOf(c, data){ for (const d of data) { const b = d.box; if (c.lng < b[0] || c.lng > b[2] || c.lat < b[1] || c.lat > b[3]) continue; if (d.rings.some(r => inRing(c.lng, c.lat, r))) return d; } return null; }
+async function drawConquest(){
+  conq.polys.forEach(p => p.setMap(null)); conq.polys = [];
+  const info = $('#conqInfo');
+  if (!conq.on || !map) { info.classList.add('hidden'); return; }
+  let data; try { data = await loadDongs(); } catch { toast('동네 지도를 불러오지 못했어요'); conq.on = false; $('#btnConq').classList.remove('on'); return; }
+  const cnt = new Map(); let outside = 0;
+  for (const c of cafes.filter(c => !c.wish)) { const d = dongOf(c, data); if (d) cnt.set(d, (cnt.get(d) || 0) + 1); else outside++; }
+  const acc = getComputedStyle(document.body).getPropertyValue('--acc').trim() || '#6F4E37';
+  for (const d of data) {
+    const n = cnt.get(d) || 0;
+    for (const r of d.rings) {
+      const p = new kakao.maps.Polygon({ map, path: r.map(([x, y]) => new kakao.maps.LatLng(y, x)), strokeWeight: n ? 1.6 : 1, strokeColor: acc, strokeOpacity: n ? .85 : .28, strokeStyle: n ? 'solid' : 'shortdash', fillColor: acc, fillOpacity: n ? Math.min(.14 + .11 * n, .62) : 0, zIndex: 0 });
+      conq.polys.push(p);
+    }
+  }
+  const top = [...cnt].sort((a, b) => b[1] - a[1])[0];
+  info.innerHTML = `<b>🚩 정복한 동네 ${cnt.size} / ${data.length}</b>${top ? `<span>최다 ${esc(top[0].n.split(' ').pop())} ${top[1]}곳</span>` : ''}${outside ? `<span>대구·경산 밖 ${outside}곳</span>` : ''}<small>경계: 통계청 SGIS · vuski/admdongkor (CC BY 4.0)</small>`;
+  info.classList.remove('hidden');
+}
+$('#btnConq').onclick = async () => {
+  conq.on = !conq.on; $('#btnConq').classList.toggle('on', conq.on);
+  if (conq.on && map && map.getLevel() < 7) map.setLevel(7);
+  if (conq.on) toast('동네 지도를 칠하는 중…');
+  await drawConquest();
+};
+
+/* =========================================================
+   AI한테 카페 추천받기 (내 기록 내보내기)
+   ========================================================= */
+const oneLine = s => (s || '').replace(/\s+/g, ' ').trim();
+const splitMenu = s => (s || '').split(/[,，·\/+]|\s{2,}/).map(x => x.trim()).filter(Boolean);
+const countTop = arr => { const m = new Map(); arr.forEach(x => m.set(x, (m.get(x) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]); };
+const isImportMemo = m => /네이버지도 저장 목록에서 가져옴/.test(m || '');
+function aiText(){
+  const vis = cafes.filter(c => !c.wish), wl = cafes.filter(c => c.wish);
+  const vs = visits.filter(v => cafes.some(c => c.id === v.cafeId)).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const fmt = arr => arr.map(([a, n]) => `${a}(${n})`).join(', ');
+  const areas = fmt(countTop(vis.map(areaOf)).slice(0, 8));
+  const tags = fmt(countTop(vis.flatMap(c => c.tags || [])).slice(0, 10));
+  const menus = fmt(countTop(vs.flatMap(v => splitMenu(v.menu))).slice(0, 12));
+  const prices = vs.map(v => +v.price).filter(Boolean);
+  const avg = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length / 100) * 100 : 0;
+  const rated = vis.map(c => [c, cafeStats(c)]).filter(([, s]) => s.rating);
+  const hi = rated.filter(([, s]) => s.rating >= 4).sort((a, b) => b[1].rating - a[1].rating).slice(0, 12).map(([c, s]) => `${c.name}(★${s.rating.toFixed(1)})`).join(', ');
+  const lo = rated.filter(([, s]) => s.rating <= 2.5).map(([c, s]) => `${c.name}(★${s.rating.toFixed(1)})`).join(', ');
+  const favs = vis.filter(c => c.fav).map(c => c.name).join(', ');
+  const span = vs.length ? `${vs[vs.length - 1].date} ~ ${vs[0].date}` : '';
+  const L = [];
+  L.push(`# 내 카페 기록 (카페지도 앱에서 내보냄 · ${todayStr()})`, '');
+  L.push('아래는 내가 다녀온 카페와 방문 기록이야. 이걸 바탕으로 내 취향을 파악해서 **아직 안 가본 카페**를 추천해줘.');
+  L.push('- "다녀온 카페"와 "가볼래 목록"에 있는 곳은 추천에서 빼줘.');
+  L.push('- 내가 자주 가는 동네 근처 위주로 추천하고, 지금도 영업 중인지 확인할 수 있으면 확인해줘.');
+  L.push('- 곳마다 왜 내 취향에 맞을지 이유를 한 줄씩 붙여줘.', '');
+  L.push('## 취향 요약');
+  L.push(`- 다녀온 카페 ${vis.length}곳 · 방문 기록 ${vs.length}번${span ? ` (${span})` : ''}`);
+  if (areas) L.push(`- 자주 간 동네: ${areas}`);
+  if (tags) L.push(`- 내가 붙인 태그: ${tags}`);
+  if (menus) L.push(`- 자주 먹은 메뉴: ${menus}`);
+  if (avg) L.push(`- 한 번 갈 때 평균 ${avg.toLocaleString('ko-KR')}원 정도 씀`);
+  if (hi) L.push(`- 높게 평가한 곳: ${hi}`);
+  if (lo) L.push(`- 별로였던 곳: ${lo}`);
+  if (favs) L.push(`- 또 가고 싶은 곳(♥): ${favs}`);
+  L.push('', '## 다녀온 카페');
+  const sorted = [...vis].sort((a, b) => visitsOf(b.id).length - visitsOf(a.id).length || a.name.localeCompare(b.name, 'ko'));
+  for (const c of sorted) {
+    const st = cafeStats(c), vv = visitsOf(c.id), bits = [areaOf(c)];
+    if (c.category) bits.push(c.category.split(' > ').pop());
+    if (st.my) bits.push(`내 별점 ★${st.my}`); else if (st.visitAvg) bits.push(`방문 평균 ★${st.visitAvg.toFixed(1)}`);
+    if (st.count) bits.push(`${st.count}번 방문`);
+    if (c.fav) bits.push('♥ 또 갈래');
+    if ((c.tags || []).length) bits.push(c.tags.join('/'));
+    const mn = [...new Set(vv.flatMap(v => splitMenu(v.menu)))].slice(0, 5); if (mn.length) bits.push('먹은 것: ' + mn.join(', '));
+    if (c.nextTry) bits.push('다음에 먹어볼 것: ' + oneLine(c.nextTry));
+    const words = vv.map(v => oneLine(v.review)).filter(Boolean).slice(0, 2).map(r => `"${r.slice(0, 80)}"`);
+    if (oneLine(c.memo) && !isImportMemo(c.memo)) words.push(`메모 "${oneLine(c.memo).slice(0, 80)}"`);
+    L.push(`- **${c.name}** — ${bits.join(' · ')}${words.length ? ' · ' + words.join(' / ') : ''}`);
+  }
+  if (wl.length) { L.push('', '## 가볼래 목록 (이미 알고 있으니 추천에서 빼줘)'); wl.forEach(c => L.push(`- ${c.name} (${areaOf(c)})${oneLine(c.memo) && !isImportMemo(c.memo) ? ' · ' + oneLine(c.memo).slice(0, 60) : ''}`)); }
+  if (vs.length) {
+    L.push('', '## 최근 방문 기록');
+    vs.slice(0, 60).forEach(v => { const c = cafeById(v.cafeId); L.push(`- ${v.date || '날짜 없음'} ${c.name}${v.rating ? ` ★${v.rating}` : ''}${v.menu ? ` · ${oneLine(v.menu)}` : ''}${v.price ? ` · ${(+v.price).toLocaleString('ko-KR')}원` : ''}${v.review ? ` · "${oneLine(v.review).slice(0, 100)}"` : ''}`); });
+  }
+  return L.join('\n');
+}
+function aiCsv(){
+  const q = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
+  const rows = [['날짜', '카페', '동네', '주소', '분류', '이번 방문 별점', '카페 내 별점', '메뉴', '가격', '후기', '태그', '또 갈래', '가볼래', '다음에 먹어볼 것', '메모']];
+  for (const c of cafes) {
+    const vv = visitsOf(c.id), base = [c.name, areaOf(c), c.roadAddress || c.address || '', (c.category || '').split(' > ').pop(), null, c.myRating || '', null, null, null, (c.tags || []).join('/'), c.fav ? 'O' : '', c.wish ? 'O' : '', c.nextTry || '', isImportMemo(c.memo) ? '' : (c.memo || '')];
+    if (!vv.length) rows.push(['', ...base.map(x => x ?? '')]);
+    for (const v of vv) { const r = ['' + (v.date || ''), ...base]; r[5] = v.rating || ''; r[7] = v.menu || ''; r[8] = v.price || ''; r[9] = oneLine(v.review); rows.push(r.map(x => x ?? '')); }
+  }
+  return '\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n');
+}
+function dlText(name, text, type){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+$('#btnAiCopy').onclick = async () => {
+  const t = aiText();
+  try { await navigator.clipboard.writeText(t); toast('복사했어요. AI 채팅창에 붙여넣어 주세요'); }
+  catch { dlText(`카페지도-AI용-${todayStr()}.md`, t, 'text/markdown'); toast('복사가 안 돼서 파일로 저장했어요'); }
+};
+const AI_ASK = '아래는 내 카페 기록이야. 내 취향에 맞는 아직 안 가본 카페를 추천해줘. 이미 간 곳이랑 가볼래 목록은 빼고, 곳마다 추천 이유도 알려줘.';
+async function openAi(site){
+  const t = aiText();
+  const f = new File([t], `카페기록-${todayStr()}.txt`, { type: 'text/plain' });
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
+  if (mobile && navigator.canShare && navigator.canShare({ files: [f] })) {
+    try { await navigator.share({ files: [f], text: AI_ASK }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  let copied = false; try { await navigator.clipboard.writeText(t); copied = true; } catch {}
+  const url = site === 'gpt' ? 'https://chatgpt.com/' : 'https://claude.ai/new';
+  if (t.length <= 3500) window.open(url + (site === 'gpt' ? '?q=' : '?q=') + encodeURIComponent(t), '_blank');
+  else window.open(url, '_blank');
+  toast(t.length <= 3500 ? 'AI 창을 열었어요' : copied ? '기록을 복사했어요. 열린 AI 창에 붙여넣어 주세요' : '"파일로 저장"으로 받아서 첨부해 주세요');
+}
+$('#btnAiGpt').onclick = () => openAi('gpt');
+$('#btnAiClaude').onclick = () => openAi('claude');
+$('#btnAiFile').onclick = () => { dlText(`카페지도-AI용-${todayStr()}.md`, aiText(), 'text/markdown'); toast('파일을 저장했어요'); };
+$('#btnAiCsv').onclick = () => { dlText(`카페지도-기록표-${todayStr()}.csv`, aiCsv(), 'text/csv'); toast('표 파일을 저장했어요'); };
+
+/* =========================================================
    오늘 어디 갈까
    ========================================================= */
 const pickOpt = { scope: '전체', dist: 0, tags: [] };
@@ -1971,6 +2146,7 @@ async function refreshAll(){
   if (curTab === 'set') renderSettings();
   if (curTab === 'rec') renderRec();
   checkStamps();
+  if (conq.on) drawConquest();
 }
 
 /* =========================================================
