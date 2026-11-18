@@ -282,6 +282,9 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 #viewer .vnav{position:absolute;top:50%;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center}
 #viewer .close{position:absolute;top:calc(14px + var(--safe-t));right:14px;color:#fff;font-size:28px;width:44px;height:44px}
 #viewer .cnt{color:#ddd;font-size:13px;margin-top:16px}
+#viewer .vcover{margin-top:14px;background:rgba(255,255,255,.92);color:#2A2522;padding:10px 18px;border-radius:999px;font-size:14px}
+#viewer .vcover.on{background:#F2A93B;color:#fff}
+.covbadge{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:#F2A93B;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:1}
 
 /* 다이얼로그/토스트 */
 #dlg{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:30px}
@@ -497,6 +500,7 @@ const CUP_ARTS = (() => {
 `<path d="M18 9l3-6.5h3" fill="none" stroke="#6DBE8C" stroke-width="2.2" stroke-linecap="round"/><path d="M8 9h16l-2 19H10z" fill="#FFFBE0" stroke="#E8D46A" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.8 13h14.4l-1.6 14.2H10.4z" fill="#FFE97A"/><circle cx="12" cy="18" r=".7" fill="#fff"/><circle cx="19" cy="21" r=".6" fill="#fff"/><circle cx="14.5" cy="24" r=".7" fill="#fff"/><circle cx="17.5" cy="16.5" r=".5" fill="#fff"/><circle cx="10" cy="9.5" r="3.6" fill="#FFD83A" stroke="#D9B21F" stroke-width="1"/><circle cx="10" cy="9.5" r="2.5" fill="#FFF3A6"/><path d="M10 7v5M7.6 8.3l4.8 2.4M7.6 10.7l4.8-2.4" stroke="#FFD83A" stroke-width=".7"/>`,
 `<ellipse cx="16" cy="26" rx="12" ry="2.6" fill="#fff" ${S}/><path d="M8 25c0-6 1.5-13 3-14.5h10C22.5 12 24 19 24 25z" fill="#FFD77A" ${S}/><path d="M11 10.5c.5-1.6 2.6-2.5 5-2.5s4.5.9 5 2.5c.3 1.3-.6 2.6-1.4 2.6-.5 1.2-1.4.6-2 .2-.6.8-2.6.8-3.2 0-.6.4-1.5 1-2 0-.9 0-1.7-1.4-1.4-2.8z" fill="#9B5B2E" stroke="#5A3E2B" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round"/><path d="M13 11c.8-.9 2-1.3 3-1.3" fill="none" stroke="#C9894E" stroke-width="1" stroke-linecap="round"/><ellipse cx="16" cy="6.2" rx="2.4" ry="1.6" fill="#fff" stroke="#E0D2C0" stroke-width=".8"/><circle cx="16" cy="4.6" r="1.4" fill="#E25B5B"/><circle cx="13.2" cy="19.5" r=".9" fill="#3A2A20"/><circle cx="18.8" cy="19.5" r=".9" fill="#3A2A20"/><path d="M15 21.2a1.4 1.4 0 0 0 2 0" fill="none" stroke="#3A2A20" stroke-width="1" stroke-linecap="round"/>`];
 })();
+const coverOf = (c, st) => (st || cafeStats(c)).photos.includes(c.coverPhotoId) ? c.coverPhotoId : (st || cafeStats(c)).photos[0];
 const cupDay = () => Math.floor((Date.now() + 9 * 3600e3) / 86400e3);
 function cupIcon(id){
   let h = (cupDay() * 2654435761) >>> 0;
@@ -681,11 +685,9 @@ async function refreshPins(){
   for (const c of cafes) {
     if (!passFilter(c, mapFilter)) continue;
     const st = cafeStats(c);
-    const cover = c.coverPhotoId || st.photos[0];
     const el = document.createElement('div');
     el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '') + (c.id === selectedId ? ' sel' : '');
-    const url = cover ? await getPhotoURL(cover) : '';
-    el.innerHTML = `<div class="ring"><div style="${url?`background-image:url('${url}')`:''}">${url?'':cupIcon(c.id)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
+    el.innerHTML = `<div class="ring"><div>${cupIcon(c.id)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); openSheet(c.id); });
     const o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.lat, c.lng), content: el, yAnchor: 1, clickable: true, zIndex: c.id===selectedId?5:2 });
     o.setMap(map); o._el = el;
@@ -744,7 +746,7 @@ async function openSheet(id){
   overlays.forEach((o, k) => { o._el.classList.toggle('sel', k === id); o.setZIndex(k === id ? 5 : 2); });
   removeTemp();
   const st = cafeStats(c);
-  const ids = [c.coverPhotoId, ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
+  const ids = [coverOf(c, st), ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
   const urls = await Promise.all(ids.map(i => getPhotoURL(i)));
   const lv = st.lastVisit;
   const d = myPos ? distKm(myPos, c) : null;
@@ -1043,7 +1045,8 @@ async function openDetail(id, keep){
   const st = cafeStats(c), vs = visitsOf(id), all = cafePhotoList(c);
   const spent = vs.reduce((s,v) => s + (+v.price||0), 0);
   $('#dTitle').textContent = c.name;
-  const wall = await Promise.all(all.map(async (p,i) => `<div class="pol" data-ph="${p.id}" style="transform:rotate(${hashRot(p.id,i)}deg)"><div style="background-image:url('${await getPhotoURL(p.id)}')"></div><div class="cap">${esc(p.cap.split(' · ')[0])}</div></div>`));
+  const cov = coverOf(c, st);
+  const wall = await Promise.all(all.map(async (p,i) => `<div class="pol" data-ph="${p.id}" style="transform:rotate(${hashRot(p.id,i)}deg)">${p.id===cov?'<span class="covbadge">★</span>':''}<div style="background-image:url('${await getPhotoURL(p.id)}')"></div><div class="cap">${esc(p.cap.split(' · ')[0])}</div></div>`));
   const vhtml = await Promise.all(vs.map(async v => {
     const ph = await Promise.all((v.photoIds||[]).map(async (p,i) => `<div class="pol" data-ph="${p}" style="transform:rotate(${hashRot(p,i)}deg)"><div style="background-image:url('${await getPhotoURL(p)}')"></div></div>`));
     return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
@@ -1098,16 +1101,31 @@ async function openViewer(list, startId){
 }
 async function drawViewer(){
   const p = vList[vIdx]; const url = await getPhotoURL(p.id, 'full');
+  const cid = visits.find(v => (v.photoIds||[]).includes(p.id))?.cafeId, vc = cid && cafes.find(x => x.id === cid);
+  const isCover = vc && coverOf(vc) === p.id;
   $('#viewer').innerHTML = `<button class="close" aria-label="닫기">×</button>
     <div class="vpol"><img src="${url}" alt=""><div class="cap">${esc(p.cap||'')}</div></div>
-    ${vList.length>1?`<button class="vnav" style="left:10px" data-d="-1">‹</button><button class="vnav" style="right:10px" data-d="1">›</button><div class="cnt">${vIdx+1} / ${vList.length}</div>`:''}`;
+    ${vList.length>1?`<button class="vnav" style="left:10px" data-d="-1">‹</button><button class="vnav" style="right:10px" data-d="1">›</button><div class="cnt">${vIdx+1} / ${vList.length}</div>`:''}
+    ${vc && !SHARE_ID ? `<button class="vcover ${isCover?'on':''}" data-cover="${vc.id}">${isCover ? '★ 대표사진' : '☆ 대표사진으로 하기'}</button>` : ''}`;
 }
 $('#viewer').onclick = e => {
   const d = e.target.closest('[data-d]');
   if (d) { vIdx = (vIdx + +d.dataset.d + vList.length) % vList.length; drawViewer(); return; }
+  const cv = e.target.closest('[data-cover]');
+  if (cv) { setCover(cv.dataset.cover, vList[vIdx].id); return; }
   if (e.target.closest('.vpol')) return;
   $('#viewer').classList.add('hidden');
 };
+async function setCover(cafeId, photoId){
+  const c = cafes.find(x => x.id === cafeId); if (!c) return;
+  if (c.coverPhotoId === photoId) { toast('이미 대표사진이에요'); return; }
+  c.coverPhotoId = photoId; c.updatedAt = Date.now(); c.dirty = true;
+  await DB.put('cafes', c); Sync.soon();
+  toast('대표사진으로 정했어요');
+  await drawViewer(); await refreshAll();
+  if (isOpen('pDetail') && detailId === cafeId) openDetail(cafeId, true);
+  if ($('#sheet').classList.contains('open') && selectedId === cafeId) openSheet(cafeId);
+}
 let tx0 = null;
 $('#viewer').addEventListener('touchstart', e => tx0 = e.touches[0].clientX, {passive:true});
 $('#viewer').addEventListener('touchend', e => { if (tx0 == null || vList.length < 2) return; const dx = e.changedTouches[0].clientX - tx0; if (Math.abs(dx) > 50) { vIdx = (vIdx + (dx < 0 ? 1 : -1) + vList.length) % vList.length; drawViewer(); } tx0 = null; });
@@ -1151,7 +1169,7 @@ async function renderList(){
   if (!cafes.length) { $('#list').innerHTML = `<div class="empty"><div class="big">☕</div>아직 기록한 카페가 없어요.<br>지도 탭에서 다녀온 카페를 검색해 보세요.</div>`; return; }
   if (!rows.length) { $('#list').innerHTML = `<div class="empty">조건에 맞는 카페가 없어요.</div>`; return; }
   const html = await Promise.all(rows.map(async ({c, st, d}) => {
-    const cover = c.coverPhotoId || st.photos[0]; const url = cover ? await getPhotoURL(cover) : '';
+    const cover = coverOf(c, st); const url = cover ? await getPhotoURL(cover) : '';
     return `<button class="item" data-id="${c.id}" style="width:100%;text-align:left">
       <div class="thumbpol" style="transform:rotate(${hashRot(c.id,0)}deg)"><div style="${url?`background-image:url('${url}')`:''}">${url?'':cupIcon(c.id)}</div></div>
       <div class="info"><div class="nm">${c.wish?'<span style="color:var(--sub)">☆</span> ':c.fav?'<span style="color:var(--heartt)">♥</span> ':''}${esc(c.name)}</div>
@@ -1537,7 +1555,7 @@ async function doPickInner(){
   for (let i = 0; i < cand.length; i++) { r -= w[i]; if (r <= 0) { c = cand[i]; break; } }
   lastPickId = c.id;
   const st = cafeStats(c);
-  const ids = [c.coverPhotoId, ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
+  const ids = [coverOf(c, st), ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
   const urlsP = Promise.all(ids.map(i => getPhotoURL(i)));
   await rollDice(cand.length > 1 ? cand.map(x => x.name) : [c.name]);
   const urls = await urlsP;
@@ -1610,7 +1628,7 @@ $('#shMake').onclick = async () => {
     for (const id of shSel) {
       const c = cafeById(id); if (!c) continue;
       const st = cafeStats(c), lv = st.lastVisit;
-      const cover = c.coverPhotoId || st.photos[0];
+      const cover = coverOf(c, st);
       list.push({ name: c.name, lat: c.lat, lng: c.lng, address: c.address || '', roadAddress: c.roadAddress || '', kakaoUrl: c.kakaoUrl || '', category: c.category || '',
         tags: c.tags || [], fav: !!c.fav, wish: !!c.wish, rating: st.rating ? Math.round(st.rating*10)/10 : 0, count: st.count,
         review: shOpt.review && lv ? (lv.review || '') : '', menu: shOpt.review && lv ? (lv.menu || '') : '',
@@ -1668,7 +1686,7 @@ async function startShareView(){
   for (const c of list) {
     const el = document.createElement('div');
     el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '');
-    el.innerHTML = `<div class="ring"><div style="${c.thumb ? `background-image:url('${c.thumb}')` : ''}">${c.thumb ? '' : cupIcon(c.id)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
+    el.innerHTML = `<div class="ring"><div>${cupIcon(c.id)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); shareSheet(c); });
     const o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.lat, c.lng), content: el, yAnchor: 1, clickable: true, zIndex: 2 });
     o.setMap(map); o._el = el; overlays.set(c.id, o);
