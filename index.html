@@ -55,6 +55,14 @@ input,textarea{outline:none}
 .mres .s{font-size:12px;color:var(--sub);margin-top:3px}
 .mres .r{font-size:13px;margin-top:5px;line-height:1.5;color:var(--ink);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pickres{background:var(--note);border-radius:18px;padding:16px;margin-top:18px;text-align:center}
+.pickres.pop{animation:pickpop .38s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes pickpop{from{transform:scale(.88) translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.dicebox{background:var(--note);border-radius:18px;margin-top:18px;padding:30px 16px 22px;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+.die{width:68px;height:68px;border-radius:17px;background:var(--bg);border:2px solid var(--acc);box-shadow:0 5px 0 var(--soft),0 10px 18px rgba(0,0,0,.10);display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:10px;gap:4px;animation:dieroll 1.15s cubic-bezier(.25,.8,.35,1) both}
+.die i{border-radius:50%}
+.die i.on{background:var(--acc)}
+@keyframes dieroll{0%{transform:translate(-150px,-70px) rotate(-540deg)}35%{transform:translate(-40px,0) rotate(-200deg)}50%{transform:translate(-10px,-30px) rotate(-80deg)}65%{transform:translate(8px,0) rotate(-10deg)}78%{transform:translate(4px,-9px) rotate(8deg)}90%{transform:translate(0,0) rotate(-3deg)}100%{transform:none}}
+.flick{margin-top:18px;font-size:16px;min-height:22px;color:var(--sub);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pickres .pols{margin:0 auto 4px;width:300px;max-width:100%}
 .ckrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 2px;border-bottom:1px solid var(--line)}
 .ckrow .ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;color:var(--onacc);font-size:14px}
@@ -1429,7 +1437,27 @@ function openPick(){
   };
   openPage('pPick');
 }
+const DIE_FACES = [[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
+let rolling = false;
+async function rollDice(names){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  $('#pickRes').innerHTML = `<div class="dicebox"><div class="die" id="die"></div><div class="flick" id="flick"></div></div>`;
+  $('#pickRes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const die = $('#die'), fl = $('#flick');
+  const face = f => { die.innerHTML = Array.from({ length: 9 }, (_, i) => `<i class="${DIE_FACES[f].includes(i) ? 'on' : ''}"></i>`).join(''); };
+  for (let i = 0; i < 14; i++) {
+    face(Math.floor(Math.random() * 6));
+    fl.textContent = names[Math.floor(Math.random() * names.length)] || '';
+    await new Promise(r => setTimeout(r, 30 + i * i * 0.9));
+  }
+  try { navigator.vibrate && navigator.vibrate(25); } catch {}
+}
 async function doPick(){
+  if (rolling) return;
+  rolling = true;
+  try { await doPickInner(); } finally { rolling = false; }
+}
+async function doPickInner(){
   if (pickOpt.dist && !myPos) { toast('내 위치를 확인하는 중…'); await locate(false); if (!myPos) { $('#pickRes').innerHTML = `<div class="pickres">위치를 못 받아서 거리 조건을 쓸 수 없어요.<br><span class="small">"상관없음"으로 바꾸거나 위치 권한을 허용해 주세요.</span></div>`; return; } }
   let cand = cafes.filter(c => {
     if (pickOpt.scope === '♪ 다녀왔어' && c.wish) return false;
@@ -1448,10 +1476,12 @@ async function doPick(){
   lastPickId = c.id;
   const st = cafeStats(c);
   const ids = [c.coverPhotoId, ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
-  const urls = await Promise.all(ids.map(i => getPhotoURL(i)));
+  const urlsP = Promise.all(ids.map(i => getPhotoURL(i)));
+  await rollDice(cand.length > 1 ? cand.map(x => x.name) : [c.name]);
+  const urls = await urlsP;
   const d = myPos ? distKm(myPos, c) : null;
   const lv = st.lastVisit;
-  $('#pickRes').innerHTML = `<div class="pickres">
+  $('#pickRes').innerHTML = `<div class="pickres pop">
     <div class="small" style="margin-bottom:8px">${total}곳 중에 골랐어요</div>
     ${ids.length ? polaroids(ids, urls) : '<div style="font-size:40px;margin:6px 0">☕</div>'}
     <div class="title" style="margin-top:6px">${c.wish ? '<span style="color:var(--sub)">☆</span> ' : ''}${esc(c.name)}</div>
