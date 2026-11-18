@@ -226,6 +226,11 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 .starpick{display:flex;gap:6px}
 .starpick button{font-size:34px;line-height:1;color:var(--line)}
 .starpick button.on{color:#F2A93B}
+.myrate{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;background:var(--note);border-radius:14px}
+.myrate .lb{font-size:14px;flex:none}
+.myrate .starpick button{font-size:28px}
+.myrate .avg{margin-left:auto;font-size:12px;color:var(--sub);text-align:right;line-height:1.4}
+.score small{display:block;font-size:10px;font-weight:400;opacity:.75;text-align:center}
 .tagpick{display:flex;flex-wrap:wrap;gap:6px}
 .tagpick .chip{background:var(--note);border-color:transparent}
 .tagpick .chip.on{background:var(--acc);color:var(--onacc)}
@@ -544,7 +549,8 @@ function fetchRemotePhoto(id, kind, existing){
 const visitsOf = cid => visits.filter(v => v.cafeId === cid).sort((a,b) => (b.date||'').localeCompare(a.date||'') || b.createdAt - a.createdAt);
 function cafeStats(c){
   const vs = visitsOf(c.id); const rs = vs.filter(v => v.rating);
-  return { count: vs.length, rating: rs.length ? rs.reduce((s,v)=>s+v.rating,0)/rs.length : 0, last: vs[0]?.date || '', lastVisit: vs[0], photos: vs.flatMap(v => v.photoIds||[]) };
+  const visitAvg = rs.length ? rs.reduce((s,v)=>s+v.rating,0)/rs.length : 0, my = +c.myRating || 0;
+  return { count: vs.length, rating: my || visitAvg, my, visitAvg, rated: rs.length, last: vs[0]?.date || '', lastVisit: vs[0], photos: vs.flatMap(v => v.photoIds||[]) };
 }
 
 /* 사진 줄이기: 원본 최대 1600px, 썸네일 360px */
@@ -858,6 +864,7 @@ function openCafeEditor(id, seed){
   $('#cBody').innerHTML = `
     <label class="f">카페 이름</label><input class="inp" id="cName" value="${esc(c.name)}" placeholder="카페 이름">
     <label class="f">주소</label><input class="inp" id="cAddr" value="${esc(c.roadAddress || c.address)}" placeholder="주소">
+    <label class="f">카페 별점 <span class="small">(방문 기록 별점이랑 따로 매기는 이 카페 총평)</span></label><div class="starpick" id="cStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= (+c.myRating||0) ? 'on' : ''}">★</button>`).join('')}</div>
     <div class="toggle"><div>☆ 가볼래<div class="small">아직 안 가본 곳이에요. 다녀와서 기록을 남기면 자동으로 꺼져요</div></div><button class="sw ${c.wish?'on':''}" id="cWish" aria-label="가볼래"></button></div>
     <div class="toggle"><div>♥ 또 갈래<div class="small">다시 가고 싶은 곳은 핀이 하트 색으로 바뀌어요</div></div><button class="sw ${c.fav?'on':''}" id="cFav" aria-label="또 갈래"></button></div>
     <label class="f">어떤 곳이에요?</label>
@@ -866,6 +873,7 @@ function openCafeEditor(id, seed){
     <textarea class="inp" id="cMemo" placeholder="자유롭게 적어두세요" style="min-height:80px">${esc(c.memo)}</textarea>
     ${id ? `<div class="sec"><button class="btn danger" id="cDel" style="width:100%">이 카페 기록 전체 삭제</button></div>` : ''}`;
   $('#cFav').onclick = e => e.currentTarget.classList.toggle('on');
+  $('#cStars').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.n; c.myRating = (+c.myRating||0) === n ? 0 : n; document.querySelectorAll('#cStars button').forEach(x => x.classList.toggle('on', +x.dataset.n <= c.myRating)); };
   $('#cWish').onclick = e => e.currentTarget.classList.toggle('on');
   $('#cTags').onclick = e => { const b = e.target.closest('.chip'); if (b) b.classList.toggle('on'); };
   if (id) $('#cDel').onclick = () => deleteCafe(id);
@@ -913,7 +921,7 @@ async function openVisitEditor(cafeId, visitId){
   $('#vTitle').textContent = c.name;
   $('#vBody').innerHTML = `
     <label class="f" style="margin-top:4px">사진</label><div class="addph" id="vPhotos"></div>
-    <label class="f">별점</label><div class="starpick" id="vStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점">★</button>`).join('')}</div>
+    <label class="f">이번 방문 별점</label><div class="starpick" id="vStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점">★</button>`).join('')}</div>
     <label class="f">언제 갔어요?</label><input class="inp" type="date" id="vDate" value="${esc(v.date)}">
     <label class="f">뭐 먹었어요?</label><input class="inp" id="vMenu" value="${esc(v.menu)}" placeholder="아인슈페너, 바스크치즈케이크">
     <label class="f">얼마 썼어요?</label><input class="inp" id="vPrice" inputmode="numeric" value="${v.price?Number(v.price).toLocaleString('ko-KR'):''}" placeholder="13,500">
@@ -1002,7 +1010,9 @@ async function openDetail(id, keep){
   $('#dBody').innerHTML = `
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(c.roadAddress || c.address || '')}</div>
       ${c.category?`<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>`:''}</div>
-      ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}</div>`:''}</div>
+      ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}<small>${st.my ? '내 별점' : '방문 평균'}</small></div>`:''}</div>
+    <div class="myrate"><span class="lb">내 별점</span><div class="starpick" id="dStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= st.my ? 'on' : ''}">★</button>`).join('')}</div>
+      <span class="avg">${st.rated ? `방문 평균<br>★ ${st.visitAvg.toFixed(1)} · ${st.rated}번` : ''}</span></div>
     <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
@@ -1014,6 +1024,15 @@ async function openDetail(id, keep){
     <div class="sec"><h3>사진 <small>${all.length}장</small></h3>${wall.length?`<div class="wall">${wall.join('')}</div>`:'<div class="emptyPhoto">방문 기록에 사진을 넣으면 여기 폴라로이드로 모여요</div>'}</div>
     <div class="sec"><h3>방문 기록 <button class="textbtn" id="dAddVisit">+ 기록 추가</button></h3>${vhtml.length?vhtml.join(''):'<div class="emptyPhoto">아직 방문 기록이 없어요</div>'}</div>`;
   $('#dAddVisit').onclick = () => openVisitEditor(id);
+  $('#dStars').onclick = async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const n = +b.dataset.n, cc = cafes.find(x => x.id === id); if (!cc) return;
+    cc.myRating = (+cc.myRating||0) === n ? 0 : n;
+    cc.updatedAt = Date.now(); cc.dirty = true;
+    await DB.put('cafes', cc); Sync.soon();
+    toast(cc.myRating ? `내 별점 ${cc.myRating}점으로 저장했어요` : '내 별점을 지웠어요');
+    await refreshAll(); openDetail(id, true);
+  };
   $('#dBody').onclick = e => {
     const ph = e.target.closest('[data-ph]'); if (ph) { openViewer(all, ph.dataset.ph); return; }
     const ev = e.target.closest('[data-ev]'); if (ev) openVisitEditor(id, ev.dataset.ev);
