@@ -612,7 +612,7 @@ function updateLabels(){
 function passFilter(c, f){
   if (f === '전체') return true;
   if (f === '♥ 또 갈래') return !!c.fav;
-  if (f === '다녀온 곳') return !c.wish;
+  if (f === '♪ 다녀왔어') return !c.wish;
   if (f === '☆ 가볼래') return !!c.wish;
   return (c.tags||[]).includes(f);
 }
@@ -660,7 +660,7 @@ function locate(pan=true){
 }
 function renderChips(){
   const used = new Set(cafes.flatMap(c => c.tags||[]));
-  const list = ['전체','다녀온 곳','☆ 가볼래','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
+  const list = ['전체','♪ 다녀왔어','♥ 또 갈래','☆ 가볼래', ...TAGS.filter(t => used.has(t))];
   if (!list.includes(mapFilter)) mapFilter = '전체';
   $('#mapChips').innerHTML = list.map(t => `<button class="chip ${t===mapFilter?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
 }
@@ -955,7 +955,7 @@ $('#vSave').onclick = async () => {
   const i = visits.findIndex(x => x.id === v.id); if (i >= 0) visits[i] = v; else visits.push(v);
   const wc = cafes.find(x => x.id === v.cafeId); let moved = false;
   if (wc && wc.wish) { wc.wish = false; wc.updatedAt = Date.now(); wc.dirty = true; await DB.put('cafes', wc); moved = true; Sync.soon(); }
-  closePage('pVisit'); await refreshAll(); toast(moved ? '다녀온 곳으로 옮겼어요' : '기록했어요');
+  closePage('pVisit'); await refreshAll(); toast(moved ? '♪ 다녀왔어로 옮겼어요' : '기록했어요');
   if (isOpen('pDetail')) openDetail(v.cafeId, true); else if (selectedId === v.cafeId) openSheet(v.cafeId);
 };
 async function deleteVisit(id){
@@ -1050,7 +1050,7 @@ try { sortBy = localStorage.getItem('sortBy') || 'recent'; } catch {}
 function renderSort(){
   $('#sortSeg').innerHTML = SORTS.map(([k,n]) => `<button class="chip ${k===sortBy?'on':''}" data-k="${k}">${n}</button>`).join('');
   const used = new Set(cafes.flatMap(c => c.tags||[]));
-  const tags = ['전체','다녀온 곳','☆ 가볼래','♥ 또 갈래', ...TAGS.filter(t => used.has(t))];
+  const tags = ['전체','♪ 다녀왔어','♥ 또 갈래','☆ 가볼래', ...TAGS.filter(t => used.has(t))];
   if (!tags.includes(listFilter)) listFilter = '전체';
   $('#listChips').innerHTML = tags.map(t => `<button class="chip ${t===listFilter?'on':''}" data-t="${esc(t)}" style="font-size:12px;padding:5px 10px">${esc(t)}</button>`).join('');
 }
@@ -1413,7 +1413,7 @@ function openPick(){
   const chips = (arr, cur, key) => arr.map(([v,n]) => `<button class="chip ${cur===v?'on':''}" data-${key}="${v}">${n}</button>`).join('');
   $('#pickBody').innerHTML = `
     <label class="f" style="margin-top:4px">어디서 고를까?</label>
-    <div class="tagpick">${chips([['전체','전체'],['다녀온 곳','다녀온 곳'],['가볼래','☆ 가볼래'],['또 갈래','♥ 또 갈래']], pickOpt.scope, 'sc')}</div>
+    <div class="tagpick">${chips([['전체','전체'],['♪ 다녀왔어','♪ 다녀왔어'],['또 갈래','♥ 또 갈래'],['가볼래','☆ 가볼래']], pickOpt.scope, 'sc')}</div>
     <label class="f">얼마나 가까이?</label>
     <div class="tagpick">${chips([[0,'상관없음'],[0.5,'500m'],[1,'1km'],[3,'3km'],[10,'10km']], pickOpt.dist, 'ds')}</div>
     ${used.length ? `<label class="f">이런 곳이면 좋겠어 (여러 개 고르면 다 맞는 곳만)</label><div class="tagpick" id="pickTags">${used.map(t => `<button class="chip ${pickOpt.tags.includes(t)?'on':''}" data-tg="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
@@ -1432,7 +1432,7 @@ function openPick(){
 async function doPick(){
   if (pickOpt.dist && !myPos) { toast('내 위치를 확인하는 중…'); await locate(false); if (!myPos) { $('#pickRes').innerHTML = `<div class="pickres">위치를 못 받아서 거리 조건을 쓸 수 없어요.<br><span class="small">"상관없음"으로 바꾸거나 위치 권한을 허용해 주세요.</span></div>`; return; } }
   let cand = cafes.filter(c => {
-    if (pickOpt.scope === '다녀온 곳' && c.wish) return false;
+    if (pickOpt.scope === '♪ 다녀왔어' && c.wish) return false;
     if (pickOpt.scope === '가볼래' && !c.wish) return false;
     if (pickOpt.scope === '또 갈래' && !c.fav) return false;
     if (pickOpt.tags.some(t => !(c.tags||[]).includes(t))) return false;
@@ -1481,7 +1481,7 @@ function openShareMaker(){
     <div class="toggle"><div>후기랑 메뉴 같이 보여주기</div><button class="sw on" id="shRev" aria-label="후기 포함"></button></div>
     <div class="toggle"><div>사진 한 장씩 같이 보여주기</div><button class="sw on" id="shPh" aria-label="사진 포함"></button></div>
     <label class="f">빠르게 고르기</label>
-    <div class="tagpick" id="shQuick">${['전체','다녀온 곳','☆ 가볼래','♥ 또 갈래', ...used].map(t => `<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}<button class="chip" data-q="__none">선택 해제</button></div>
+    <div class="tagpick" id="shQuick">${['전체','♪ 다녀왔어','♥ 또 갈래','☆ 가볼래', ...used].map(t => `<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}<button class="chip" data-q="__none">선택 해제</button></div>
     <label class="f">카페 고르기 <span id="shCount"></span></label>
     <div class="listsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="shQ" type="search" placeholder="이름, 동네로 찾기"></div>
     <div id="shList"></div>`;
