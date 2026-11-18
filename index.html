@@ -39,7 +39,8 @@ input,textarea{outline:none}
 
 /* ---------- 지도 ---------- */
 #map{position:absolute;inset:0}
-#mapTop{position:absolute;left:0;right:0;top:0;padding:calc(12px + var(--safe-t)) 14px 0;z-index:5;pointer-events:none}
+#mapTop{position:absolute;left:0;right:0;top:0;padding:calc(12px + var(--safe-t)) 14px 0;z-index:9;pointer-events:none}
+#results:not(.hidden)~#mapTop .chips{display:none}
 #mapTop>*{pointer-events:auto}
 .searchbar{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:16px;padding:0 14px;height:50px;box-shadow:0 2px 10px rgba(0,0,0,.10);border:1px solid var(--line)}
 .searchbar input{flex:1;border:0;background:none;font-size:16px;min-width:0}
@@ -75,7 +76,7 @@ input,textarea{outline:none}
 /* 폴라로이드 */
 .pols{position:relative;height:178px;margin:2px 0 6px}
 .pol{position:absolute;background:var(--frame);padding:7px 7px 22px;border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,.16);border:1px solid var(--line)}
-.pol>div{width:104px;height:118px;background:var(--ph) center/cover no-repeat}
+.pol>div:first-child{width:104px;height:118px;background:var(--ph) center/cover no-repeat}
 .pol .cap{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:11px;color:var(--sub)}
 .pols.empty{height:auto}
 .emptyPhoto{border:1.5px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--sub);font-size:14px}
@@ -89,7 +90,7 @@ input,textarea{outline:none}
 .note{background:var(--note);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .note .meta{font-size:12px;color:var(--sub);margin-bottom:4px;white-space:normal}
 .btnrow{display:flex;gap:8px;margin-top:14px}
-.btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;padding:13px 10px;border-radius:14px;background:var(--acc);color:var(--onacc);text-align:center}
+.btn{text-decoration:none;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;padding:13px 10px;border-radius:14px;background:var(--acc);color:var(--onacc);text-align:center}
 .btn.ghost{background:var(--soft);color:var(--softt)}
 .btn.kakao{background:#FEE500;color:#191600}
 .btn.naver{background:#03C75A;color:#fff}
@@ -146,7 +147,7 @@ input,textarea{outline:none}
 
 .wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:18px 12px;padding:6px 2px}
 .wall .pol{position:relative}
-.wall .pol>div{width:100%;height:auto;aspect-ratio:1/1.1}
+.wall .pol>div:first-child{width:100%;height:auto;aspect-ratio:1/1.1}
 
 .visit{position:relative;padding-left:20px;margin-bottom:18px}
 .visit:before{content:"";position:absolute;left:5px;top:8px;bottom:-18px;width:2px;background:var(--line)}
@@ -157,7 +158,7 @@ input,textarea{outline:none}
 .vphotos{display:flex;gap:10px;overflow-x:auto;padding:8px 2px 4px;scrollbar-width:none}
 .vphotos::-webkit-scrollbar{display:none}
 .vphotos .pol{position:relative;flex:none}
-.vphotos .pol>div{width:84px;height:92px}
+.vphotos .pol>div:first-child{width:84px;height:92px}
 .small{font-size:12px;color:var(--sub)}
 .vacts{display:flex;gap:14px;margin-top:6px}
 .vacts button{font-size:12px;color:var(--sub);text-decoration:underline;text-underline-offset:2px}
@@ -175,7 +176,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 .tagpick .chip.on{background:var(--acc);color:var(--onacc)}
 .addph{display:flex;gap:12px;flex-wrap:wrap;padding-top:6px}
 .addph .pol{position:relative}
-.addph .pol>div{width:86px;height:94px}
+.addph .pol>div:first-child{width:86px;height:94px}
 .addph .x{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:14px;display:flex;align-items:center;justify-content:center}
 .addph .plus{width:102px;height:126px;border:1.5px dashed var(--line);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--sub);font-size:13px}
 .addph .plus svg{width:26px;height:26px}
@@ -539,7 +540,9 @@ $('#btnMe').onclick = () => locate(true);
 /* 핀 눌렀을 때 아래 카드 */
 function setMapBtnBottom(){
   const sh = $('#sheet');
-  $('#mapBtns').style.bottom = sh.classList.contains('open') ? (sh.offsetHeight + 14) + 'px' : '20px';
+  const open = sh.classList.contains('open');
+  $('#mapBtns').style.bottom = '20px';
+  $('#mapBtns').style.visibility = open ? 'hidden' : 'visible';
 }
 function polaroids(ids, urls){
   if (!ids.length) return '';
@@ -575,11 +578,15 @@ async function openSheet(id){
     </div>`;
   $('#sheet').classList.add('open');
   $('#sheet').scrollTop = 0;
-  if (map) {
-    const ll = new kakao.maps.LatLng(c.lat, c.lng);
-    map.panTo(ll);
-  }
-  requestAnimationFrame(setMapBtnBottom);
+  requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(c.lat, c.lng); });
+}
+function centerAbove(lat, lng){
+  if (!map) return;
+  map.setCenter(new kakao.maps.LatLng(lat, lng));
+  const h = $('#sheet').classList.contains('open') ? $('#sheet').offsetHeight : 0;
+  const vh = $('#map').offsetHeight;
+  const dy = Math.max(0, Math.min(h, vh - 160) / 2);
+  if (dy) map.panBy(0, dy);
 }
 function closeSheet(){
   $('#sheet').classList.remove('open'); selectedId = null;
@@ -645,7 +652,7 @@ function pickPlace(p){
   $('#results').classList.add('hidden'); $('#qClear').classList.add('hidden'); qEl.blur();
   const mine = cafes.find(c => c.kakaoId === p.id);
   const ll = new kakao.maps.LatLng(+p.y, +p.x);
-  map.setLevel(Math.min(map.getLevel(), 3)); map.panTo(ll);
+  map.setLevel(Math.min(map.getLevel(), 3)); map.setCenter(ll);
   if (mine) { openSheet(mine.id); return; }
   closeSheet();
   pendingPlace = { kakaoId: p.id, name: p.place_name, address: p.address_name, roadAddress: p.road_address_name, lat: +p.y, lng: +p.x, kakaoUrl: p.place_url, phone: p.phone, category: p.category_name };
@@ -662,9 +669,7 @@ function pickPlace(p){
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
     </div>`;
   $('#sheet').classList.add('open');
-  requestAnimationFrame(setMapBtnBottom);
-  // 위 closeSheet가 pendingPlace를 지우므로 다시 넣어줌
-  pendingPlace = c; tempOverlay = tempOverlay;
+  requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(c.lat, c.lng); });
 }
 function manualAdd(name){
   if (!map) return;
@@ -977,14 +982,16 @@ function showTab(t){
 }
 $('#tabbar').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
 const pageStack = [];
+let ignorePop = 0;
 function openPage(id){ $('#'+id).classList.add('open'); if (!pageStack.includes(id)) { pageStack.push(id); history.pushState({p:id}, ''); } }
 function closePage(id, fromPop){
   $('#'+id).classList.remove('open');
-  const i = pageStack.indexOf(id); if (i >= 0) { pageStack.splice(i, 1); if (!fromPop) history.back(); }
+  const i = pageStack.indexOf(id); if (i >= 0) { pageStack.splice(i, 1); if (!fromPop) { ignorePop++; history.back(); } }
 }
 const isOpen = id => $('#'+id).classList.contains('open');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closePage(b.dataset.close));
 window.addEventListener('popstate', () => {
+  if (ignorePop > 0) { ignorePop--; return; }
   if (!$('#viewer').classList.contains('hidden')) { $('#viewer').classList.add('hidden'); history.pushState({}, ''); return; }
   const top = pageStack[pageStack.length - 1]; if (top) closePage(top, true);
 });
