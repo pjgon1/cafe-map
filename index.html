@@ -605,7 +605,7 @@ async function openSheet(id){
     ${polaroids(ids, urls)}
     <div class="rowsb" style="margin-top:${ids.length?6:0}px">
       <div style="min-width:0"><div class="title">${esc(c.name)}</div>
-      <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 ${st.count}회</div></div>
+      <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
       ${st.rating ? `<div class="score">★ ${st.rating.toFixed(1)}</div>` : ''}
     </div>
     <div style="margin-top:10px">${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
@@ -899,7 +899,7 @@ async function openDetail(id, keep){
       ${c.category?`<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>`:''}</div>
       ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}</div>`:''}</div>
     <div style="margin-top:12px">${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
-    <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
+    <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
     <div class="linkrow" style="margin-top:12px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
@@ -947,7 +947,7 @@ $('#viewer').addEventListener('touchend', e => { if (tx0 == null || vList.length
 /* =========================================================
    목록
    ========================================================= */
-const SORTS = [['recent','최근 방문순'],['name','이름순'],['dist','거리순'],['rating','별점순'],['count','많이 간 순']];
+const SORTS = [['recent','최근 방문순'],['name','이름순'],['dist','거리순'],['rating','별점순'],['count','기록 많은 순']];
 let sortBy = 'recent', listFilter = '전체';
 try { sortBy = localStorage.getItem('sortBy') || 'recent'; } catch {}
 function renderSort(){
@@ -979,7 +979,7 @@ async function renderList(){
     count: (a,b) => b.st.count - a.st.count || (b.st.last||'').localeCompare(a.st.last||''),
   }[sortBy];
   rows.sort(by);
-  $('#listCount').textContent = cafes.length ? `카페 ${cafes.length}곳 · 방문 ${visits.length}번` : '';
+  $('#listCount').textContent = cafes.length ? `카페 ${cafes.length}곳 · 방문 기록 ${visits.length}개` : '';
   if (!cafes.length) { $('#list').innerHTML = `<div class="empty"><div class="big">☕</div>아직 기록한 카페가 없어요.<br>지도 탭에서 다녀온 카페를 검색해 보세요.</div>`; return; }
   if (!rows.length) { $('#list').innerHTML = `<div class="empty">조건에 맞는 카페가 없어요.</div>`; return; }
   const html = await Promise.all(rows.map(async ({c, st, d}) => {
@@ -988,7 +988,7 @@ async function renderList(){
       <div class="thumbpol" style="transform:rotate(${hashRot(c.id,0)}deg)"><div style="${url?`background-image:url('${url}')`:''}">${url?'':ICON_CUP}</div></div>
       <div class="info"><div class="nm">${c.fav?'<span style="color:var(--heartt)">♥</span> ':''}${esc(c.name)}</div>
       <div class="ad">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''}</div>
-      <div class="mini">${st.rating?`<b>★ ${st.rating.toFixed(1)}</b>`:''}<span>방문 ${st.count}회</span>${st.last?`<span>${fmtDate(st.last)}</span>`:''}</div></div></button>`;
+      <div class="mini">${st.rating?`<b>★ ${st.rating.toFixed(1)}</b>`:''}<span>방문 기록 ${st.count}개</span>${st.last?`<span>${fmtDate(st.last)}</span>`:''}</div></div></button>`;
   }));
   $('#list').innerHTML = html.join('');
 }
@@ -1000,7 +1000,7 @@ $('#list').onclick = e => { const b = e.target.closest('.item'); if (b) openDeta
 async function renderSettings(){
   renderAccount();
   const photos = visits.reduce((s,v) => s + (v.photoIds||[]).length, 0);
-  $('#stats').innerHTML = `<div class="stat"><b>${cafes.length}</b><span>카페</span></div><div class="stat"><b>${visits.length}</b><span>방문</span></div><div class="stat"><b>${photos}</b><span>사진</span></div>`;
+  $('#stats').innerHTML = `<div class="stat"><b>${cafes.length}</b><span>카페</span></div><div class="stat"><b>${visits.length}</b><span>방문 기록</span></div><div class="stat"><b>${photos}</b><span>사진</span></div>`;
   renderThemes();
   try { const e = await navigator.storage?.estimate?.(); if (e) $('#storageInfo').textContent = `사용 중: ${(e.usage/1048576).toFixed(1)}MB`; } catch {}
 }
