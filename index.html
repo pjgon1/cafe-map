@@ -1782,7 +1782,8 @@ $('#btnConq').onclick = async () => {
 const oneLine = s => (s || '').replace(/\s+/g, ' ').trim();
 const splitMenu = s => (s || '').split(/[,，·\/+]|\s{2,}/).map(x => x.trim()).filter(Boolean);
 const countTop = arr => { const m = new Map(); arr.forEach(x => m.set(x, (m.get(x) || 0) + 1)); return [...m].sort((a, b) => b[1] - a[1]); };
-const isImportMemo = m => /네이버지도 저장 목록에서 가져옴/.test(m || '');
+const cleanMemo = m => (m || '').replace(/네이버지도 저장 목록에서 가져옴/g, '').trim();
+const isImportMemo = m => !cleanMemo(m);
 function aiText(){
   const vis = cafes.filter(c => !c.wish), wl = cafes.filter(c => c.wish);
   const vs = visits.filter(v => cafes.some(c => c.id === v.cafeId)).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -1824,10 +1825,10 @@ function aiText(){
     const mn = [...new Set(vv.flatMap(v => splitMenu(v.menu)))].slice(0, 5); if (mn.length) bits.push('먹은 것: ' + mn.join(', '));
     if (c.nextTry) bits.push('다음에 먹어볼 것: ' + oneLine(c.nextTry));
     const words = vv.map(v => oneLine(v.review)).filter(Boolean).slice(0, 2).map(r => `"${r.slice(0, 80)}"`);
-    if (oneLine(c.memo) && !isImportMemo(c.memo)) words.push(`메모 "${oneLine(c.memo).slice(0, 80)}"`);
+    if (oneLine(cleanMemo(c.memo)) && !isImportMemo(c.memo)) words.push(`메모 "${oneLine(cleanMemo(c.memo)).slice(0, 80)}"`);
     L.push(`- **${c.name}** — ${bits.join(' · ')}${words.length ? ' · ' + words.join(' / ') : ''}`);
   }
-  if (wl.length) { L.push('', '## 가볼래 목록 (이미 알고 있으니 추천에서 빼줘)'); wl.forEach(c => L.push(`- ${c.name} (${areaOf(c)})${oneLine(c.memo) && !isImportMemo(c.memo) ? ' · ' + oneLine(c.memo).slice(0, 60) : ''}`)); }
+  if (wl.length) { L.push('', '## 가볼래 목록 (이미 알고 있으니 추천에서 빼줘)'); wl.forEach(c => L.push(`- ${c.name} (${areaOf(c)})${oneLine(cleanMemo(c.memo)) && !isImportMemo(c.memo) ? ' · ' + oneLine(cleanMemo(c.memo)).slice(0, 60) : ''}`)); }
   if (vs.length) {
     L.push('', '## 최근 방문 기록');
     vs.slice(0, 60).forEach(v => { const c = cafeById(v.cafeId); L.push(`- ${v.date || '날짜 없음'} ${c.name}${v.rating ? ` ★${v.rating}` : ''}${v.menu ? ` · ${oneLine(v.menu)}` : ''}${v.price ? ` · ${(+v.price).toLocaleString('ko-KR')}원` : ''}${v.review ? ` · "${oneLine(v.review).slice(0, 100)}"` : ''}`); });
@@ -1838,7 +1839,7 @@ function aiCsv(){
   const q = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
   const rows = [['날짜', '카페', '동네', '주소', '분류', '이번 방문 별점', '카페 내 별점', '메뉴', '가격', '후기', '태그', '또 갈래', '가볼래', '다음에 먹어볼 것', '메모']];
   for (const c of cafes) {
-    const vv = visitsOf(c.id), base = [c.name, areaOf(c), c.roadAddress || c.address || '', (c.category || '').split(' > ').pop(), null, c.myRating || '', null, null, null, (c.tags || []).join('/'), c.fav ? 'O' : '', c.wish ? 'O' : '', c.nextTry || '', isImportMemo(c.memo) ? '' : (c.memo || '')];
+    const vv = visitsOf(c.id), base = [c.name, areaOf(c), c.roadAddress || c.address || '', (c.category || '').split(' > ').pop(), null, c.myRating || '', null, null, null, (c.tags || []).join('/'), c.fav ? 'O' : '', c.wish ? 'O' : '', c.nextTry || '', cleanMemo(c.memo)];
     if (!vv.length) rows.push(['', ...base.map(x => x ?? '')]);
     for (const v of vv) { const r = ['' + (v.date || ''), ...base]; r[5] = v.rating || ''; r[7] = v.menu || ''; r[8] = v.price || ''; r[9] = oneLine(v.review); rows.push(r.map(x => x ?? '')); }
   }
