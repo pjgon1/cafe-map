@@ -1440,7 +1440,6 @@ function openPick(){
 const DIE_FACES = [[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
 let rolling = false;
 async function rollDice(names){
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   $('#pickRes').innerHTML = `<div class="dicebox"><div class="die" id="die"></div><div class="flick" id="flick"></div></div>`;
   $('#pickRes').scrollIntoView({ behavior: 'smooth', block: 'start' });
   const die = $('#die'), fl = $('#flick');
