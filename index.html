@@ -277,6 +277,21 @@ body.sharemode .view{bottom:0}
 .listsearch{display:flex;align-items:center;gap:8px;background:var(--note);border-radius:12px;padding:0 12px;height:42px}
 .listsearch input{flex:1;border:0;background:none;font-size:15px}
 .listsearch svg{width:18px;height:18px;color:var(--sub)}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;text-align:center}
+.calhead b{font-size:17px}
+.calhead .iconbtn{font-size:24px;width:40px;height:40px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calgrid .cw{text-align:center;font-size:12px;color:var(--sub);padding:2px 0 4px}
+.calgrid .cw.sun{color:#D2647D}.calgrid .cw.sat{color:#5B8DEF}
+.calgrid .cd{position:relative;aspect-ratio:1;border-radius:10px;background:var(--note);overflow:hidden;padding:0;color:var(--ink)}
+.calgrid .cd:disabled{background:transparent;color:var(--sub)}
+.calgrid .cd .cph{position:absolute;inset:0;background:center/cover no-repeat}
+.calgrid .cd.has .cph+.dn{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.calgrid .cd .dn{position:absolute;left:5px;top:3px;font-size:12px;font-weight:600}
+.calgrid .cd .cc{position:absolute;right:4px;bottom:4px;background:var(--acc);color:var(--onacc);font-size:10px;font-weight:700;border-radius:999px;padding:0 5px;line-height:15px}
+.calgrid .cd .cdot{position:absolute;left:50%;bottom:7px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--acc)}
+.calgrid .cd.today{box-shadow:inset 0 0 0 2px var(--acc)}
+.calgrid .cd.sel{box-shadow:0 0 0 3px var(--acc)}
 .toprow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);background:var(--bg)}
 .toprow.drag{position:relative;z-index:2;box-shadow:0 6px 18px rgba(0,0,0,.15);border-radius:12px;transform:scale(1.02)}
 .toprow .trk{width:30px;text-align:center;font-size:20px;font-weight:800;color:var(--sub);flex:none}
@@ -377,6 +392,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 
 /* 설정 */
 .themes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.themes .themesmore{grid-column:1/-1;padding:8px 0;justify-self:center}
 .theme{border-radius:16px;padding:12px;border:2px solid transparent;text-align:left}
 .theme.on{border-color:var(--ink)}
 .theme .sw3{display:flex;gap:4px;margin-bottom:8px}
@@ -626,6 +642,17 @@ const THEMES = [
   {k:'blueberry',n:'블루베리 요거트',bg:'#FCFAFE',ink:'#2D2638',sub:'#8B8299',acc:'#7B5EA7',onacc:'#fff',soft:'#EEE7F7',softt:'#5D4388',note:'#F5F1FA',heart:'#FBEBF0',heartt:'#B3466B',line:'#ECE5F3',frame:'#fff',ph:'#E2D7F0'},
   {k:'sesame',  n:'흑임자',      bg:'#FAF9F7',ink:'#1F1E1C',sub:'#7F7B75',acc:'#3B3936',onacc:'#fff',soft:'#ECEAE6',softt:'#3B3936',note:'#F2F0EC',heart:'#F8ECEC',heartt:'#A8474F',line:'#E5E2DD',frame:'#fff',ph:'#D9D5CE'},
   {k:'night',   n:'밤 카페 (다크)',bg:'#221C18',ink:'#F3ECE4',sub:'#A99D91',acc:'#D7A86E',onacc:'#221C18',soft:'#3A302A',softt:'#E8C9A0',note:'#2D2520',heart:'#3D2A2C',heartt:'#F0A3B1',line:'#3A302A',frame:'#F3ECE4',ph:'#4E3E33'},
+  // 더보기 테마
+  {more:1,k:'hojicha', n:'호지차 라떼',  bg:'#FCF8F4',ink:'#33261E',sub:'#8F7C6E',acc:'#A0613A',onacc:'#fff',soft:'#F3E3D6',softt:'#7E4824',note:'#F8F0E8',heart:'#FBECEA',heartt:'#B4475A',line:'#EEE1D5',frame:'#fff',ph:'#E9D2BF'},
+  {more:1,k:'lemon',   n:'레몬 마들렌',  bg:'#FFFEF5',ink:'#35321F',sub:'#8F8A6B',acc:'#B59A12',onacc:'#fff',soft:'#FAF3C8',softt:'#7A6608',note:'#FDF9E3',heart:'#FCEEEA',heartt:'#C0533C',line:'#F1EBC6',frame:'#fff',ph:'#F5ECB5'},
+  {more:1,k:'mintchoco',n:'민트 초코',   bg:'#F7FCFA',ink:'#2B211D',sub:'#7C8A85',acc:'#2FA58A',onacc:'#fff',soft:'#DDF3EC',softt:'#1E7863',note:'#EDF8F4',heart:'#F6ECE8',heartt:'#7A4A36',line:'#D9EDE6',frame:'#fff',ph:'#C9EADF'},
+  {more:1,k:'peach',   n:'복숭아 아이스티',bg:'#FFF9F6',ink:'#3A2822',sub:'#9E857B',acc:'#EE8A6A',onacc:'#fff',soft:'#FDE7DD',softt:'#B85A3C',note:'#FEF2EC',heart:'#FCE6EA',heartt:'#C4485F',line:'#F7E2D9',frame:'#fff',ph:'#FAD6C6'},
+  {more:1,k:'lavender',n:'라벤더 라떼',  bg:'#FBFAFE',ink:'#2E2A3A',sub:'#8B869C',acc:'#9479C9',onacc:'#fff',soft:'#EEE9FA',softt:'#6A51A3',note:'#F5F2FC',heart:'#FAEBF1',heartt:'#B04A76',line:'#EBE6F6',frame:'#fff',ph:'#E2DAF5'},
+  {more:1,k:'caramel', n:'카라멜 마키아또',bg:'#FFFBF5',ink:'#35261A',sub:'#957F6A',acc:'#C47A2C',onacc:'#fff',soft:'#F8E8D2',softt:'#8F5413',note:'#FCF3E6',heart:'#FBECE8',heartt:'#B9473F',line:'#F2E3CE',frame:'#fff',ph:'#F0D7B6'},
+  {more:1,k:'yuzu',    n:'유자차',       bg:'#FFFCF4',ink:'#382E1C',sub:'#988B6F',acc:'#E09B12',onacc:'#fff',soft:'#FDF0CF',softt:'#9A6400',note:'#FEF7E4',heart:'#FCEDE9',heartt:'#C24D3A',line:'#F5E9C7',frame:'#fff',ph:'#FAE3AD'},
+  {more:1,k:'cherry',  n:'체리 콕',      bg:'#FFF8F8',ink:'#36191D',sub:'#9C7F83',acc:'#C2283F',onacc:'#fff',soft:'#FBE1E5',softt:'#97182C',note:'#FDF0F2',heart:'#FBE1E5',heartt:'#C2283F',line:'#F4DADF',frame:'#fff',ph:'#F6CDD4'},
+  {more:1,k:'seasalt', n:'바다 소금빵',  bg:'#F6FBFB',ink:'#1E2E31',sub:'#78898C',acc:'#2E8C93',onacc:'#fff',soft:'#DCEFF0',softt:'#1C6B71',note:'#EBF6F6',heart:'#FBECEC',heartt:'#B8474F',line:'#D7E9EA',frame:'#fff',ph:'#C7E3E5'},
+  {more:1,k:'lounge',  n:'심야 라운지 (다크)',bg:'#161B26',ink:'#E8ECF4',sub:'#959DB0',acc:'#7FA6E8',onacc:'#161B26',soft:'#252D3D',softt:'#B5CBF2',note:'#1E2532',heart:'#33263A',heartt:'#F2A6C4',line:'#283041',frame:'#E8ECF4',ph:'#323C50'},
 ];
 
 /* =========================================================
@@ -825,13 +852,15 @@ function applyTheme(k){
   try { localStorage.setItem('theme', t.k); } catch {}
   renderThemes();
 }
+let themesMore = false;
 function renderThemes(){
   let cur = 'coffee'; try { cur = localStorage.getItem('theme') || 'coffee'; } catch {}
-  $('#themes').innerHTML = THEMES.map(t => `<button class="theme ${t.k===cur?'on':''}" data-k="${t.k}" style="background:${t.bg};color:${t.ink};box-shadow:inset 0 0 0 1px ${t.line}">
+  if (THEMES.find(t => t.k === cur)?.more) themesMore = true;
+  $('#themes').innerHTML = THEMES.filter(t => !t.more || themesMore).map(t => `<button class="theme ${t.k===cur?'on':''}" data-k="${t.k}" style="background:${t.bg};color:${t.ink};box-shadow:inset 0 0 0 1px ${t.line}">
     <div class="sw3"><span style="background:${t.acc}"></span><span style="background:${t.soft}"></span><span style="background:${t.heartt}"></span></div>
-    <div class="tn">${t.n}</div></button>`).join('');
+    <div class="tn">${t.n}</div></button>`).join('') + `<button class="textbtn themesmore" id="themesMore">${themesMore ? '접기 ▲' : `더보기 (${THEMES.filter(t => t.more).length}개) ▼`}</button>`;
 }
-$('#themes').onclick = e => { const b = e.target.closest('.theme'); if (b) { applyTheme(b.dataset.k); refreshPins(); if (conq.on) drawConquest(); } };
+$('#themes').onclick = e => { if (e.target.closest('#themesMore')) { themesMore = !themesMore; renderThemes(); return; } const b = e.target.closest('.theme'); if (b) { applyTheme(b.dataset.k); refreshPins(); if (conq.on) drawConquest(); } };
 
 /* =========================================================
    지도
@@ -1900,7 +1929,7 @@ function drawRecWho(){
 }
 $('#recWho').onclick = e => { const b = e.target.closest('[data-w]'); if (!b) return; recWho = b.dataset.w; renderRec(); $('#recScroll').scrollTop = 0; };
 function renderRec(){
-  const modes = [['album','앨범'],['top','TOP 10'],['stats','결산'],['stamp','뱃지'],['menu','메뉴로 찾기']];
+  const modes = [['album','앨범'],['cal','달력'],['top','TOP 10'],['stats','결산'],['stamp','뱃지'],['menu','메뉴로 찾기']];
   $('#recSeg').innerHTML = modes.map(([k,n]) => `<button class="chip ${k===recMode?'on':''}" data-k="${k}">${n}</button>`).join('');
   if (session && !SHARE_ID && !recFrTried && ['album', 'top', 'stamp'].includes(recMode)) { recFrTried = true; frLoad().then(ok => { if (ok && FR.list.length && curTab === 'rec') drawRecWho(); }).catch(() => {}); }
   drawRecWho();
@@ -1911,6 +1940,33 @@ function renderRec(){
   if (recMode === 'menu') renderMenu();
   if (recMode === 'stamp') renderStamps();
   if (recMode === 'top') renderTop();
+  if (recMode === 'cal') renderCal();
+}
+
+/* 사진 달력: 간 날에 그날 대표사진, 누르면 그날 기록 */
+const calYM = { y: new Date().getFullYear(), m: new Date().getMonth() + 1 };
+let calSel = '';
+function renderCal(){
+  const body = $('#recBody'), { y, m } = calYM, pad = n => String(n).padStart(2, '0'), pre = `${y}-${pad(m)}-`;
+  const byDay = new Map();
+  visits.filter(v => (v.date || '').startsWith(pre)).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).forEach(v => { const d = +v.date.slice(8, 10); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(v); });
+  const first = new Date(y, m - 1, 1).getDay(), days = new Date(y, m, 0).getDate(), today = todayStr();
+  const cnt = [...byDay.values()].reduce((s, a) => s + a.length, 0);
+  let cells = ['일', '월', '화', '수', '목', '금', '토'].map((w, i) => `<div class="cw ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</div>`).join('') + '<div></div>'.repeat(first);
+  for (let d = 1; d <= days; d++) {
+    const vs = byDay.get(d) || [], ph = vs.flatMap(v => v.photoIds || [])[0], key = pre + pad(d);
+    cells += `<button class="cd ${vs.length ? 'has' : ''} ${key === today ? 'today' : ''} ${key === calSel ? 'sel' : ''}" data-day="${key}" ${vs.length ? '' : 'disabled'}>${ph ? `<div class="cph" data-cph="${ph}"></div>` : ''}<span class="dn">${d}</span>${vs.length > 1 ? `<span class="cc">${vs.length}</span>` : ''}${vs.length && !ph ? '<span class="cdot"></span>' : ''}</button>`;
+  }
+  const sel = calSel.startsWith(pre) ? (byDay.get(+calSel.slice(8, 10)) || []) : [];
+  body.innerHTML = `<div class="calhead"><button class="iconbtn" data-cm="-1" aria-label="이전 달">‹</button><div><b>${y}년 ${m}월</b><div class="small">${cnt ? `방문 ${cnt}번 · ${byDay.size}일` : '기록 없음'}</div></div><button class="iconbtn" data-cm="1" aria-label="다음 달">›</button></div>
+    <div class="calgrid">${cells}</div>
+    ${sel.length ? `<div class="sec"><h3>${fmtDate(calSel)}</h3>${sel.map(v => { const c = cafeById(v.cafeId); return `<button class="note tap calv" data-cv="${esc(v.cafeId)}" style="width:100%;text-align:left;margin-top:8px"><div class="meta">${esc(c?.name || '삭제된 카페')}${v.rating ? ` · ${stars(v.rating)}` : ''}</div>${esc([v.menu, v.review].filter(Boolean).join(' · ') || '후기 없음')}</button>`; }).join('')}</div>` : `<p class="small" style="text-align:center;margin-top:14px">${cnt ? '사진이 있는 날을 눌러보세요' : ''}</p>`}`;
+  body.querySelectorAll('[data-cph]').forEach(async el => { const u = await getPhotoURL(el.dataset.cph); if (u) el.style.backgroundImage = `url('${u}')`; });
+  body.onclick = e => {
+    const mv = e.target.closest('[data-cm]'); if (mv) { const t = new Date(calYM.y, calYM.m - 1 + +mv.dataset.cm, 1); calYM.y = t.getFullYear(); calYM.m = t.getMonth() + 1; calSel = ''; renderCal(); return; }
+    const d = e.target.closest('[data-day]'); if (d) { calSel = calSel === d.dataset.day ? '' : d.dataset.day; renderCal(); return; }
+    const cv = e.target.closest('[data-cv]'); if (cv && cafeById(cv.dataset.cv)) openDetail(cv.dataset.cv);
+  };
 }
 
 /* 나의 TOP 10: 별점·방문 수로 자동 순위 → 직접 끌어서 바꾸면 그 순서로 저장(c.rank, 동기화됨) */
@@ -3330,7 +3386,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-17'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-18'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
