@@ -919,6 +919,16 @@ $('#sheet').onclick = e => {
 const shortAddr = c => (c.roadAddress || c.address || '').split(' ').slice(1,4).join(' ') || '주소 없음';
 const kakaoUrl = c => c.kakaoUrl || `https://map.kakao.com/link/map/${encodeURIComponent(c.name)},${c.lat},${c.lng}`;
 const naverUrl = c => `https://map.naver.com/p/search/${encodeURIComponent(c.name + ' ' + (c.roadAddress || c.address || '').split(' ').slice(0,3).join(' '))}`;
+// 네이버지도 버튼: 폰이면 네이버지도 앱(nmap://)부터 열고, 앱이 없어서 안 열리면 1.5초 뒤 웹으로
+document.addEventListener('click', e => {
+  const a = e.target.closest('a.btn.naver'); if (!a || !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+  e.preventDefault();
+  const web = a.href, q = decodeURIComponent(web.split('/p/search/')[1] || '');
+  let left = false; const onHide = () => { left = true; };
+  document.addEventListener('visibilitychange', onHide, { once: true }); window.addEventListener('pagehide', onHide, { once: true });
+  location.href = `nmap://search?query=${encodeURIComponent(q)}&appname=${encodeURIComponent(location.host)}`;
+  setTimeout(() => { document.removeEventListener('visibilitychange', onHide); if (!left && !document.hidden) window.open(web, '_blank', 'noopener'); }, 1500);
+}, true);
 
 /* =========================================================
    장소 검색 (카카오)
@@ -2411,7 +2421,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-12'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-13'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
