@@ -319,9 +319,16 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 .subpick .sl{width:46px;font-size:14px;color:var(--ink);flex:none}
 .subpick .starpick{gap:4px}
 .subpick .starpick button{font-size:24px}
-.subavg{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.subavg span{background:var(--note);border-radius:999px;padding:3px 10px;font-size:13px;color:#C98A1C;font-weight:600}
-.subavg small{color:var(--sub);font-weight:400;font-size:12px;margin-right:2px}
+.score.tap .caret{display:inline-block;transition:transform .2s;margin-left:2px}
+.score.tap.open .caret{transform:rotate(90deg)}
+.subpanel{margin-top:10px;background:var(--note);border-radius:12px;padding:8px 12px}
+.sprow{display:flex;align-items:center;gap:10px;padding:3px 0;font-size:14px}
+.sprow .sl{width:46px;color:var(--sub);flex:none}
+.sprow.tot .sl{color:var(--ink);font-weight:600}
+.sprow b{font-size:13px;color:var(--ink);min-width:26px}
+.sbar{position:relative;display:inline-block;font-size:18px;line-height:1;letter-spacing:1px}
+.sbar .bg{color:var(--line)}
+.sbar .fg{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;color:#F2A93B}
 .myrate{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;background:var(--note);border-radius:14px}
 .myrate .lb{font-size:14px;flex:none}
 .myrate .starpick button{font-size:28px}
@@ -745,7 +752,18 @@ function subAvg(vs){
   for (const [k] of SUBS) { const xs = vs.map(v => +v.sub?.[k]).filter(x => x > 0); if (xs.length) out[k] = (xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1).replace(/\.0$/, ''); }
   return out;
 }
-const subAvgHTML = vs => { const t = subLine(subAvg(vs)); return t ? `<div class="subavg">${t.split(' · ').map(x => { const i = x.lastIndexOf(' '); return `<span><small>${x.slice(0, i)}</small> ★ ${x.slice(i + 1)}</span>`; }).join('')}</div>` : ''; };
+// 소수점까지 채워지는 별 5개
+const starBar = x => `<span class="sbar"><span class="bg">★★★★★</span><span class="fg" style="width:${Math.max(0, Math.min(5, x)) / 5 * 100}%">★★★★★</span></span>`;
+// 별점 눌렀을 때 펼쳐지는 항목별 평균
+function subPanelHTML(total, vs){
+  const avg = subAvg(vs), rows = SUBS.filter(([k]) => avg[k]);
+  return `<div class="subpanel hidden">${total ? `<div class="sprow tot"><span class="sl">평균</span>${starBar(total)}<b>${total.toFixed(1)}</b></div>` : ''}${rows.length ? rows.map(([k, n]) => `<div class="sprow"><span class="sl">${n}</span>${starBar(+avg[k])}<b>${(+avg[k]).toFixed(1)}</b></div>`).join('') : '<div class="small" style="padding:4px 0">항목별 별점은 아직 없어요. 방문 기록에서 매길 수 있어요.</div>'}</div>`;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-subtog]'); if (!t) return;
+  const box = t.closest('#sheet, #dBody')?.querySelector('.subpanel'); if (!box) return;
+  box.classList.toggle('hidden'); t.classList.toggle('open', !box.classList.contains('hidden'));
+});
 function cafeStats(c){
   const vs = visitsOf(c.id); const rs = vs.filter(v => v.rating);
   const visitAvg = rs.length ? rs.reduce((s,v)=>s+v.rating,0)/rs.length : 0, my = +c.myRating || 0;
@@ -939,9 +957,9 @@ async function openSheet(id){
     <div class="rowsb" style="margin-top:${ids.length?6:0}px">
       <div style="min-width:0"><div class="title">${esc(c.name)}</div>
       <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
-      ${st.rating ? `<div class="score">★ ${st.rating.toFixed(1)}</div>` : ''}
+      ${st.rating || subLine(subAvg(visitsOf(c.id))) ? `<button class="score tap" data-subtog="1">★ ${st.rating ? st.rating.toFixed(1) : '-'} <span class="caret">›</span></button>` : ''}
     </div>
-    ${subAvgHTML(visitsOf(c.id))}
+    ${subPanelHTML(st.rating, visitsOf(c.id))}
     <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.nextTry ? `<div class="nextbar">🍰 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     ${c.wish && !lv ? `<div class="note" style="margin-top:8px;color:var(--sub)">아직 안 가본 곳이에요.${c.memo?'<br>'+esc(c.memo):''}</div>` : lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
@@ -1404,10 +1422,10 @@ async function openDetail(id, keep){
   $('#dBody').innerHTML = `
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(c.roadAddress || c.address || '')}</div>
       ${c.category?`<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>`:''}</div>
-      ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}<small>${st.my ? '내 별점' : '방문 평균'}</small></div>`:''}</div>
+      ${st.rating || subLine(subAvg(vs)) ?`<button class="score tap" data-subtog="1">★ ${st.rating ? st.rating.toFixed(1) : '-'}<small>${st.my ? '내 별점' : '방문 평균'} ›</small></button>`:''}</div>
     <div class="myrate"><span class="lb">내 별점</span><div class="starpick" id="dStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= st.my ? 'on' : ''}">★</button>`).join('')}</div>
       <span class="avg">${st.rated ? `방문 평균<br>★ ${st.visitAvg.toFixed(1)} · ${st.rated}번` : ''}</span></div>
-    ${subAvgHTML(vs)}
+    ${subPanelHTML(st.rating, vs)}
     <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
@@ -3005,7 +3023,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-32'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-33'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
