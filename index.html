@@ -2168,10 +2168,13 @@ function showTab(t, fromBack){
 $('#tabbar').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
 const pageStack = [];
 /* 폰 뒤로가기 버튼
-   - 브라우저 기록에 '방패' 한 칸을 늘 깔아 두고, 뒤로가기가 그걸 쓰면(popstate) 앱이 직접 처리
+   - 브라우저 기록에 '방패' 한 칸을 깔아 두고, 뒤로가기가 그걸 쓰면(popstate) 앱이 직접 처리
    - 열린 것부터 하나씩 닫기: 확인창(취소) → 사진 크게 보기 → 열린 화면 → 카드 → 검색 → 바로 전에 보던 탭
-   - 더 돌아갈 곳이 없으면 '종료할까요?' 창. [종료]를 눌러야만 꺼짐 (창이 떠 있을 때 뒤로가기는 취소) */
-let guard = false, exitAsk = false, leaving = false;
+   - 더 돌아갈 곳이 없으면 종료 안내창. 방패를 다시 깔지 않으니 여기서 뒤로가기를 누르면 앱이 꺼짐
+     (웹앱은 버튼으로 스스로 꺼질 수가 없어서, 폰 뒤로가기로 끄는 방식)
+   - 그렇게 나갔다가 다시 들어오면 처음 화면부터 새로 시작
+   - 폰은 '화면을 누르지 않고 만든 기록'을 건너뛰므로, 방패는 실제로 누를 때(click 등) 깖 */
+let guard = false, exitAsk = false, exitedAt = 0;
 function armBack(){ if (!guard && !exitAsk) { history.pushState({m:1}, ''); guard = true; } }
 function openPage(id){
   $('#'+id).classList.add('open');
@@ -2184,21 +2187,15 @@ function closePage(id){
 }
 const isOpen = id => $('#'+id).classList.contains('open');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closePage(b.dataset.close));
-function quitApp(){
-  // 1) 앱 창 닫기 시도
-  try { window.close(); } catch {}
-  // 2) 폰이 막으면: 방패를 걷어서, 다음 뒤로가기 한 번에 바로 꺼지게
-  setTimeout(() => {
-    if (document.hidden) return;
-    exitAsk = true; leaving = true;
-    if (guard) history.back(); else leaving = false;
-    toast('뒤로가기를 한 번 더 누르면 꺼져요');
-    setTimeout(() => { exitAsk = false; }, 4000);
-  }, 350);
+function askExit(){
+  exitAsk = true;
+  $('#dlgMsg').textContent = '뒤로가기를 한 번 더 누르면\n커피로그가 꺼져요.';
+  $('#dlgBtns').innerHTML = '<button class="btn" data-v="0" style="flex:1">계속 쓰기</button>';
+  $('#dlg').classList.remove('hidden');
+  $('#dlgBtns').onclick = e => { if (!e.target.closest('button')) return; $('#dlg').classList.add('hidden'); exitAsk = false; armBack(); };
 }
 window.addEventListener('popstate', () => {
   guard = false;
-  if (leaving) { leaving = false; return; } // quitApp이 방패를 걷은 것
   if (!$('#loading').classList.contains('hidden')) { armBack(); return; } // 저장 중에는 무시
   if (!$('#dlg').classList.contains('hidden')) $('#dlgBtns [data-v="0"]')?.click();
   else if (!$('#viewer').classList.contains('hidden')) $('#viewer').classList.add('hidden');
@@ -2207,11 +2204,16 @@ window.addEventListener('popstate', () => {
   else if (!$('#results').classList.contains('hidden')) $('#qClear').click();
   else if (tabHist.length && !SHARE_ID) showTab(tabHist.pop(), true);
   else if (curTab !== 'map' && !SHARE_ID) showTab('map', true);
-  else { armBack(); ask('커피로그를 종료할까요?', '종료').then(ok => { if (ok) quitApp(); }); return; }
+  else { askExit(); return; }
   armBack();
 });
-// 화면을 한 번이라도 누르면 방패를 확실히 깔아 둠 (폰이 '누른 적 없는 기록'은 건너뛰기도 해서)
-document.addEventListener('pointerdown', armBack, true);
+// 실제로 화면을 누를 때 방패를 깔아 둠
+for (const ev of ['click', 'touchend', 'keydown']) document.addEventListener(ev, armBack, true);
+// 종료 안내창이 뜬 상태에서 앱을 나갔다면, 다시 들어올 때 처음 화면부터 새로 시작
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (exitAsk) exitedAt = Date.now(); return; }
+  if (exitedAt) location.replace(location.pathname);
+});
 let lastCupDay = cupDay();
 setInterval(() => { if (cupDay() !== lastCupDay && !SHARE_ID) { lastCupDay = cupDay(); refreshAll(); } }, 10 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && cupDay() !== lastCupDay && !SHARE_ID) { lastCupDay = cupDay(); refreshAll(); } });
@@ -2227,7 +2229,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-3'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-4'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
@@ -2266,7 +2268,7 @@ async function start(){
   try { $('#verInfo').textContent = '지금 버전 ' + APP_VERSION; } catch {}
   let th = 'coffee'; try { th = localStorage.getItem('theme') || 'coffee'; } catch {}
   applyTheme(th);
-  if (SHARE_ID) { await startShareView(); armBack(); return; }
+  if (SHARE_ID) { await startShareView(); return; }
   try { await DB.open(); await loadAll(); } catch { toast('이 브라우저에서는 저장이 안 돼요'); }
   await Sync.init();
   try { navigator.storage?.persist?.(); } catch {}
@@ -2284,7 +2286,6 @@ async function start(){
     }
   }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-  armBack();
   setTimeout(autoCheckUpdate, 4000);
 }
 // 지도·로그인 스크립트는 화면을 먼저 띄운 뒤 받아옴 (defer). 다 받아지면 시작
