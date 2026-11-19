@@ -29,6 +29,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 input,textarea{outline:none}
 .hidden{display:none!important}
+#q::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
 
 /* ---------- 탭 공통 ---------- */
 .view{position:fixed;inset:0;bottom:calc(64px + var(--safe-b));overflow:hidden}
@@ -147,7 +148,7 @@ body.sharemode .view{bottom:0}
 .mePin{width:18px;height:18px;border-radius:50%;background:#3B82F6;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,.2)}
 
 /* 바텀시트 */
-.sheet{position:absolute;left:0;right:0;bottom:0;z-index:8;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.12);padding:8px 18px 18px;transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-height:78%;overflow-y:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:8;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.12);padding:8px 18px 18px;transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-height:max(240px, calc(100% - 250px - var(--safe-t, 0px)));overflow-y:auto}
 .sheet.open{transform:none}
 .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 12px}
 
@@ -587,6 +588,7 @@ const DB = {
     t.oncomplete = () => res(out && 'result' in out ? out.result : out); t.onerror = () => rej(t.error);
   });},
   all(store){ return this.tx(store, 'readonly', s => s.getAll()); },
+  keys(store){ return this.tx(store, 'readonly', s => s.getAllKeys()); },
   get(store, id){ return this.tx(store, 'readonly', s => s.get(id)); },
   put(store, obj){ return this.tx(store, 'readwrite', s => s.put(obj)); },
   del(store, id){ return this.tx(store, 'readwrite', s => s.delete(id)); },
@@ -822,13 +824,15 @@ async function openSheet(id){
   $('#sheet').scrollTop = 0;
   requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(c.lat, c.lng); });
 }
+// 고른 카페 핀이 위 검색창과 아래 카드 사이 빈 곳 가운데 오게
 function centerAbove(lat, lng){
   if (!map) return;
   map.setCenter(new kakao.maps.LatLng(lat, lng));
-  const h = $('#sheet').classList.contains('open') ? $('#sheet').offsetHeight : 0;
-  const vh = $('#map').offsetHeight;
-  const dy = Math.max(0, Math.min(h, vh - 160) / 2);
-  if (dy) map.panBy(0, dy);
+  const mr = $('#map').getBoundingClientRect(), vh = mr.height;
+  const top = Math.max(0, ...[...$('#mapTop').children].filter(k => k.offsetParent).map(k => k.getBoundingClientRect().bottom - mr.top));
+  const sh = $('#sheet'), h = sh.classList.contains('open') ? sh.offsetHeight : 0;
+  const y = (top + vh - h) / 2 + 30;
+  map.panBy(0, Math.round(vh / 2 - y));
 }
 function closeSheet(){
   $('#sheet').classList.remove('open'); selectedId = null;
@@ -837,6 +841,7 @@ function closeSheet(){
 }
 $('#sheet').onclick = e => {
   const ph = e.target.closest('[data-ph]'); if (ph) { const c = cafes.find(x => x.id === selectedId); openViewer(cafePhotoList(c), ph.dataset.ph); return; }
+  const al = e.target.closest('[data-alt]'); if (al) { const all = tapFound, p = all[+al.dataset.alt]; if (p) pickPlace(p, true, all); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const act = b.dataset.act;
   if (act === 'visit') openVisitEditor(selectedId);
@@ -862,13 +867,16 @@ function showSearchHome(){
   $('#results').classList.remove('hidden'); closeSheet();
   $('#results').innerHTML = `<div class="hint home">다녀온 카페 이름을 검색해서 고르면<br>지도에 내 핀이 꽂혀요.<br><br><span class="small">예: 모모커피 성수, 동성로 카페</span></div>`;
 }
+let searchSeq = 0;
 function doSearch(){
   const q = qEl.value.trim(); if (!q) return;
+  const seq = ++searchSeq;
   $('#results').classList.remove('hidden'); closeSheet();
   if (!places) { $('#results').innerHTML = '<div class="hint">지도가 아직 준비되지 않았어요.</div>'; return; }
   const opt = { size: 15 };
   if (map) { opt.location = map.getCenter(); opt.sort = kakao.maps.services.SortBy.ACCURACY; }
   places.keywordSearch(q, (data, status) => {
+    if (seq !== searchSeq || $('#results').classList.contains('hidden')) return; // 늦게 온 옛 검색 결과는 버림
     if (status === kakao.maps.services.Status.ZERO_RESULT) {
       $('#results').innerHTML = `<div class="hint">'${esc(q)}' 검색 결과가 없어요.<br><br><button class="textbtn" id="manualAdd">지도 가운데 위치에 직접 등록하기</button></div>`;
       $('#manualAdd').onclick = () => manualAdd(q); return;
@@ -891,7 +899,7 @@ function doSearch(){
   }, opt);
 }
 // 지도에서 카페·식당 아이콘을 누르면, 누른 자리 바로 아래 장소를 찾아 카드로 보여줌
-let tapSeq = 0;
+let tapSeq = 0, tapFound = [];
 async function onMapTap(ll){
   if (SHARE_ID) { closeSheet(); return; }
   if ($('#sheet').classList.contains('open')) { closeSheet(); return; }
@@ -908,11 +916,12 @@ async function onMapTap(ll){
   if (seq !== tapSeq) return;
   if (!found.length) return;
   found.sort((a, b) => (+a.distance) - (+b.distance));
-  pickPlace(found[0], true);
+  const seen = new Set(), uniq = found.filter(p => !seen.has(p.id) && seen.add(p.id));
+  pickPlace(uniq[0], true, uniq);
 }
 function removeTemp(){ if (tempOverlay) { tempOverlay.setMap(null); tempOverlay = null; } pendingPlace = null; }
-function pickPlace(p, fromTap){
-  $('#results').classList.add('hidden'); $('#qClear').classList.add('hidden'); qEl.blur();
+function pickPlace(p, fromTap, near){
+  $('#results').classList.add('hidden'); $('#qClear').classList.toggle('hidden', !qEl.value); qEl.blur();
   const mine = cafes.find(c => c.kakaoId === p.id);
   const ll = new kakao.maps.LatLng(+p.y, +p.x);
   if (!fromTap) { map.setLevel(Math.min(map.getLevel(), 3)); map.setCenter(ll); }
@@ -922,10 +931,14 @@ function pickPlace(p, fromTap){
   const el = document.createElement('div'); el.className = 'tempPin'; el.innerHTML = '<div class="dot"></div>';
   tempOverlay = new kakao.maps.CustomOverlay({ position: ll, content: el, yAnchor: .5, zIndex: 6 }); tempOverlay.setMap(map);
   const c = pendingPlace;
+  // 지도를 눌러 고른 경우, 바로 옆 다른 가게도 골라 바꿀 수 있게
+  tapFound = fromTap && near ? near : [];
+  const alts = tapFound.filter(x => x.id !== p.id).slice(0, 3);
   $('#sheet').innerHTML = `<div class="grab"></div>
     <div class="title">${esc(c.name)}</div>
     <div class="subt">${esc(c.roadAddress || c.address)}</div>
     ${c.category ? `<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>` : ''}
+    ${alts.length ? `<div class="tagpick" style="margin-top:10px;align-items:center"><span class="small" style="margin-right:2px">여기 아니에요?</span>${alts.map(a => `<button class="chip" data-alt="${tapFound.indexOf(a)}">${esc(a.place_name)}</button>`).join('')}</div>` : ''}
     <div class="btnrow"><button class="btn" data-act="saveNew">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-act="saveWish">☆ 가볼래</button></div>
     <div class="linkrow">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
@@ -1275,12 +1288,17 @@ const b64ToBlob = async s => (await fetch(s)).blob();
 $('#btnExport').onclick = async () => {
   loading(true, '백업 파일 만드는 중…');
   try {
-    const ps = await DB.all('photos');
-    const photos = [];
-    for (const p of ps) { if (!p.full && !p.thumb) continue; photos.push({ id: p.id, full: p.full ? await blobToB64(p.full) : null, thumb: p.thumb ? await blobToB64(p.thumb) : null }); }
+    // 사진이 많아도 폰 메모리가 터지지 않게, 한 장씩 조각으로 이어 붙임
     const strip = o => { const { dirty, ...r } = o; return r; };
-    const data = { app: 'cafe-map', version: 1, exportedAt: new Date().toISOString(), cafes: cafes.map(strip), visits: visits.map(strip), photos };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const head = JSON.stringify({ app: 'cafe-map', version: 1, exportedAt: new Date().toISOString(), cafes: cafes.map(strip), visits: visits.map(strip) });
+    const parts = [head.slice(0, -1) + ',"photos":['];
+    let n = 0;
+    for (const id of await DB.keys('photos')) {
+      const p = await DB.get('photos', id); if (!p || (!p.full && !p.thumb)) continue;
+      parts.push((n++ ? ',' : '') + JSON.stringify({ id: p.id, full: p.full ? await blobToB64(p.full) : null, thumb: p.thumb ? await blobToB64(p.thumb) : null }));
+    }
+    parts.push(']}');
+    const blob = new Blob(parts, { type: 'application/json' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `커피로그-백업-${todayStr()}.json`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     toast('백업 파일을 저장했어요');
@@ -1426,6 +1444,7 @@ async function applyRemote(store, row){
   }
   const remote = row.data || {};
   if (local && local.dirty !== false && (local.updatedAt || 0) > (remote.updatedAt || 0)) return false; // 이 기기 것이 더 최신
+  if (local && local.dirty === false && (local.updatedAt || 0) === (remote.updatedAt || 0)) return false; // 내가 방금 올린 것과 같음 → 다시 그릴 필요 없음
   await DB.put(store, { ...remote, id: row.id, dirty: false });
   return true;
 }
@@ -1652,6 +1671,7 @@ function renderSnap(){
   $('#snapRes').onclick = e => { const b = e.target.closest('[data-pick]'); if (b) snapChoose(+b.dataset.pick); };
 }
 function snapRows(mine, kakaoList){
+  if (!snap) return; // 그새 창을 닫음
   const rows = [];
   for (const c of mine) rows.push({ mine: c, name: c.name, sub: shortAddr(c), d: snap.pos ? distKm(snap.pos, c) : null });
   for (const p of kakaoList) {
@@ -1665,6 +1685,7 @@ function snapRows(mine, kakaoList){
       <div class="s">${esc(r.sub)}${r.mine ? ' · 내 기록에 있는 곳' : ''}</div></button>`).join('') : `<div class="hint" style="margin-top:6px">근처에서 카페를 못 찾았어요. 이름으로 찾아주세요.</div>`;
 }
 function snapNearby(){
+  if (!places) { $('#snapRes').innerHTML = '<div class="hint">지도가 아직 준비되지 않았어요.</div>'; return; }
   const p = snap.pos, ll = new kakao.maps.LatLng(p.lat, p.lng);
   const mine = cafes.filter(c => distKm(p, c) < 0.3).sort((a, b) => distKm(p, a) - distKm(p, b)).slice(0, 5);
   $('#snapRes').innerHTML = '<div class="hint">근처 카페 찾는 중…</div>';
@@ -1674,6 +1695,7 @@ function snapNearby(){
   for (const cat of ['CE7', 'FD6']) places.categorySearch(cat, (r, st) => { if (st === kakao.maps.services.Status.OK) got.push(...(cat === 'FD6' ? r.filter(x => /카페|디저트|제과|베이커리|간식|도넛|아이스크림|떡|빙수|차,/.test(x.category_name)) : r)); done(); }, { location: ll, radius: 250, sort: kakao.maps.services.SortBy.DISTANCE });
 }
 function snapSearch(q){
+  if (!places || !snap) return;
   const mine = cafes.filter(c => c.name.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
   const opt = {}; if (snap.pos) { opt.location = new kakao.maps.LatLng(snap.pos.lat, snap.pos.lng); opt.sort = kakao.maps.services.SortBy.DISTANCE; } else if (myPos) opt.location = new kakao.maps.LatLng(myPos.lat, myPos.lng);
   places.keywordSearch(q, (r, st) => snapRows(mine, st === kakao.maps.services.Status.OK ? r.slice(0, 10) : []), opt);
@@ -1856,7 +1878,7 @@ function aiText(){
   if (wl.length) { L.push('', '## 가볼래 목록 (이미 알고 있으니 추천에서 빼줘)'); wl.forEach(c => L.push(`- ${c.name} (${areaOf(c)})${oneLine(cleanMemo(c.memo)) && !isImportMemo(c.memo) ? ' · ' + oneLine(cleanMemo(c.memo)).slice(0, 60) : ''}`)); }
   if (vs.length) {
     L.push('', '## 최근 방문 기록');
-    vs.slice(0, 60).forEach(v => { const c = cafeById(v.cafeId); L.push(`- ${v.date || '날짜 없음'} ${c.name}${v.rating ? ` ★${v.rating}` : ''}${v.menu ? ` · ${oneLine(v.menu)}` : ''}${v.price ? ` · ${(+v.price).toLocaleString('ko-KR')}원` : ''}${v.review ? ` · "${oneLine(v.review).slice(0, 100)}"` : ''}`); });
+    vs.slice(0, 60).forEach(v => { const c = cafeById(v.cafeId); if (!c) return; L.push(`- ${v.date || '날짜 없음'} ${c.name}${v.rating ? ` ★${v.rating}` : ''}${v.menu ? ` · ${oneLine(v.menu)}` : ''}${v.price ? ` · ${(+v.price).toLocaleString('ko-KR')}원` : ''}${v.review ? ` · "${oneLine(v.review).slice(0, 100)}"` : ''}`); });
   }
   return L.join('\n');
 }
