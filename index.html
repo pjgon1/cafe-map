@@ -917,10 +917,11 @@ function fitAll(scope){
   fitOutside = pts.filter(p => !isDG(p)).length;
   if (scope === 'dg' || scope === 'core') { const d = pts.filter(isDG); if (d.length) pts = d; else if (scope === 'dg') scope = 'all'; }
   if (scope === 'core' && pts.length >= 5) {
-    // 중심부: 가운데(중앙값)에서 가까운 75%만 → 멀리 떨어진 몇 곳은 화면 밖으로 나가도 꽉 차게
-    const med = a => { const x = [...a].sort((p, q) => p - q); return x[x.length >> 1]; };
-    const m = { lat: med(pts.map(p => p.lat)), lng: med(pts.map(p => p.lng)) };
-    pts = [...pts].sort((a, b) => distKm(a, m) - distKm(b, m)).slice(0, Math.max(3, Math.ceil(pts.length * 0.75)));
+    // 중심부: 반경 2.5km 안에 카페가 가장 많이 모인 곳을 찾고, 거기서 5km 안의 카페만 꽉 차게
+    let best = pts[0], bc = -1;
+    for (const p of pts) { const n = pts.filter(q => distKm(p, q) <= 2.5).length; if (n > bc) { bc = n; best = p; } }
+    const core = pts.filter(q => distKm(best, q) <= 5);
+    if (core.length >= 3) pts = core;
   }
   if (pts.length === 1) { map.setLevel(4); map.panTo(new kakao.maps.LatLng(pts[0].lat, pts[0].lng)); }
   else { const b = new kakao.maps.LatLngBounds(); pts.forEach(p => b.extend(new kakao.maps.LatLng(p.lat, p.lng))); map.setBounds(b, 80, 40, 120, 40); }
@@ -3329,7 +3330,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-16'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-17'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
