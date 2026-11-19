@@ -1060,12 +1060,14 @@ const kakaoUrl = c => c.kakaoUrl || `https://map.kakao.com/link/map/${encodeURIC
 const naverUrl = c => `https://map.naver.com/p/search/${encodeURIComponent(c.name + ' ' + (c.roadAddress || c.address || '').split(' ').slice(0,3).join(' '))}`;
 // 네이버지도 버튼: 폰이면 네이버지도 앱(nmap://)부터 열고, 앱이 없어서 안 열리면 1.5초 뒤 웹으로
 document.addEventListener('click', e => {
-  const a = e.target.closest('a.btn.naver'); if (!a || !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+  const a = e.target.closest('a.btn.naver, a.nroute'); if (!a || !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
   e.preventDefault();
   const web = a.href, q = decodeURIComponent(web.split('/p/search/')[1] || '');
   let left = false; const onHide = () => { left = true; };
   document.addEventListener('visibilitychange', onHide, { once: true }); window.addEventListener('pagehide', onHide, { once: true });
-  location.href = `nmap://search?query=${encodeURIComponent(q)}&appname=${encodeURIComponent(location.host)}`;
+  // 길찾기: 네이버지도 앱 대중교통 길찾기(내 위치 → 카페). 앱이 없으면 웹 네이버지도
+  if (a.dataset.nr) { const [lat, lng] = a.dataset.nr.split(','); location.href = `nmap://route/public?dlat=${lat}&dlng=${lng}&dname=${encodeURIComponent(a.dataset.nn || '')}&appname=${encodeURIComponent(location.host)}`; }
+  else location.href = `nmap://search?query=${encodeURIComponent(q)}&appname=${encodeURIComponent(location.host)}`;
   setTimeout(() => { document.removeEventListener('visibilitychange', onHide); if (!left && !document.hidden) window.open(web, '_blank', 'noopener'); }, 1500);
 }, true);
 
@@ -1422,7 +1424,7 @@ async function openDetail(id, keep){
     <div class="linkrow" style="margin-top:12px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
-      <a class="btn ghost" href="https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${c.lat},${c.lng}" target="_blank" rel="noopener">길찾기</a>
+      <a class="btn ghost nroute" href="${naverUrl(c)}" data-nr="${c.lat},${c.lng}" data-nn="${esc(c.name)}" target="_blank" rel="noopener">길찾기</a>
     </div>
     <div class="sec"><h3>사진 <small>${all.length}장</small></h3>${wall.length?`<div class="wall">${wall.join('')}</div>`:'<div class="emptyPhoto">방문 기록에 사진을 넣으면 여기 폴라로이드로 모여요</div>'}</div>
     <div class="sec"><h3>방문 기록 <button class="textbtn" id="dAddVisit">+ 기록 추가</button></h3>${vhtml.length?vhtml.join(''):'<div class="emptyPhoto">아직 방문 기록이 없어요</div>'}</div>`;
@@ -2310,7 +2312,7 @@ async function doPickInner(){
       <div class="subt">${esc(shortAddr(c))}${d != null ? ' · ' + fmtDist(d) : ''}${c._st.rating ? ' · ★ ' + c._st.rating.toFixed(1) : ''}</div>
       ${lv && lv.review ? `<div class="note" style="margin-top:6px;text-align:left;background:var(--bg)">${esc(lv.review)}</div>` : ''}
       <div class="btnrow"><button class="btn" data-fgoto="${c._fr}|${esc(c.id)}">지도에서 보기</button><button class="btn ghost" data-again="1">다시 뽑기</button></div>
-      <div class="linkrow"><a class="btn kakao" href="https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${c.lat},${c.lng}" target="_blank" rel="noopener">길찾기</a><a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a></div>
+      <div class="linkrow"><a class="btn naver nroute" href="${naverUrl(c)}" data-nr="${c.lat},${c.lng}" data-nn="${esc(c.name)}" target="_blank" rel="noopener">길찾기</a><a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a></div>
     </div>`;
     $('#pickRes').scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
@@ -2331,7 +2333,7 @@ async function doPickInner(){
     <div style="margin-top:8px">${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${lv && lv.review ? `<div class="note" style="margin-top:6px;text-align:left;background:var(--bg)">${esc(lv.review)}</div>` : ''}
     <div class="btnrow"><button class="btn" data-goto="${c.id}">지도에서 보기</button><button class="btn ghost" data-again="1">다시 뽑기</button></div>
-    <div class="linkrow"><a class="btn kakao" href="https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${c.lat},${c.lng}" target="_blank" rel="noopener">길찾기</a><a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a></div>
+    <div class="linkrow"><a class="btn naver nroute" href="${naverUrl(c)}" data-nr="${c.lat},${c.lng}" data-nn="${esc(c.name)}" target="_blank" rel="noopener">길찾기</a><a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a></div>
   </div>`;
   $('#pickRes').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -2897,7 +2899,7 @@ function shareSheet(c, pan){
     <div class="linkrow" style="margin-top:14px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
-      <a class="btn ghost" href="https://map.kakao.com/link/to/${encodeURIComponent(c.name)},${c.lat},${c.lng}" target="_blank" rel="noopener">길찾기</a>
+      <a class="btn ghost nroute" href="${naverUrl(c)}" data-nr="${c.lat},${c.lng}" data-nn="${esc(c.name)}" target="_blank" rel="noopener">길찾기</a>
     </div>`;
   $('#sheet').classList.add('open');
   requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(c.lat, c.lng); });
@@ -3022,7 +3024,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-35'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-36'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
