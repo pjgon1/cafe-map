@@ -836,7 +836,7 @@ function centerAbove(lat, lng){
   map.panBy(0, Math.round(vh / 2 - y));
 }
 function closeSheet(){
-  $('#sheet').classList.remove('open'); selectedId = null;
+  $('#sheet').classList.remove('open'); selectedId = null; bldChild = false;
   overlays.forEach(o => { o._el.classList.remove('sel'); o.setZIndex(2); });
   removeTemp(); setMapBtnBottom();
 }
@@ -946,7 +946,7 @@ async function buildingPlaces(ll){
     return { name: a.road_address.building_name || '', road: road.split(' ').slice(1).join(' '), list };
   } catch { return null; }
 }
-let bldList = [], lastBld = null;
+let bldList = [], lastBld = null, bldChild = false; // bldChild: 건물 목록에서 고른 가게 카드 (뒤로가기 → 목록)
 function showBuilding(b){
   closeSheet();
   lastBld = b; bldList = b.list; tapFound = b.list;
@@ -977,6 +977,7 @@ function pickPlace(p, fromTap, near){
   tapFound = fromTap && near ? near : [];
   const fromBld = fromTap && near && near === bldList && bldList.length >= 2;
   const alts = fromBld ? [] : tapFound.filter(x => x.id !== p.id).slice(0, 3);
+  bldChild = !!fromBld;
   $('#sheet').innerHTML = `<div class="grab"></div>
     <div class="title">${esc(c.name)}</div>
     <div class="subt">${esc(c.roadAddress || c.address)}</div>
@@ -2220,7 +2221,7 @@ let tok = 0, skipPop = 0, exitAsk = false, exitedAt = 0;
 const vis = el => !el.classList.contains('hidden');
 function wantTok(){
   return 1 + (vis($('#dlg')) && !exitAsk ? 1 : 0) + (vis($('#viewer')) ? 1 : 0) + pageStack.length
-    + ($('#sheet').classList.contains('open') ? 1 : 0) + (vis($('#results')) ? 1 : 0) + (SHARE_ID ? 0 : tabHist.length);
+    + ($('#sheet').classList.contains('open') ? 1 + (bldChild ? 1 : 0) : 0) + (vis($('#results')) ? 1 : 0) + (SHARE_ID ? 0 : tabHist.length);
 }
 const canPush = () => !navigator.userActivation || navigator.userActivation.isActive;
 function syncBack(){
@@ -2246,7 +2247,7 @@ function closeTop(){
   if (vis($('#dlg'))) { $('#dlgBtns [data-v="0"]')?.click(); return true; }
   if (vis($('#viewer'))) { $('#viewer').classList.add('hidden'); return true; }
   if (pageStack.length) { closePage(pageStack[pageStack.length - 1]); return true; }
-  if ($('#sheet').classList.contains('open')) { closeSheet(); return true; }
+  if ($('#sheet').classList.contains('open')) { if (bldChild && lastBld) showBuilding(lastBld); else closeSheet(); return true; }
   if (vis($('#results'))) { $('#qClear').click(); return true; }
   if (tabHist.length && !SHARE_ID) { showTab(tabHist.pop(), true); return true; }
   return false;
@@ -2289,7 +2290,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-6'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-7'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
