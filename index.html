@@ -2169,9 +2169,9 @@ $('#tabbar').onclick = e => { const b = e.target.closest('button'); if (b) showT
 const pageStack = [];
 /* 폰 뒤로가기 버튼
    - 브라우저 기록에 '방패' 한 칸을 늘 깔아 두고, 뒤로가기가 그걸 쓰면(popstate) 앱이 직접 처리
-   - 열린 것부터 하나씩 닫기: 사진 크게 보기 → 확인창 → 열린 화면 → 카드 → 검색 → 바로 전에 보던 탭
-   - 더 돌아갈 곳이 없으면 '종료할까요?' 창. 이때 뒤로가기를 한 번 더 누르면 앱이 꺼짐 */
-let guard = false, exitAsk = false;
+   - 열린 것부터 하나씩 닫기: 확인창(취소) → 사진 크게 보기 → 열린 화면 → 카드 → 검색 → 바로 전에 보던 탭
+   - 더 돌아갈 곳이 없으면 '종료할까요?' 창. [종료]를 눌러야만 꺼짐 (창이 떠 있을 때 뒤로가기는 취소) */
+let guard = false, exitAsk = false, leaving = false;
 function armBack(){ if (!guard && !exitAsk) { history.pushState({m:1}, ''); guard = true; } }
 function openPage(id){
   $('#'+id).classList.add('open');
@@ -2184,8 +2184,21 @@ function closePage(id){
 }
 const isOpen = id => $('#'+id).classList.contains('open');
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closePage(b.dataset.close));
+function quitApp(){
+  // 1) 앱 창 닫기 시도
+  try { window.close(); } catch {}
+  // 2) 폰이 막으면: 방패를 걷어서, 다음 뒤로가기 한 번에 바로 꺼지게
+  setTimeout(() => {
+    if (document.hidden) return;
+    exitAsk = true; leaving = true;
+    if (guard) history.back(); else leaving = false;
+    toast('뒤로가기를 한 번 더 누르면 꺼져요');
+    setTimeout(() => { exitAsk = false; }, 4000);
+  }, 350);
+}
 window.addEventListener('popstate', () => {
   guard = false;
+  if (leaving) { leaving = false; return; } // quitApp이 방패를 걷은 것
   if (!$('#loading').classList.contains('hidden')) { armBack(); return; } // 저장 중에는 무시
   if (!$('#dlg').classList.contains('hidden')) $('#dlgBtns [data-v="0"]')?.click();
   else if (!$('#viewer').classList.contains('hidden')) $('#viewer').classList.add('hidden');
@@ -2194,17 +2207,7 @@ window.addEventListener('popstate', () => {
   else if (!$('#results').classList.contains('hidden')) $('#qClear').click();
   else if (tabHist.length && !SHARE_ID) showTab(tabHist.pop(), true);
   else if (curTab !== 'map' && !SHARE_ID) showTab('map', true);
-  else {
-    // 더 돌아갈 곳이 없음: 방패를 다시 깔지 않은 채로 물어봄 → 여기서 뒤로가기를 또 누르면 앱 밖으로 나감
-    exitAsk = true;
-    ask('커피로그를 종료할까요?\n(뒤로가기를 한 번 더 눌러도 꺼져요)', '종료').then(ok => {
-      exitAsk = false;
-      if (!ok) { armBack(); return; }
-      try { window.close(); } catch {}
-      setTimeout(() => toast('뒤로가기를 한 번 더 누르면 꺼져요'), 300);
-    });
-    return;
-  }
+  else { armBack(); ask('커피로그를 종료할까요?', '종료').then(ok => { if (ok) quitApp(); }); return; }
   armBack();
 });
 // 화면을 한 번이라도 누르면 방패를 확실히 깔아 둠 (폰이 '누른 적 없는 기록'은 건너뛰기도 해서)
@@ -2224,7 +2227,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-2'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-3'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
