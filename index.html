@@ -756,6 +756,8 @@ let mapFilter = '전체'; // (예전 이름, 지금은 mapSel 사용)
 const MAP_STATUS = ['♪ 다녀왔어', '♥ 또 갈래', '☆ 가볼래'];
 const mapSel = { status: '', tags: new Set() };
 const passMap = c => (!mapSel.status || passFilter(c, mapSel.status)) && [...mapSel.tags].every(t => (c.tags || []).includes(t));
+// 친구 핀에도 같은 칩 적용 (m: ♪ 다녀왔어 / ♥ 또 갈래 / ☆ 가볼래). 또 갈래도 다녀온 곳이라 '다녀왔어'에 포함
+const passMapFr = (c, m) => (!mapSel.status || (mapSel.status === '♪ 다녀왔어' ? m !== '☆' : mapSel.status === '♥ 또 갈래' ? m === '♥' : m === '☆')) && [...mapSel.tags].every(t => (c.tags || []).includes(t));
 
 function initMap(){
   return new Promise(res => {
@@ -850,8 +852,8 @@ $('#mapChips').onclick = e => {
   else if (MAP_STATUS.includes(t)) mapSel.status = mapSel.status === t ? '' : t; // 셋 중 하나만, 다시 누르면 취소
   else mapSel.tags.has(t) ? mapSel.tags.delete(t) : mapSel.tags.add(t);      // 태그는 여러 개
   closeSheet(); refreshPins();
-  const n = cafes.filter(passMap).length;
-  if (!n && (mapSel.status || mapSel.tags.size)) toast('조건에 다 맞는 카페가 없어요');
+  if (FR.pinsOn) drawFriendPins(null, true).then(() => { if (!cafes.filter(passMap).length && !FR.pins.size && (mapSel.status || mapSel.tags.size)) toast('조건에 다 맞는 카페가 없어요'); });
+  else if (!cafes.filter(passMap).length && (mapSel.status || mapSel.tags.size)) toast('조건에 다 맞는 카페가 없어요');
 };
 $('#btnFit').onclick = fitAll;
 $('#btnMe').onclick = () => locate(true);
@@ -2555,12 +2557,13 @@ async function drawFriendPins(focusUid, quiet){
   // 친구 페이지에서 "지도에서 보기"로 온 경우엔 그 친구는 설정과 상관없이 보여줌
   const users = FR.list.filter(u => u === focusUid || !FRCFG.off.has(u));
   const recs = await Promise.all(users.map(async u => [u, await frRecords(u)]));
-  const mine = new Set(cafes.map(c => c.kakaoId).filter(Boolean));
+  // 지금 지도에 보이는 내 핀만 (칩으로 내 핀이 숨겨졌으면 친구 핀은 보여줌)
+  const mine = new Set(cafes.filter(passMap).map(c => c.kakaoId).filter(Boolean));
   const groups = new Map(); // 같은 카페를 여러 친구가 갔으면 핀 하나로
   for (const [u, rec] of recs) for (const c of rec.cafes) {
     if (!c.lat || !c.lng) continue;
     const m = frMark(rec, c);
-    if (!FRCFG.kinds.has(m)) continue;
+    if (!FRCFG.kinds.has(m) || !passMapFr(c, m)) continue;
     const key = c.kakaoId || `${c.name}@${(+c.lat).toFixed(4)},${(+c.lng).toFixed(4)}`;
     if (!groups.has(key)) groups.set(key, { c, who: [] });
     groups.get(key).who.push({ uid: u, c, m });
@@ -2841,7 +2844,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-22'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-23'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
