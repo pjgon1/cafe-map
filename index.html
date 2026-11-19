@@ -1886,19 +1886,22 @@ function topDrag(){
   const list = $('#topList'); if (!list) return;
   list.querySelectorAll('.tgrip').forEach(g => g.addEventListener('pointerdown', e => {
     e.preventDefault();
-    const row = g.closest('.toprow'); row.classList.add('drag'); g.setPointerCapture(e.pointerId);
+    // 줄을 옮기면(DOM 이동) 손가락 추적이 끊겨서 한 칸만 움직이던 문제 → 문서 전체에서 손가락을 따라감
+    const row = g.closest('.toprow'), pid = e.pointerId; row.classList.add('drag');
     const move = ev => {
+      if (ev.pointerId !== pid) return; ev.preventDefault();
       const rows = [...list.querySelectorAll('.toprow')].filter(r => r !== row);
       const after = rows.find(r => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
       if (after) { if (row.nextElementSibling !== after) list.insertBefore(row, after); } else if (list.lastElementChild !== row) list.appendChild(row);
       topRenumber();
     };
-    const up = async () => {
-      g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    const up = async ev => {
+      if (ev.pointerId !== pid) return;
+      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
       row.classList.remove('drag'); await saveTop(topIds());
       const s = list.previousElementSibling?.querySelector('.small'); if (s) s.textContent = '내가 정한 순위예요. ≡ 를 끌어서 바꿔요';
     };
-    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+    document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
   }));
 }
 async function shareTop(){
@@ -3178,7 +3181,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-3'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-4'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
