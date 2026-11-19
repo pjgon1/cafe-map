@@ -64,7 +64,10 @@ input,textarea{outline:none}
 .frline{display:flex;gap:8px;align-items:center}
 .frline .inp{flex:1;min-width:0}
 .frline .btn{flex:none;padding:12px 16px}
-.frrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.frrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);width:100%;text-align:left;background:var(--bg)}
+.frrow .frmain{display:flex;align-items:center;gap:10px;flex:1;min-width:0;text-align:left;color:inherit}
+.frrow .tgrip{font-size:22px;color:var(--sub);padding:8px 6px;touch-action:none;cursor:grab;flex:none}
+.frrow.drag{position:relative;z-index:2;box-shadow:0 6px 18px rgba(0,0,0,.15);border-radius:12px}
 .frrow .av{width:36px;height:36px;border-radius:50%;background:var(--soft);color:var(--softt);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
 .frrow .nm{flex:1;min-width:0;font-size:15px}
 .frrow .btn{padding:8px 12px;font-size:13px;flex:none}
@@ -1871,7 +1874,7 @@ function drawRecWho(){
   const box = $('#recWho'), show = ['album', 'top', 'stamp'].includes(recMode) && session && FR.list.length;
   box.classList.toggle('hidden', !show);
   if (!show) { if (recWho !== 'me' && !FR.list.includes(recWho)) recWho = 'me'; return; }
-  box.innerHTML = [['me', '나'], ...FR.list.map(u => [u, '👥 ' + frName(u)])].map(([k, n]) => `<button class="chip ${k === recWho ? 'on' : ''}" data-w="${esc(k)}">${esc(n)}</button>`).join('');
+  box.innerHTML = [['me', '나'], ...FR.list.map(u => [u, frName(u)])].map(([k, n]) => `<button class="chip ${k === recWho ? 'on' : ''}" data-w="${esc(k)}">${esc(n)}</button>`).join('');
 }
 $('#recWho').onclick = e => { const b = e.target.closest('[data-w]'); if (!b) return; recWho = b.dataset.w; renderRec(); $('#recScroll').scrollTop = 0; };
 function renderRec(){
@@ -2687,6 +2690,9 @@ const FRCFG = (() => { try { const v = JSON.parse(localStorage.getItem('frPinCfg
 const saveFrCfg = () => { try { localStorage.setItem('frPinCfg', JSON.stringify({ off: [...FRCFG.off], kinds: [...FRCFG.kinds] })); } catch {} };
 const HANDLE_RE = /^[a-z0-9_가-힣]{2,20}$/;
 const frName = uid => FR.prof.get(uid)?.handle || '친구';
+// 친구 순서: 친구 탭에서 ≡ 로 끌어 바꾼 순서 (이 기기에 저장)
+const frOrderGet = () => { try { return JSON.parse(localStorage.getItem('frOrder') || '[]'); } catch { return []; } };
+const frSort = list => { const o = frOrderGet(), at = u => { const i = o.indexOf(u); return i < 0 ? 1e9 : i; }; return list.map((u, i) => [u, i]).sort((a, b) => at(a[0]) - at(b[0]) || a[1] - b[1]).map(x => x[0]); };
 async function frLoad(force){
   if (!sb || !session) return false;
   if (!force && Date.now() - FR.loadedAt < 60000) return true;
@@ -2705,7 +2711,7 @@ async function frLoad(force){
   // 서로 요청을 보낸 상태(꼬임)는 서버에서 친구로 합침
   const both = [...inc].filter(u => out.has(u) && !acc.has(u));
   if (both.length) { await Promise.all(both.map(u => sb.rpc('friend_request', { target: u }))); both.forEach(u => acc.add(u)); }
-  FR.list = [...acc];
+  FR.list = frSort([...acc]);
   FR.incoming = [...inc].filter(u => !acc.has(u));
   FR.outgoing = [...out].filter(u => !acc.has(u) && !inc.has(u));
   const ids = [...new Set([...FR.list, ...FR.incoming, ...FR.outgoing])];
@@ -2764,12 +2770,35 @@ function drawFriends(){
     <div class="frline"><input class="inp" id="frAdd" autocapitalize="none" spellcheck="false" placeholder="친구 이름"><button class="btn" id="frAddGo">요청</button></div>
     ${FR.incoming.length ? `<div class="sec"><h3>받은 친구 요청 <small>${FR.incoming.length}</small></h3>${FR.incoming.map(u => row(u, `<button class="btn" data-acc="${u}">수락</button><button class="btn ghost" data-del="${u}">거절</button>`)).join('')}</div>` : ''}
     ${FR.list.length ? '<div class="sec" id="frFeed"><h3>친구 소식</h3><div class="small">불러오는 중…</div></div>' : ''}
-    <div class="sec"><h3>친구 <small>${FR.list.length}명</small></h3>${FR.list.length ? FR.list.map(u => `<button class="frrow tap" data-open="${u}"><div class="av">${esc((frName(u)[0] || '?').toUpperCase())}</div><div class="nm">${esc(frName(u))}<span class="small" data-cnt="${u}"></span></div><span class="go">›</span></button>`).join('') : '<div class="emptyPhoto">아직 친구가 없어요. 친구 이름으로 요청을 보내보세요.</div>'}</div>
+    <div class="sec"><h3>친구 <small>${FR.list.length}명</small></h3>${FR.list.length ? `<div id="frList">${FR.list.map(u => `<div class="frrow" data-fid="${u}"><button class="frmain tap" data-open="${u}"><div class="av">${esc((frName(u)[0] || '?').toUpperCase())}</div><div class="nm">${esc(frName(u))}<span class="small" data-cnt="${u}"></span></div><span class="go">›</span></button>${FR.list.length > 1 ? '<button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button>' : ''}</div>`).join('')}</div>` : '<div class="emptyPhoto">아직 친구가 없어요. 친구 이름으로 요청을 보내보세요.</div>'}</div>
     ${FR.outgoing.length ? `<div class="sec"><h3>보낸 요청 <small>수락 기다리는 중</small></h3>${FR.outgoing.map(u => row(u, `<button class="btn ghost" data-del="${u}">취소</button>`)).join('')}</div>` : ''}
     <p class="small" style="line-height:1.7;margin-top:18px">서로 친구가 되면 서로의 카페·방문 기록·사진을 볼 수 있어요. 카페 메모와 "다음엔 이거"는 보이지 않아요.</p>` : '');
   // 친구마다 카페 수 표시
   FR.list.forEach(async u => { const r = await frRecords(u); const el = $(`[data-cnt="${u}"]`); if (el) el.textContent = ` · 카페 ${r.cafes.length}곳`; });
   if (FR.list.length) drawFeed();
+  frListDrag();
+}
+function frListDrag(){
+  const list = $('#frList'); if (!list) return;
+  list.querySelectorAll('.tgrip').forEach(g => g.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const row = g.closest('.frrow'), pid = e.pointerId; row.classList.add('drag');
+    const move = ev => {
+      if (ev.pointerId !== pid) return; ev.preventDefault();
+      const rows = [...list.querySelectorAll('.frrow')].filter(r => r !== row);
+      const after = rows.find(r => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+      if (after) { if (row.nextElementSibling !== after) list.insertBefore(row, after); } else if (list.lastElementChild !== row) list.appendChild(row);
+    };
+    const up = ev => {
+      if (ev.pointerId !== pid) return;
+      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+      row.classList.remove('drag');
+      const ids = [...list.querySelectorAll('.frrow')].map(r => r.dataset.fid);
+      try { localStorage.setItem('frOrder', JSON.stringify(ids)); } catch {}
+      FR.list = frSort(FR.list);
+    };
+    document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  }));
 }
 /* 친구 소식: 친구들이 최근 다녀온 곳 / 가볼래에 담은 곳 (최근 60일, 최신순) */
 let feedN = 5;
@@ -3276,7 +3305,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-9'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-10'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
