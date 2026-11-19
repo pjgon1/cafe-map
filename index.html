@@ -195,6 +195,8 @@ body.sharemode .view{bottom:0}
 .title{font-size:21px;font-weight:700;letter-spacing:-.2px;line-height:1.3}
 .subt{font-size:13px;color:var(--sub);margin-top:3px}
 .rowsb{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pagehead.rowsb{align-items:center}
+#btnFriends{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 .tag{display:inline-block;font-size:12px;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--softt);margin:0 4px 4px 0}
 .tag.heart{background:var(--heart);color:var(--heartt)}
 .tag.wish{background:transparent;color:var(--sub);border:1px dashed var(--sub)}
@@ -408,7 +410,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 
 <section class="view hidden" id="v-fr">
   <div class="scroll" id="frScroll">
-    <div class="pagehead"><h1>친구</h1></div>
+    <div class="pagehead rowsb"><h1>친구</h1><button class="textbtn" id="frSetBtn">⚙ 지도 핀 설정</button></div>
     <div style="padding:0 18px 30px" id="frBody"></div>
   </div>
 </section>
@@ -455,6 +457,15 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
     <div class="t">사진으로 기록</div><div style="width:40px"></div>
   </div>
   <div class="body" id="snapBody"></div>
+</div>
+
+<!-- 친구 핀 설정 -->
+<div class="page" id="pFrSet">
+  <div class="bar">
+    <button class="iconbtn" data-close="pFrSet" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="t">친구 핀 설정</div><div style="width:40px"></div>
+  </div>
+  <div class="body" id="frSetBody"></div>
 </div>
 
 <!-- 오늘 어디 갈까 -->
@@ -2310,6 +2321,9 @@ async function renderShares(){
    친구 (서로 수락해야 친구 · 친구 기록은 읽기만, 메모는 안 보임)
    ========================================================= */
 const FR = { me: null, list: [], incoming: [], outgoing: [], prof: new Map(), data: new Map(), loadedAt: 0, pinsOn: false, pins: new Map() };
+// 친구 핀 설정: 안 띄울 친구, 띄울 종류(♪ 다녀왔어 / ♥ 또 갈래 / ☆ 가볼래)
+const FRCFG = (() => { try { const v = JSON.parse(localStorage.getItem('frPinCfg') || '{}'); return { off: new Set(v.off || []), kinds: new Set(v.kinds || ['♪', '♥', '☆']) }; } catch { return { off: new Set(), kinds: new Set(['♪', '♥', '☆']) }; } })();
+const saveFrCfg = () => { try { localStorage.setItem('frPinCfg', JSON.stringify({ off: [...FRCFG.off], kinds: [...FRCFG.kinds] })); } catch {} };
 const HANDLE_RE = /^[a-z0-9_가-힣]{2,20}$/;
 const frName = uid => FR.prof.get(uid)?.handle || '친구';
 async function frLoad(force){
@@ -2504,24 +2518,29 @@ async function setFriendPins(on, focusUid){
   if (!FR.list.length) { toast('아직 친구가 없어요. 친구를 추가해 보세요'); FR.pinsOn = false; $('#btnFriends').classList.remove('on'); openFriends(); return; }
   await drawFriendPins(focusUid);
 }
-async function drawFriendPins(focusUid){
+// 다녀왔어(♪) / 가볼래만(☆) / 또 갈래(♥)
+const frMark = (rec, c) => c.fav ? '♥' : (!c.wish || frVisitsOf(rec, c.id).length) ? '♪' : '☆';
+async function drawFriendPins(focusUid, quiet){
   FR.pins.forEach(o => o.setMap(null)); FR.pins.clear();
   if (!map || !FR.pinsOn) return;
-  const recs = await Promise.all(FR.list.map(async u => [u, await frRecords(u)]));
+  // 친구 페이지에서 "지도에서 보기"로 온 경우엔 그 친구는 설정과 상관없이 보여줌
+  const users = FR.list.filter(u => u === focusUid || !FRCFG.off.has(u));
+  const recs = await Promise.all(users.map(async u => [u, await frRecords(u)]));
   const mine = new Set(cafes.map(c => c.kakaoId).filter(Boolean));
   const groups = new Map(); // 같은 카페를 여러 친구가 갔으면 핀 하나로
   for (const [u, rec] of recs) for (const c of rec.cafes) {
     if (!c.lat || !c.lng) continue;
+    const m = frMark(rec, c);
+    if (!FRCFG.kinds.has(m)) continue;
     const key = c.kakaoId || `${c.name}@${(+c.lat).toFixed(4)},${(+c.lng).toFixed(4)}`;
     if (!groups.has(key)) groups.set(key, { c, who: [] });
-    groups.get(key).who.push({ uid: u, c });
+    groups.get(key).who.push({ uid: u, c, m });
   }
   const b = new kakao.maps.LatLngBounds(); let n = 0;
   for (const [key, g] of groups) {
     if (g.c.kakaoId && mine.has(g.c.kakaoId)) continue; // 내 핀이 이미 있는 곳은 내 핀으로
     // 다녀왔어(실선) / 가볼래만(점선) / 또 갈래(하트) 구분
-    const mark = w => { const rec = FR.data.get(w.uid); const went = !w.c.wish || (rec && frVisitsOf(rec, w.c.id).length); return w.c.fav ? '♥' : went ? '♪' : '☆'; };
-    const marks = g.who.map(mark), anyWent = marks.some(m => m !== '☆'), anyFav = marks.includes('♥');
+    const marks = g.who.map(w => w.m), anyWent = marks.some(m => m !== '☆'), anyFav = marks.includes('♥');
     const el = document.createElement('div');
     el.className = 'pin friend' + (anyWent ? '' : ' wish') + (anyFav ? ' ffav' : '');
     el.innerHTML = `<div class="ring"><div>${cupIcon(g.c.id)}</div></div><div class="tip"></div><div class="nm">${esc(g.c.name)}</div><div class="fwho">${g.who.map((w, i) => esc(marks[i] + ' ' + frName(w.uid))).join(', ')}</div>`;
@@ -2532,8 +2551,53 @@ async function drawFriendPins(focusUid){
   }
   updateLabels();
   if (focusUid && n) { if (n > 1) map.setBounds(b, 90, 40, 120, 40); else { map.setLevel(4); map.setCenter(b.getSouthWest()); } }
-  if (!focusUid) toast(`친구 카페 ${FR.pins.size}곳을 지도에 띄웠어요`);
+  if (!focusUid && !quiet) toast(FR.pins.size ? `친구 카페 ${FR.pins.size}곳을 지도에 띄웠어요` : '설정에 맞는 친구 카페가 없어요. 버튼을 꾹 눌러 설정을 바꿔보세요');
 }
+
+/* 친구 핀 설정 화면 (지도 친구 버튼 꾹 / 친구 탭 ⚙) */
+async function openFrSet(){
+  if (!session) { toast('친구 기능은 로그인해야 쓸 수 있어요'); return; }
+  $('#frSetBody').innerHTML = '<div class="empty">불러오는 중…</div>';
+  openPage('pFrSet');
+  if (!await frLoad()) { $('#frSetBody').innerHTML = '<div class="empty">친구 목록을 못 불러왔어요.<br><span class="small">인터넷 연결을 확인해 주세요.</span></div>'; return; }
+  drawFrSet();
+}
+function drawFrSet(){
+  const kinds = [['♪', '♪ 다녀왔어'], ['♥', '♥ 또 갈래'], ['☆', '☆ 가볼래']];
+  const allOn = FR.list.every(u => !FRCFG.off.has(u));
+  $('#frSetBody').innerHTML = `
+    <label class="f" style="margin-top:0">띄울 핀 종류 <span class="small">(여러 개 고를 수 있어요)</span></label>
+    <div class="tagpick">${kinds.map(([k, t]) => `<button class="chip ${FRCFG.kinds.has(k) ? 'on' : ''}" data-fk="${k}">${t}</button>`).join('')}</div>
+    <div class="rowsb" style="margin-top:22px"><label class="f" style="margin:0">띄울 친구</label>${FR.list.length > 1 ? `<button class="textbtn" id="frSetAll">${allOn ? '모두 끄기' : '모두 켜기'}</button>` : ''}</div>
+    ${FR.list.length ? FR.list.map(u => `<div class="toggle" style="margin-top:8px"><div>${esc(frName(u))}<div class="small" data-fsc="${u}"></div></div><button class="sw ${FRCFG.off.has(u) ? '' : 'on'}" data-fu="${u}" aria-label="${esc(frName(u))} 핀 띄우기"></button></div>`).join('')
+      : '<div class="emptyPhoto" style="margin-top:8px">아직 친구가 없어요.</div>'}
+    <button class="btn" id="frSetGo" style="width:100%;margin-top:22px">지도에서 보기</button>
+    <p class="small" style="line-height:1.7;margin-top:14px">이 설정은 이 폰에만 저장돼요. 내 핀이 이미 있는 카페는 친구 핀 대신 내 핀으로 보여요.</p>`;
+  FR.list.forEach(async u => {
+    const rec = await frRecords(u), n = { '♪': 0, '♥': 0, '☆': 0 };
+    rec.cafes.forEach(c => n[frMark(rec, c)]++);
+    const el = $(`[data-fsc="${u}"]`); if (el) el.textContent = `다녀왔어 ${n['♪']} · 또 갈래 ${n['♥']} · 가볼래 ${n['☆']}`;
+  });
+}
+let frSetT;
+const frSetChanged = () => { saveFrCfg(); clearTimeout(frSetT); if (FR.pinsOn) frSetT = setTimeout(() => drawFriendPins(null, true), 250); };
+$('#frSetBody').onclick = async e => {
+  const k = e.target.closest('[data-fk]');
+  if (k) {
+    const v = k.dataset.fk;
+    if (FRCFG.kinds.has(v) && FRCFG.kinds.size === 1) { toast('하나는 골라야 해요'); return; }
+    FRCFG.kinds.has(v) ? FRCFG.kinds.delete(v) : FRCFG.kinds.add(v);
+    k.classList.toggle('on', FRCFG.kinds.has(v)); frSetChanged(); return;
+  }
+  const f = e.target.closest('[data-fu]');
+  if (f) { const u = f.dataset.fu; FRCFG.off.has(u) ? FRCFG.off.delete(u) : FRCFG.off.add(u); f.classList.toggle('on', !FRCFG.off.has(u)); frSetChanged(); const a = $('#frSetAll'); if (a) a.textContent = FR.list.every(x => !FRCFG.off.has(x)) ? '모두 끄기' : '모두 켜기'; return; }
+  if (e.target.closest('#frSetAll')) { const allOn = FR.list.every(u => !FRCFG.off.has(u)); FR.list.forEach(u => allOn ? FRCFG.off.add(u) : FRCFG.off.delete(u)); frSetChanged(); drawFrSet(); return; }
+  if (e.target.closest('#frSetGo')) {
+    if (!FR.list.some(u => !FRCFG.off.has(u))) { toast('띄울 친구를 하나 이상 켜주세요'); return; }
+    closePage('pFrSet'); if (curTab !== 'map') showTab('map');
+    if (FR.pinsOn) drawFriendPins(); else setFriendPins(true);
+  }
+};
 async function openFriendSheet(uid, c, pan, who){
   closeSheet();
   who = who || [{ uid, c }];
@@ -2561,7 +2625,16 @@ async function frAddWish(c){
   closeSheet(); await refreshAll(); if (FR.pinsOn) drawFriendPins();
   toast('☆ 가볼래에 담았어요'); openSheet(n.id);
 }
-$('#btnFriends').onclick = () => setFriendPins(!FR.pinsOn);
+(() => { // 친구 버튼: 누르면 켜고 끄기, 꾹 누르면 설정
+  const b = $('#btnFriends'); let t, long = false, sx = 0, sy = 0;
+  const stop = () => clearTimeout(t);
+  b.addEventListener('pointerdown', e => { long = false; sx = e.clientX; sy = e.clientY; stop(); t = setTimeout(() => { long = true; try { navigator.vibrate?.(15); } catch {} openFrSet(); }, 500); });
+  b.addEventListener('pointermove', e => { if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) stop(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, stop));
+  b.addEventListener('contextmenu', e => e.preventDefault());
+  b.onclick = () => { if (long) { long = false; return; } setFriendPins(!FR.pinsOn); };
+})();
+$('#frSetBtn').onclick = () => openFrSet();
 $('#lFriends').onclick = () => openFriends();
 
 /* 링크 받은 사람 화면 (?s=링크번호) */
@@ -2739,7 +2812,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-20'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-21'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
