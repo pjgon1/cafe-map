@@ -842,6 +842,8 @@ function closeSheet(){
 }
 $('#sheet').onclick = e => {
   const ph = e.target.closest('[data-ph]'); if (ph) { const c = cafes.find(x => x.id === selectedId); openViewer(cafePhotoList(c), ph.dataset.ph); return; }
+  if (e.target.closest('[data-bldback]') && lastBld) { showBuilding(lastBld); return; }
+  const bp = e.target.closest('[data-bp]'); if (bp) { const p = bldList[+bp.dataset.bp]; if (p) pickPlace(p, true, bldList); return; }
   const al = e.target.closest('[data-alt]'); if (al) { const all = tapFound, p = all[+al.dataset.alt]; if (p) pickPlace(p, true, all); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const act = b.dataset.act;
@@ -909,6 +911,12 @@ async function onMapTap(ll){
   // 지도 확대 정도에 따라 찾는 반경을 조절 (멀리 보면 넓게)
   const lv = map.getLevel(), radius = lv <= 2 ? 15 : lv <= 3 ? 25 : lv <= 4 ? 40 : 0;
   if (!radius) { toast('지도를 조금 더 확대한 뒤 눌러주세요'); return; }
+  // 1) 누른 자리가 건물이면, 그 건물 주소에 있는 가게를 전부 찾아서 고르게 함
+  const bld = await buildingPlaces(ll);
+  if (seq !== tapSeq) return;
+  if (bld && bld.list.length >= 2) { showBuilding(bld); return; }
+  if (bld && bld.list.length === 1) { pickPlace(bld.list[0], true, bld.list); return; }
+  // 2) 건물이 아니면(길, 공터) 누른 자리에서 제일 가까운 카페·음식점
   const opt = { x: ll.getLng(), y: ll.getLat(), radius, sort: kakao.maps.services.SortBy.DISTANCE };
   const found = [];
   for (const code of ['CE7', 'FD6']) {
@@ -919,6 +927,39 @@ async function onMapTap(ll){
   found.sort((a, b) => (+a.distance) - (+b.distance));
   const seen = new Set(), uniq = found.filter(p => !seen.has(p.id) && seen.add(p.id));
   pickPlace(uniq[0], true, uniq);
+}
+// 누른 좌표의 건물 주소 → 그 주소로 등록된 가게 전부 (최대 45곳)
+const geocoder = () => (window.__gc ||= new kakao.maps.services.Geocoder());
+async function buildingPlaces(ll){
+  try {
+    const a = await new Promise(r => geocoder().coord2Address(ll.getLng(), ll.getLat(), (d, st) => r(st === kakao.maps.services.Status.OK ? d[0] : null)));
+    const road = a?.road_address?.address_name; if (!road) return null;
+    const tail = x => (x || '').split(' ').slice(1).join(' ').replace(/\s+/g, ' ').trim(); // '대구광역시'/'대구' 차이 무시
+    const want = tail(road), list = [], seen = new Set();
+    for (let page = 1; page <= 3; page++) {
+      const [d, pg] = await new Promise(r => places.keywordSearch(road, (d, st, pg) => r([st === kakao.maps.services.Status.OK ? d : [], pg]), { x: ll.getLng(), y: ll.getLat(), radius: 300, page }));
+      for (const p of d) if (tail(p.road_address_name) === want && !seen.has(p.id)) { seen.add(p.id); list.push(p); }
+      if (!pg?.hasNextPage) break;
+    }
+    const rank = p => p.category_group_code === 'CE7' || /카페|커피|디저트|베이커리|제과/.test(p.category_name) ? 0 : p.category_group_code === 'FD6' ? 1 : 2;
+    list.sort((x, y) => rank(x) - rank(y) || x.place_name.localeCompare(y.place_name, 'ko'));
+    return { name: a.road_address.building_name || '', road: road.split(' ').slice(1).join(' '), list };
+  } catch { return null; }
+}
+let bldList = [], lastBld = null;
+function showBuilding(b){
+  closeSheet();
+  lastBld = b; bldList = b.list; tapFound = b.list;
+  const p0 = b.list[0], ll = new kakao.maps.LatLng(+p0.y, +p0.x);
+  const el = document.createElement('div'); el.className = 'tempPin'; el.innerHTML = '<div class="dot"></div>';
+  tempOverlay = new kakao.maps.CustomOverlay({ position: ll, content: el, yAnchor: .5, zIndex: 6 }); tempOverlay.setMap(map);
+  $('#sheet').innerHTML = `<div class="grab"></div>
+    <div class="title">🏢 ${esc(b.name || b.road)}</div>
+    <div class="subt">${b.name ? esc(b.road) + ' · ' : ''}이 건물에 있는 곳 ${b.list.length}개 · 하나 골라주세요</div>
+    <div style="margin-top:8px">${b.list.map((p, i) => { const mine = cafes.find(c => c.kakaoId === p.id); const cat = (p.category_name || '').split(' > ').slice(-1)[0];
+      return `<button class="mres" data-bp="${i}"><div class="t"><span>${esc(p.place_name)}</span>${mine ? `<span class="small" style="color:var(--acc)">${mine.wish ? '☆ 가볼래' : '♪ 기록됨'}</span>` : ''}</div><div class="s">${esc(cat || '기타')}${p.phone ? ' · ' + esc(p.phone) : ''}</div></button>`; }).join('')}</div>`;
+  $('#sheet').classList.add('open'); $('#sheet').scrollTop = 0;
+  requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(+p0.y, +p0.x); });
 }
 function removeTemp(){ if (tempOverlay) { tempOverlay.setMap(null); tempOverlay = null; } pendingPlace = null; }
 function pickPlace(p, fromTap, near){
@@ -934,11 +975,13 @@ function pickPlace(p, fromTap, near){
   const c = pendingPlace;
   // 지도를 눌러 고른 경우, 바로 옆 다른 가게도 골라 바꿀 수 있게
   tapFound = fromTap && near ? near : [];
-  const alts = tapFound.filter(x => x.id !== p.id).slice(0, 3);
+  const fromBld = fromTap && near && near === bldList && bldList.length >= 2;
+  const alts = fromBld ? [] : tapFound.filter(x => x.id !== p.id).slice(0, 3);
   $('#sheet').innerHTML = `<div class="grab"></div>
     <div class="title">${esc(c.name)}</div>
     <div class="subt">${esc(c.roadAddress || c.address)}</div>
     ${c.category ? `<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>` : ''}
+    ${fromBld ? `<div class="tagpick" style="margin-top:10px"><button class="chip" data-bldback="1">🏢 이 건물 다른 곳 ${bldList.length - 1}개 보기</button></div>` : ''}
     ${alts.length ? `<div class="tagpick" style="margin-top:10px;align-items:center"><span class="small" style="margin-right:2px">여기 아니에요?</span>${alts.map(a => `<button class="chip" data-alt="${tapFound.indexOf(a)}">${esc(a.place_name)}</button>`).join('')}</div>` : ''}
     <div class="btnrow"><button class="btn" data-act="saveNew">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-act="saveWish">☆ 가볼래</button></div>
     <div class="linkrow">
@@ -2246,7 +2289,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-5'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-6'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
