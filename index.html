@@ -945,7 +945,7 @@ async function refreshPins(){
   for (const c of cafes) {
     if (!passMap(c) || FR.only) continue; // 친구만 보기면 내 핀은 숨김
     seen.add(c.id);
-    const sel = c.id === selectedId, sig = [c.name, c.lat, c.lng, c.wish ? 1 : 0, c.fav ? 1 : 0, day].join('|');
+    const sel = c.id === selectedId, sig = [c.name, c.lat, c.lng, c.wish ? 1 : 0, c.fav ? 1 : 0, c.closed ? 1 : 0, day].join('|');
     let o = overlays.get(c.id);
     if (o && o._sig === sig) { if (o._el.classList.contains('sel') !== sel) { o._el.classList.toggle('sel', sel); o.setZIndex(sel ? 5 : 2); } continue; }
     if (o) o.setMap(null);
@@ -3514,7 +3514,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-25'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-26'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
