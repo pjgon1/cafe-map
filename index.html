@@ -308,8 +308,15 @@ body.sharemode .view{bottom:0}
 .seg.who{padding-top:0}
 .seg.who .chip.on{background:#5B8DEF;border-color:#5B8DEF;color:#fff}
 .seg{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
-#recSeg .chip{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#recSeg .chip.drag{transform:scale(1.08);box-shadow:0 4px 12px rgba(0,0,0,.18);position:relative;z-index:2}
+.segrow{display:flex;align-items:center;gap:4px}
+.segrow .seg{flex:1;min-width:0}
+.segrow .segcfg{width:34px;height:34px;color:var(--sub);flex:none}
+.segrow .segcfg svg{width:20px;height:20px}
+.ordrow{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--line);background:var(--bg);font-size:16px}
+.ordrow .on1{flex:1}
+.ordrow .tgrip{font-size:22px;color:var(--sub);padding:4px 8px;touch-action:none;cursor:grab;flex:none}
+.ordrow.drag{box-shadow:0 6px 18px rgba(0,0,0,.15);position:relative;z-index:2;border-radius:12px}
+.ordrow .first{font-size:12px;color:var(--acc);font-weight:700}
 .seg::-webkit-scrollbar{display:none}
 .item{display:flex;gap:14px;padding:14px 18px;align-items:center;border-bottom:1px solid var(--line)}
 .thumbpol{flex:none;background:var(--frame);padding:4px 4px 12px;border-radius:2px;box-shadow:0 1px 5px rgba(0,0,0,.15);border:1px solid var(--line)}
@@ -493,7 +500,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 <section class="view hidden" id="v-rec">
   <div class="scroll" id="recScroll">
     <div class="pagehead"><h1>모아보기</h1></div>
-    <div class="listtools"><div class="seg" id="recSeg"></div><div class="seg who hidden" id="recWho"></div></div>
+    <div class="listtools"><div class="segrow"><div class="seg" id="recSeg"></div><button class="iconbtn segcfg" id="recCfg" aria-label="칸 순서 바꾸기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div><div class="seg who hidden" id="recWho"></div></div>
     <div id="recBody" style="padding:0 18px 40px"></div>
   </div>
 </section>
@@ -550,6 +557,14 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 </div>
 
 <!-- 친구 핀 설정 -->
+<div class="page" id="pRecOrd">
+  <div class="bar">
+    <button class="iconbtn" data-close="pRecOrd" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="t">모아보기 칸 순서</div><div style="width:40px"></div>
+  </div>
+  <div class="body"><p class="small" style="margin:0 0 6px">≡ 를 잡고 위아래로 끌어 순서를 바꾸세요. 맨 위 칸이 처음 열려요.</p><div id="recOrdList"></div>
+  <button class="textbtn" id="recOrdReset" style="margin:14px auto 0;display:block">기본 순서로</button></div>
+</div>
 <div class="page" id="pFrSet">
   <div class="bar">
     <button class="iconbtn" data-close="pFrSet" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -2087,42 +2102,51 @@ $('#recBody').addEventListener('click', async e => {
   const up = e.target.closest('[data-up]'); if (up) { const o = topFull.filter(id => id !== up.dataset.up); o.splice(Math.min(9, o.length), 0, up.dataset.up); topFull = o; await saveTop(o); renderTop(); toast('10위로 올렸어요'); return; }
   const op = e.target.closest('[data-open]'); if (op) openDetail(op.dataset.open);
 });
-/* 모아보기 칸 순서: 꾹 눌러서 옆으로 끌기 */
-let recSegDragged = 0;
-(() => {
-  const seg = $('#recSeg'); let drag = null;
-  seg.addEventListener('pointerdown', e => {
-    const chip = e.target.closest('.chip'); if (!chip || drag) return;
-    const pid = e.pointerId, x0 = e.clientX, y0 = e.clientY;
-    const st = { chip, pid, on: false, timer: 0 }; drag = st;
-    st.timer = setTimeout(() => { st.on = true; chip.classList.add('drag'); try { navigator.vibrate?.(15); } catch {} }, 380);
+/* 모아보기 칸 순서: ⚙ → 순서 창에서 ≡ 끌기. 서버(user_prefs.rec_order)에 저장, 이 기기에도 복사 */
+function recOrderSave(ids){
+  try { localStorage.setItem('recOrder', JSON.stringify(ids)); } catch {}
+  if (session && sb) sb.from('user_prefs').upsert({ user_id: session.user.id, rec_order: ids, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) toast('순서를 서버에 못 올렸어요. 이 기기에는 저장됐어요'); });
+}
+let recOrderPulled = '';
+async function recOrderPull(){
+  if (!session || !sb || SHARE_ID || recOrderPulled === session.user.id) return;
+  try {
+    const { data, error } = await sb.from('user_prefs').select('rec_order').eq('user_id', session.user.id).maybeSingle();
+    if (error) return; recOrderPulled = session.user.id;
+    if (data && Array.isArray(data.rec_order)) {
+      const old = localStorage.getItem('recOrder'); localStorage.setItem('recOrder', JSON.stringify(data.rec_order));
+      if (old !== JSON.stringify(data.rec_order) && curTab === 'rec' && $('#pRecOrd') && !$('#pRecOrd').classList.contains('open')) renderRec();
+    } else { const loc = localStorage.getItem('recOrder'); if (loc) recOrderSave(JSON.parse(loc)); }
+  } catch {}
+}
+setTimeout(recOrderPull, 4000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { recOrderPulled = ''; recOrderPull(); } });
+function drawRecOrd(){
+  const list = $('#recOrdList');
+  list.innerHTML = recModes().map(([k, n], i) => `<div class="ordrow" data-k="${k}"><span class="on1">${n}</span>${i === 0 ? '<span class="first">처음 열림</span>' : ''}<button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`).join('');
+  list.querySelectorAll('.tgrip').forEach(g => g.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const row = g.closest('.ordrow'), pid = e.pointerId; row.classList.add('drag');
     const move = ev => {
+      if (ev.pointerId !== pid) return; ev.preventDefault();
+      const rows = [...list.querySelectorAll('.ordrow')].filter(r => r !== row);
+      const after = rows.find(r => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+      if (after) { if (row.nextElementSibling !== after) list.insertBefore(row, after); } else if (list.lastElementChild !== row) list.appendChild(row);
+    };
+    const up = ev => {
       if (ev.pointerId !== pid) return;
-      if (!st.on) { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) end(ev, true); return; }
-      ev.preventDefault();
-      const r = seg.getBoundingClientRect();
-      if (ev.clientX < r.left + 24) seg.scrollLeft -= 8; else if (ev.clientX > r.right - 24) seg.scrollLeft += 8;
-      const others = [...seg.querySelectorAll('.chip')].filter(c => c !== chip);
-      const after = others.find(c => { const b = c.getBoundingClientRect(); return ev.clientX < b.left + b.width / 2; });
-      if (after) { if (chip.nextElementSibling !== after) seg.insertBefore(chip, after); } else if (seg.lastElementChild !== chip) seg.appendChild(chip);
+      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+      row.classList.remove('drag');
+      const ids = [...list.querySelectorAll('.ordrow')].map(r => r.dataset.k);
+      if (JSON.stringify(ids) !== JSON.stringify(recModes().map(m => m[0]))) { recOrderSave(ids); renderRec(); }
+      drawRecOrd();
     };
-    const end = (ev, cancel) => {
-      if (ev && ev.pointerId !== pid) return;
-      clearTimeout(st.timer); drag = null;
-      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', end); document.removeEventListener('pointercancel', end);
-      if (st.on && !cancel) {
-        chip.classList.remove('drag'); recSegDragged = Date.now();
-        const ids = [...seg.querySelectorAll('.chip')].map(c => c.dataset.k);
-        try { localStorage.setItem('recOrder', JSON.stringify(ids)); } catch {}
-        toast('순서를 바꿨어요');
-      } else chip.classList.remove('drag');
-    };
-    document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
-  });
-  seg.addEventListener('touchmove', e => { if (drag?.on) e.preventDefault(); }, { passive: false });
-  seg.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
-})();
-$('#recSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b || Date.now() - recSegDragged < 400) return; recMode = b.dataset.k; renderRec(); $('#recScroll').scrollTop = 0; };
+    document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  }));
+}
+$('#recCfg').onclick = () => { drawRecOrd(); openPage('pRecOrd'); recOrderPull(); };
+$('#recOrdReset').onclick = () => { recOrderSave(REC_MODES.map(m => m[0])); drawRecOrd(); renderRec(); toast('기본 순서로 돌렸어요'); };
+$('#recSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; recMode = b.dataset.k; renderRec(); $('#recScroll').scrollTop = 0; };
 
 // 앨범: 찍은 사진을 날짜순 폴라로이드로
 let albumSeq = 0, albumIO = null;
@@ -3434,7 +3458,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-20'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-21'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
