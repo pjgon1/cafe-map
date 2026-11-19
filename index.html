@@ -904,15 +904,16 @@ async function refreshPins(){
 }
 // 대구·경산 범위 (대략적인 위경도 상자)
 const inDG = (lat, lng) => lat >= 35.55 && lat <= 36.10 && lng >= 128.30 && lng <= 129.00;
-let fitLast = null; // 지난번 맞춘 화면 (그대로면 다음 누름은 전체로)
+let fitLast = null, fitOutside = 0; // 지난번 맞춘 화면 (그대로면 다음 누름은 전체로)
 function fitAll(scope){
   // scope: 'dg' 대구·경산만, 'all' 전체
-  let pts;
-  if (FR.pinsOn && FR.only) pts = [...FR.pins.values()].map(o => o.getPosition()).map(p => ({ lat: p.getLat(), lng: p.getLng() }));
-  else pts = cafes.filter(passMap).map(c => ({ lat: +c.lat, lng: +c.lng }));
+  // 지금 지도에 떠 있는 핀 전부: 내 핀(친구만 보기면 제외) + 친구 핀(켜져 있으면)
+  let pts = FR.pinsOn && FR.only ? [] : cafes.filter(passMap).map(c => ({ lat: +c.lat, lng: +c.lng }));
+  if (FR.pinsOn) pts = pts.concat([...FR.pins.values()].map(o => o.getPosition()).map(p => ({ lat: p.getLat(), lng: p.getLng() })));
   pts = pts.filter(p => p.lat && p.lng);
   if (!map || !pts.length) { toast(FR.pinsOn && FR.only ? '보여줄 친구 카페가 없어요' : '아직 기록한 카페가 없어요'); return; }
-  if (scope === 'dg') { const d = pts.filter(p => inDG(p.lat, p.lng)); if (d.length && d.length < pts.length) pts = d; else scope = 'all'; }
+  fitOutside = pts.filter(p => !inDG(p.lat, p.lng)).length;
+  if (scope === 'dg') { const d = pts.filter(p => inDG(p.lat, p.lng)); if (d.length) pts = d; else scope = 'all'; }
   if (pts.length === 1) { map.setLevel(4); map.panTo(new kakao.maps.LatLng(pts[0].lat, pts[0].lng)); }
   else { const b = new kakao.maps.LatLngBounds(); pts.forEach(p => b.extend(new kakao.maps.LatLng(p.lat, p.lng))); map.setBounds(b, 80, 40, 120, 40); }
   setTimeout(() => { const c = map.getCenter(); fitLast = { scope, lat: c.getLat(), lng: c.getLng(), lv: map.getLevel() }; }, 450);
@@ -922,7 +923,7 @@ function fitStep(){
   const c = map && map.getCenter();
   const same = fitLast && c && fitLast.scope === 'dg' && map.getLevel() === fitLast.lv && Math.abs(c.getLat() - fitLast.lat) < 1e-4 && Math.abs(c.getLng() - fitLast.lng) < 1e-4;
   const done = fitAll(same ? 'all' : 'dg');
-  if (done) toast(done === 'dg' ? '대구·경산 카페를 보여줘요 · 한 번 더 누르면 전체' : '전체 카페를 보여줘요');
+  if (done) toast(done === 'dg' ? (fitOutside ? `대구·경산만 보여줘요 · 한 번 더 누르면 바깥 ${fitOutside}곳까지` : '대구·경산 카페를 보여줘요') : '전체 카페를 보여줘요');
 }
 function locate(pan=true){
   return new Promise(res => {
@@ -3317,7 +3318,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-13'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-14'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
