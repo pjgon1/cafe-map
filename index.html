@@ -379,6 +379,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
     <div style="padding:0 18px 30px">
       <div class="sec" style="margin-top:12px"><h3>계정</h3><div class="acct" id="acct"></div></div>
       <div class="sec"><h3>내 기록</h3><div class="stats" id="stats"></div></div>
+      <div class="sec"><h3>앱 업데이트</h3><button class="setrow" id="btnUpdate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><div>업데이트 확인<small id="verInfo"></small></div></button></div>
       <div class="sec"><h3>색 테마</h3><div class="themes" id="themes"></div></div>
       <div class="sec"><h3>내 공유 링크</h3><div id="shareList"></div></div>
       <div class="sec"><h3>AI한테 카페 추천받기</h3>
@@ -2213,9 +2214,45 @@ async function refreshAll(){
 }
 
 /* =========================================================
+   앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
+   ========================================================= */
+const APP_VERSION = '2026.11.19-1'; // 고칠 때마다 올림
+async function latestVersion(){
+  try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
+  catch { return ''; }
+}
+async function applyUpdate(){
+  loading(true, '최신 버전 받는 중…');
+  try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch {}
+  try { for (const k of await caches.keys()) await caches.delete(k); } catch {}
+  location.replace(location.pathname + '?u=' + Date.now());
+}
+$('#btnUpdate').onclick = async () => {
+  loading(true, '새 버전 확인 중…'); const v = await latestVersion(); loading(false);
+  if (!v) { toast('인터넷 연결을 확인해 주세요'); return; }
+  if (v !== APP_VERSION) { toast(`새 버전 ${v}으로 바꿔요`); applyUpdate(); return; }
+  if (await ask(`이미 최신 버전이에요 (${APP_VERSION}).\n그래도 새로 받아올까요?`, '새로 받기')) applyUpdate();
+};
+// 앱을 열거나 다시 볼 때 새 버전이 있으면 물어봄 (30분에 한 번만 확인)
+let verCheckedAt = 0;
+async function autoCheckUpdate(){
+  if (SHARE_ID || Date.now() - verCheckedAt < 30 * 60 * 1000) return;
+  verCheckedAt = Date.now();
+  const v = await latestVersion(); if (!v || v === APP_VERSION) return;
+  let skipped = ''; try { skipped = sessionStorage.getItem('skipVer') || ''; } catch {}
+  if (skipped === v || pageStack.length || !$('#dlg').classList.contains('hidden') || !$('#loading').classList.contains('hidden')) return;
+  if (await ask(`새 버전이 나왔어요 (${v}).\n지금 업데이트할까요? 기록은 그대로예요.`, '업데이트')) applyUpdate();
+  else { try { sessionStorage.setItem('skipVer', v); } catch {} }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoCheckUpdate(); });
+
+/* =========================================================
    시작
    ========================================================= */
 async function start(){
+  // 업데이트하느라 붙인 주소 꼬리(?u=) 정리
+  if (/[?&]u=/.test(location.search)) { const q = new URLSearchParams(location.search); q.delete('u'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '')); }
+  try { $('#verInfo').textContent = '지금 버전 ' + APP_VERSION; } catch {}
   let th = 'coffee'; try { th = localStorage.getItem('theme') || 'coffee'; } catch {}
   applyTheme(th);
   if (SHARE_ID) { await startShareView(); armBack(); return; }
@@ -2237,6 +2274,7 @@ async function start(){
   }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   armBack();
+  setTimeout(autoCheckUpdate, 4000);
 }
 // 지도·로그인 스크립트는 화면을 먼저 띄운 뒤 받아옴 (defer). 다 받아지면 시작
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
