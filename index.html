@@ -323,7 +323,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 .score.tap.open .caret{transform:rotate(90deg)}
 .subpanel{margin-top:10px;background:var(--note);border-radius:12px;padding:8px 12px}
 .sprow{display:flex;align-items:center;gap:10px;padding:3px 0;font-size:14px}
-.sprow .sl{width:46px;color:var(--sub);flex:none}
+.sprow .sl{width:52px;color:var(--sub);flex:none}
 .sprow.tot .sl{color:var(--ink);font-weight:600}
 .sprow b{font-size:13px;color:var(--ink);min-width:26px}
 .sbar{position:relative;display:inline-block;font-size:18px;line-height:1;letter-spacing:1px}
@@ -755,9 +755,9 @@ function subAvg(vs){
 // 소수점까지 채워지는 별 5개
 const starBar = x => `<span class="sbar"><span class="bg">★★★★★</span><span class="fg" style="width:${Math.max(0, Math.min(5, x)) / 5 * 100}%">★★★★★</span></span>`;
 // 별점 눌렀을 때 펼쳐지는 항목별 평균
-function subPanelHTML(total, vs){
+function subPanelHTML(total, vs, label = '평균'){
   const avg = subAvg(vs), rows = SUBS.filter(([k]) => avg[k]);
-  return `<div class="subpanel hidden">${total ? `<div class="sprow tot"><span class="sl">평균</span>${starBar(total)}<b>${total.toFixed(1)}</b></div>` : ''}${rows.length ? rows.map(([k, n]) => `<div class="sprow"><span class="sl">${n}</span>${starBar(+avg[k])}<b>${(+avg[k]).toFixed(1)}</b></div>`).join('') : '<div class="small" style="padding:4px 0">항목별 별점은 아직 없어요. 방문 기록에서 매길 수 있어요.</div>'}</div>`;
+  return `<div class="subpanel hidden">${total ? `<div class="sprow tot"><span class="sl">${label}</span>${starBar(total)}<b>${total.toFixed(1)}</b></div>` : ''}${rows.length ? rows.map(([k, n]) => `<div class="sprow"><span class="sl">${n}</span>${starBar(+avg[k])}<b>${(+avg[k]).toFixed(1)}</b></div>`).join('') : '<div class="small" style="padding:4px 0">항목별 별점은 아직 없어요. 방문 기록에서 매길 수 있어요.</div>'}</div>`;
 }
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-subtog]'); if (!t) return;
@@ -959,7 +959,7 @@ async function openSheet(id){
       <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
       ${st.rating || subLine(subAvg(visitsOf(c.id))) ? `<button class="score tap" data-subtog="1">★ ${st.rating ? st.rating.toFixed(1) : '-'} <span class="caret">›</span></button>` : ''}
     </div>
-    ${subPanelHTML(st.rating, visitsOf(c.id))}
+    ${subPanelHTML(st.rating, visitsOf(c.id), st.my ? '내 별점' : '평균')}
     <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.nextTry ? `<div class="nextbar">🍰 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     ${c.wish && !lv ? `<div class="note" style="margin-top:8px;color:var(--sub)">아직 안 가본 곳이에요.${c.memo?'<br>'+esc(c.memo):''}</div>` : lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
@@ -1425,7 +1425,7 @@ async function openDetail(id, keep){
       ${st.rating || subLine(subAvg(vs)) ?`<button class="score tap" data-subtog="1">★ ${st.rating ? st.rating.toFixed(1) : '-'}<small>${st.my ? '내 별점' : '방문 평균'} ›</small></button>`:''}</div>
     <div class="myrate"><span class="lb">내 별점</span><div class="starpick" id="dStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= st.my ? 'on' : ''}">★</button>`).join('')}</div>
       <span class="avg">${st.rated ? `방문 평균<br>★ ${st.visitAvg.toFixed(1)} · ${st.rated}번` : ''}</span></div>
-    ${subPanelHTML(st.rating, vs)}
+    ${subPanelHTML(st.rating, vs, st.my ? '내 별점' : '평균')}
     <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
@@ -3023,7 +3023,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-33'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-34'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
