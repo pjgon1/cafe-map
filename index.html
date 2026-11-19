@@ -37,6 +37,7 @@ input,textarea{outline:none}
 #tabbar{position:fixed;left:0;right:0;bottom:0;height:calc(64px + var(--safe-b));padding-bottom:var(--safe-b);background:var(--bg);border-top:1px solid var(--line);display:flex;z-index:30}
 .headbtns{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
 .headbtns::-webkit-scrollbar{display:none}
+#map.far .pin .nm,#map.far .pin .fwho{display:none}
 .pin.friend .ring{border-color:#5B8DEF}
 .pin.friend .tip{border-top-color:#5B8DEF}
 .pin .fwho{margin-top:2px;font-size:10px;color:#fff;background:#5B8DEF;padding:1px 7px;border-radius:999px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -764,8 +765,8 @@ function mapFail(){
 }
 function updateLabels(){
   if (!map) return;
-  const show = map.getLevel() <= 6;
-  document.querySelectorAll('.pin .nm').forEach(e => e.style.display = show ? '' : 'none');
+  // 핀마다 바꾸지 않고 지도에 표시 하나만: 멀리 보면 이름표 숨김 (새로 생긴 핀도 자동 적용)
+  $('#map').classList.toggle('far', map.getLevel() > 6);
 }
 function passFilter(c, f){
   if (f === '전체') return true;
@@ -2682,7 +2683,7 @@ window.addEventListener('popstate', e => {
 });
 // 누른 직후마다 맞추기 (+ 앱이 알아서 연 것도 잠깐 뒤 맞춤)
 for (const ev of ['click', 'touchend', 'keydown']) document.addEventListener(ev, () => setTimeout(syncBack, 0), true);
-setInterval(syncBack, 400);
+setInterval(syncBack, useCW ? 2000 : 400); // CloseWatcher면 가끔 확인만
 armCW(); // 앱을 켜자마자 뒤로가기를 눌러도 종료 확인창이 뜨게
 // 종료 확인창이 뜬 상태에서 앱을 나갔다면, 다시 들어올 때 처음 화면부터 새로 시작
 document.addEventListener('visibilitychange', () => {
@@ -2704,7 +2705,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-18'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-19'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
