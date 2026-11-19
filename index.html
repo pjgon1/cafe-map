@@ -151,6 +151,9 @@ body.sharemode #tabbar,body.sharemode #btnAdd,body.sharemode #btnPick,body.share
 body.sharemode .view{bottom:0}
 #tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;color:var(--sub)}
 #tabbar button.on{color:var(--acc)}
+#tabbar button{position:relative}
+#tabbar button.newdot::after{content:'';position:absolute;top:9px;left:calc(50% + 8px);width:9px;height:9px;border-radius:50%;background:#E5484D;border:2px solid var(--bg)}
+.feed .newb{display:inline-block;background:#E5484D;color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:0 6px;margin-left:4px;vertical-align:1px}
 #tabbar svg{width:24px;height:24px}
 
 /* ---------- 지도 ---------- */
@@ -2474,6 +2477,24 @@ function drawFriends(){
 }
 /* 친구 소식: 친구들이 최근 다녀온 곳 / 가볼래에 담은 곳 (최근 60일, 최신순) */
 let feedN = 5;
+// 새 소식 빨간 점: 마지막으로 소식을 본 시점보다 새 기록이 있으면 친구 탭에 점
+const feedSeen = () => { try { const v = +localStorage.getItem('feedSeen'); if (v) return v; localStorage.setItem('feedSeen', String(Date.now())); } catch {} return Date.now(); };
+let feedPrevSeen = feedSeen(), feedCheckAt = 0;
+const feedDot = on => $('#tabbar [data-tab="fr"]')?.classList.toggle('newdot', !!on);
+async function feedCheck(force){
+  if (!session || SHARE_ID || curTab === 'fr' || (!force && Date.now() - feedCheckAt < 5 * 60000)) return;
+  feedCheckAt = Date.now();
+  try {
+    if (!await frLoad() || !FR.list.length) return;
+    const seen = feedSeen(), since = Date.now() - 60 * 864e5;
+    const recs = await Promise.all(FR.list.map(u => frRecords(u, true)));
+    const hasNew = recs.some(r => r.visits.some(v => (v.createdAt || 0) > seen && (v.createdAt || 0) > since) || r.cafes.some(c => c.wish && (c.createdAt || 0) > seen && (c.createdAt || 0) > since));
+    if (curTab !== 'fr') feedDot(hasNew || FR.incoming.length);
+  } catch {}
+}
+setTimeout(() => feedCheck(true), 5000);
+setInterval(() => { if (document.visibilityState === 'visible') feedCheck(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') feedCheck(); });
 const relDay = s => { if (!s) return ''; const [y, m, d] = s.split('-').map(Number); const t = new Date(); t.setHours(0, 0, 0, 0); const n = Math.round((t - new Date(y, m - 1, d)) / 864e5); return n <= 0 ? '오늘' : n === 1 ? '어제' : n < 7 ? n + '일 전' : fmtDate(s); };
 const dayOf = ms => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 async function drawFeed(){
@@ -2486,6 +2507,9 @@ async function drawFeed(){
     for (const c of rec.cafes) if (c.wish && c.createdAt && !rec.visits.some(v => v.cafeId === c.id)) { const day = dayOf(c.createdAt); if (day >= since) items.push({ u, c, day, t: c.createdAt }); }
   }
   items.sort((a, b) => b.day.localeCompare(a.day) || b.t - a.t);
+  const seen = feedSeen(), newest = Math.max(0, ...items.map(x => x.t));
+  if (newest > seen) { feedPrevSeen = seen; try { localStorage.setItem('feedSeen', String(newest)); } catch {} }
+  feedDot(false);
   if (!items.length) { box.innerHTML = '<h3>친구 소식</h3><div class="emptyPhoto">최근 두 달 동안 친구들 새 기록이 없어요.</div>'; return; }
   const show = items.slice(0, feedN);
   box.innerHTML = `<h3>친구 소식 <small>최근 두 달</small></h3>` + show.map(x => {
@@ -2493,7 +2517,7 @@ async function drawFeed(){
     const what = x.v ? `다녀왔어요${x.v.rating ? ' · ★ ' + x.v.rating : ''}` : '가볼래에 담았어요';
     const sub = x.v ? [x.v.menu, x.v.review].filter(Boolean).join(' · ') : '';
     return `<button class="feed tap" data-feed="${x.u}|${esc(x.c.id)}"><div class="av">${esc((frName(x.u)[0] || '?').toUpperCase())}</div>
-      <div class="fb"><div><b>${esc(frName(x.u))}</b> <span class="small">· ${relDay(x.day)}</span></div><div class="fc">${x.v ? '☕' : '☆'} ${esc(x.c.name)} <span class="small" style="font-weight:400">${what}</span></div>${sub ? `<div class="fr">${esc(sub)}</div>` : ''}</div>
+      <div class="fb"><div><b>${esc(frName(x.u))}</b> <span class="small">· ${relDay(x.day)}</span>${x.t > feedPrevSeen ? '<span class="newb">N</span>' : ''}</div><div class="fc">${x.v ? '☕' : '☆'} ${esc(x.c.name)} <span class="small" style="font-weight:400">${what}</span></div>${sub ? `<div class="fr">${esc(sub)}</div>` : ''}</div>
       ${ph ? `<div class="fth" data-vz="${x.u}|${ph}"><div data-fvp="${ph}"></div></div>` : ''}</button>`;
   }).join('') + (items.length > feedN ? `<button class="textbtn" id="feedMore" style="margin-top:10px">더 보기 (${items.length - feedN})</button>` : '');
   box.querySelectorAll('.feed').forEach(el => { const u = el.dataset.feed.split('|')[0]; frFillPhotos(el, u); });
@@ -2956,7 +2980,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-28'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-29'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
