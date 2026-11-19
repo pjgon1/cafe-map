@@ -289,6 +289,10 @@ body.sharemode .view{bottom:0}
 .calgrid .cd.has .cph+.dn{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .calgrid .cd .dn{position:absolute;left:5px;top:3px;font-size:12px;font-weight:600}
 .calgrid .cd .cc{position:absolute;right:4px;bottom:4px;background:var(--acc);color:var(--onacc);font-size:10px;font-weight:700;border-radius:999px;padding:0 5px;line-height:15px}
+.calgrid .cd .ccup{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--ph)}
+.calgrid .cd .ccup .cup{width:72%;height:72%;margin-top:6px}
+.toprow .tth{display:flex;align-items:center;justify-content:center}
+.toprow .tth .cup{width:40px;height:40px}
 .calgrid .cd .cdot{position:absolute;left:50%;bottom:7px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--acc)}
 .calgrid .cd.today{box-shadow:inset 0 0 0 2px var(--acc)}
 .calgrid .cd.sel{box-shadow:0 0 0 3px var(--acc)}
@@ -1955,13 +1959,13 @@ function renderCal(){
   let cells = ['일', '월', '화', '수', '목', '금', '토'].map((w, i) => `<div class="cw ${i === 0 ? 'sun' : i === 6 ? 'sat' : ''}">${w}</div>`).join('') + '<div></div>'.repeat(first);
   for (let d = 1; d <= days; d++) {
     const vs = byDay.get(d) || [], ph = vs.flatMap(v => v.photoIds || [])[0], key = pre + pad(d);
-    cells += `<button class="cd ${vs.length ? 'has' : ''} ${key === today ? 'today' : ''} ${key === calSel ? 'sel' : ''}" data-day="${key}" ${vs.length ? '' : 'disabled'}>${ph ? `<div class="cph" data-cph="${ph}"></div>` : ''}<span class="dn">${d}</span>${vs.length > 1 ? `<span class="cc">${vs.length}</span>` : ''}${vs.length && !ph ? '<span class="cdot"></span>' : ''}</button>`;
+    cells += `<button class="cd ${vs.length ? 'has' : ''} ${key === today ? 'today' : ''} ${key === calSel ? 'sel' : ''}" data-day="${key}" data-cafe="${esc(vs[0]?.cafeId || '')}" ${vs.length ? '' : 'disabled'}>${ph ? `<div class="cph" data-cph="${ph}"></div>` : ''}<span class="dn">${d}</span>${vs.length > 1 ? `<span class="cc">${vs.length}</span>` : ''}${vs.length && !ph ? `<div class="ccup">${cupIcon(vs[0].cafeId)}</div>` : ''}</button>`;
   }
   const sel = calSel.startsWith(pre) ? (byDay.get(+calSel.slice(8, 10)) || []) : [];
   body.innerHTML = `<div class="calhead"><button class="iconbtn" data-cm="-1" aria-label="이전 달">‹</button><div><b>${y}년 ${m}월</b><div class="small">${cnt ? `방문 ${cnt}번 · ${byDay.size}일` : '기록 없음'}</div></div><button class="iconbtn" data-cm="1" aria-label="다음 달">›</button></div>
     <div class="calgrid">${cells}</div>
     ${sel.length ? `<div class="sec"><h3>${fmtDate(calSel)}</h3>${sel.map(v => { const c = cafeById(v.cafeId); return `<button class="note tap calv" data-cv="${esc(v.cafeId)}" style="width:100%;text-align:left;margin-top:8px"><div class="meta">${esc(c?.name || '삭제된 카페')}${v.rating ? ` · ${stars(v.rating)}` : ''}</div>${esc([v.menu, v.review].filter(Boolean).join(' · ') || '후기 없음')}</button>`; }).join('')}</div>` : `<p class="small" style="text-align:center;margin-top:14px">${cnt ? '사진이 있는 날을 눌러보세요' : ''}</p>`}`;
-  body.querySelectorAll('[data-cph]').forEach(async el => { const u = await getPhotoURL(el.dataset.cph); if (u) el.style.backgroundImage = `url('${u}')`; });
+  body.querySelectorAll('[data-cph]').forEach(async el => { const u = await getPhotoURL(el.dataset.cph); if (u) el.style.backgroundImage = `url('${u}')`; else { el.outerHTML = `<div class="ccup">${cupIcon(el.closest('.cd')?.dataset.cafe || el.dataset.cph)}</div>`; } });
   body.onclick = e => {
     const mv = e.target.closest('[data-cm]'); if (mv) { const t = new Date(calYM.y, calYM.m - 1 + +mv.dataset.cm, 1); calYM.y = t.getFullYear(); calYM.m = t.getMonth() + 1; calSel = ''; renderCal(); return; }
     const d = e.target.closest('[data-day]'); if (d) { calSel = calSel === d.dataset.day ? '' : d.dataset.day; renderCal(); return; }
@@ -2002,14 +2006,14 @@ async function renderTop(){
   const body = $('#recBody'), { top, rest, manual, fresh } = topOrder();
   if (manual && fresh) saveTop(topFull); // 새로 끼워넣은 자리도 고정
   if (!top.length) { body.innerHTML = `<div class="empty"><div class="big">🏆</div>별점을 매기거나 방문 기록을 남기면<br>여기 나만의 순위가 생겨요.</div>`; return; }
-  const row = (x, i) => `<div class="toprow" data-id="${esc(x.c.id)}"><div class="trk r${i + 1}">${i + 1}</div><div class="tth" data-cover="${esc(coverOf(x.c, x.st) || '')}"></div>
+  const row = (x, i) => `<div class="toprow" data-id="${esc(x.c.id)}"><div class="trk r${i + 1}">${i + 1}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div>
     <div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${esc(areaOf(x.c))}${x.st.rating ? ` · ★ ${x.st.rating.toFixed(1)}` : ''} · 방문 ${x.st.count}번</div></div>
     <button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`;
   body.innerHTML = `<div class="rowsb" style="align-items:center;margin:4px 0 6px"><div class="small">${manual ? '내가 정한 순위예요. ≡ 를 끌어서 바꿔요' : '별점·방문 수로 자동으로 매긴 순위예요. ≡ 를 끌어서 바꿔요'}</div>${manual ? '<button class="textbtn" id="topReset">자동 순위로</button>' : ''}</div>
     <div id="topList">${top.map(row).join('')}</div>
     <button class="btn" id="topShare" style="width:100%;margin-top:16px">🏆 이미지로 저장·공유</button>
-    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>올리면 10위로, 원래 10위는 여기 첫 번째로</small></h3>${rest.map((x, i) => `<div class="toprow out"><div class="trk">${i + 11}</div><div class="tth" data-cover="${esc(coverOf(x.c, x.st) || '')}"></div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button></div>`).join('')}</div>` : ''}`;
-  body.querySelectorAll('[data-cover]').forEach(async d => { if (d.dataset.cover) { const u = await getPhotoURL(d.dataset.cover); if (u) d.style.backgroundImage = `url('${u}')`; } });
+    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>올리면 10위로, 원래 10위는 여기 첫 번째로</small></h3>${rest.map((x, i) => `<div class="toprow out"><div class="trk">${i + 11}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button></div>`).join('')}</div>` : ''}`;
+  body.querySelectorAll('[data-cover]').forEach(async d => { if (d.dataset.cover) { const u = await getPhotoURL(d.dataset.cover); if (u) d.style.backgroundImage = `url('${u}')`; else d.innerHTML = cupIcon(d.dataset.cid); } });
   topDrag();
 }
 function topIds(){ return [...document.querySelectorAll('#topList .toprow')].map(r => r.dataset.id); }
@@ -2389,10 +2393,10 @@ async function renderFriendRec(u){
   if (ranked.length) pool.filter(x => !(+x.c.rank > 0)).sort(cmp).forEach(f => { let last = -1; order.forEach((x, i) => { if (cmp(x, f) <= 0) last = i; }); order.splice(last + 1, 0, f); });
   order = order.slice(0, 31);
   if (!order.length) { body.innerHTML = `<div class="empty"><div class="big">🏆</div>${name}님은 아직 순위에 들 카페가 없어요.</div>`; body.onclick = null; return; }
-  const row = (x, i) => `<div class="toprow ${i >= 10 ? 'out' : ''}"><div class="trk ${i < 10 ? 'r' + (i + 1) : ''}">${i + 1}</div><div class="tth" data-fcov="${esc(x.st.cover || '')}"></div>
+  const row = (x, i) => `<div class="toprow ${i >= 10 ? 'out' : ''}"><div class="trk ${i < 10 ? 'r' + (i + 1) : ''}">${i + 1}</div><div class="tth" data-cid="${esc(x.c.id)}" data-fcov="${esc(x.st.cover || '')}">${x.st.cover ? '' : cupIcon(x.c.id)}</div>
     <div class="tmain tap" data-ftop="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${esc(areaOf(x.c))}${x.st.rating ? ` · ★ ${x.st.rating.toFixed(1)}` : ''} · 방문 ${x.st.count}번</div></div></div>`;
   body.innerHTML = `<p class="small" style="margin:6px 0">👥 ${name}님의 TOP 10${ranked.length ? ' (직접 정한 순위)' : ''}</p>${order.slice(0, 10).map(row).join('')}${order.length > 10 ? `<div class="sec"><h3>순위 밖</h3>${order.slice(10).map((x, i) => row(x, i + 10)).join('')}</div>` : ''}`;
-  body.querySelectorAll('[data-fcov]').forEach(async d => { if (d.dataset.fcov) { const url = await frPhoto(u, d.dataset.fcov); if (url) d.style.backgroundImage = `url('${url}')`; } });
+  body.querySelectorAll('[data-fcov]').forEach(async d => { if (d.dataset.fcov) { const url = await frPhoto(u, d.dataset.fcov); if (url) d.style.backgroundImage = `url('${url}')`; else d.innerHTML = cupIcon(d.dataset.cid); } });
   body.onclick = e => { const t = e.target.closest('[data-ftop]'); if (!t) return; const c = byId.get(t.dataset.ftop); if (c) { showTab('map'); setFriendPins(true).then(() => openFriendSheet(u, c, true)); } };
 }
 function renderStamps(){
@@ -3386,7 +3390,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-18'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-19'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
