@@ -286,6 +286,7 @@ body.sharemode .view{bottom:0}
 .listsearch{display:flex;align-items:center;gap:8px;background:var(--note);border-radius:12px;padding:0 12px;height:42px}
 .listsearch input{flex:1;border:0;background:none;font-size:15px}
 .listsearch svg{width:18px;height:18px;color:var(--sub)}
+.wx{font-size:12px;color:var(--sub);font-weight:400;margin-left:4px;white-space:nowrap}
 .calhead{display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;text-align:center}
 .calhead b{font-size:17px}
 .calhead .iconbtn{font-size:24px;width:40px;height:40px}
@@ -691,6 +692,10 @@ const THEMES = [
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+/* 그날 날씨 (Open-Meteo, 키 없이 무료). v.wx = { c: 날씨코드, hi: 최고, lo: 최저, d: 날짜 } */
+const wxIcon = c => { c = +c; return c === 0 ? '☀️' : c <= 2 ? '🌤' : c === 3 ? '☁️' : c <= 48 ? '🌫' : c <= 57 ? '🌦' : c <= 67 ? '🌧' : c <= 77 ? '❄️' : c <= 82 ? '🌧' : c <= 86 ? '❄️' : '⛈'; };
+const wxName = c => { c = +c; return c === 0 ? '맑음' : c <= 2 ? '구름 조금' : c === 3 ? '흐림' : c <= 48 ? '안개' : c <= 57 ? '이슬비' : c <= 67 ? '비' : c <= 77 ? '눈' : c <= 82 ? '소나기' : c <= 86 ? '눈' : '뇌우'; };
+const wxTag = v => { const w = v && v.wx; if (!w || !Number.isFinite(+w.c) || !Number.isFinite(+w.hi)) return ''; return ` <span class="wx" title="${wxName(w.c)} · 최고 ${Math.round(+w.hi)}° / 최저 ${Math.round(+w.lo)}°">${wxIcon(w.c)} ${Math.round(+w.hi)}°</span>`; };
 const todayStr = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 const fmtDate = s => { if(!s) return ''; const [y,m,d] = s.split('-').map(Number); const now = new Date().getFullYear(); return (y!==now? y+'년 ':'') + m+'월 '+d+'일'; };
 const won = n => n ? Number(n).toLocaleString('ko-KR') + '원' : '';
@@ -1523,6 +1528,36 @@ $('#photoInput').onchange = e => {
   for (const f of e.target.files) editingVisit.newPhotos.push({ file: f, url: URL.createObjectURL(f) });
   e.target.value = ''; renderVisitPhotos();
 };
+async function wxFetch(lat, lng, date){
+  if (!lat || !lng || !/^\d{4}-\d{2}-\d{2}$/.test(date || '') || date > todayStr()) return null;
+  const old = (Date.now() - new Date(date + 'T12:00:00+09:00')) / 864e5 > 85;
+  const q = `latitude=${(+lat).toFixed(3)}&longitude=${(+lng).toFixed(3)}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&start_date=${date}&end_date=${date}`;
+  try {
+    const r = await fetch((old ? 'https://archive-api.open-meteo.com/v1/archive?' : 'https://api.open-meteo.com/v1/forecast?') + q);
+    if (!r.ok) return null;
+    const d = (await r.json()).daily || {};
+    const c = d.weather_code?.[0], hi = d.temperature_2m_max?.[0], lo = d.temperature_2m_min?.[0];
+    return Number.isFinite(c) && Number.isFinite(hi) ? { c, hi: Math.round(hi * 10) / 10, lo: Number.isFinite(lo) ? Math.round(lo * 10) / 10 : hi, d: date } : null;
+  } catch { return null; }
+}
+async function wxFill(v){
+  if (!v || !v.date || (v.wx && v.wx.d === v.date)) return false;
+  const c = cafeById(v.cafeId); if (!c || !c.lat) return false;
+  const w = await wxFetch(c.lat, c.lng, v.date); if (!w) return false;
+  const cur = visits.find(x => x.id === v.id); if (!cur || cur.date !== w.d) return false;
+  cur.wx = w; cur.updatedAt = Date.now(); cur.dirty = true;
+  await DB.put('visits', cur); Sync.soon();
+  return true;
+}
+// 예전 기록도 날씨 채우기 (조금씩, 한 기기에서 한 번 돌면 끝)
+async function wxBackfill(){
+  if (SHARE_ID) return;
+  const todo = visits.filter(v => v.date && !(v.wx && v.wx.d === v.date) && v.date < todayStr()).slice(0, 300);
+  let n = 0;
+  for (const v of todo) { if (await wxFill(v)) n++; await new Promise(r => setTimeout(r, 250)); }
+  if (n && curTab === 'rec') renderRec();
+}
+setTimeout(() => wxBackfill().catch(() => {}), 9000);
 $('#vSave').onclick = once(async () => {
   const ev = editingVisit, v = ev.data;
   v.date = $('#vDate').value || todayStr();
@@ -1540,6 +1575,7 @@ $('#vSave').onclick = once(async () => {
   } catch (err) { loading(false); toast('저장 공간이 부족하거나 사진을 읽지 못했어요'); return; }
   loading(false);
   const i = visits.findIndex(x => x.id === v.id); if (i >= 0) visits[i] = v; else visits.push(v);
+  wxFill(v).then(ok => { if (ok && $('#pDetail')?.classList.contains('open') && typeof detailId !== 'undefined' && detailId === v.cafeId) openDetail(v.cafeId); }).catch(() => {});
   const wc = cafes.find(x => x.id === v.cafeId); let moved = false;
   if (wc && wc.wish) { wc.wish = false; wc.updatedAt = Date.now(); wc.dirty = true; await DB.put('cafes', wc); moved = true; Sync.soon(); }
   { const cc = cafes.find(x => x.id === v.cafeId); if (cc && cc.nextTry && v.menu && v.menu.toLowerCase().includes(cc.nextTry.toLowerCase())) { cc.nextTry = ''; cc.updatedAt = Date.now(); cc.dirty = true; await DB.put('cafes', cc); Sync.soon(); } }
@@ -1597,7 +1633,7 @@ async function openDetail(id, keep){
   const wall = await Promise.all(all.map(async (p,i) => `<div class="pol" data-ph="${p.id}" style="transform:rotate(${hashRot(p.id,i)}deg)">${p.id===cov?'<span class="covbadge">★</span>':''}<div style="background-image:url('${await getPhotoURL(p.id)}')"></div><div class="cap">${esc(p.cap.split(' · ')[0])}</div></div>`));
   const vhtml = await Promise.all(vs.map(async v => {
     const ph = await Promise.all((v.photoIds||[]).map(async (p,i) => `<div class="pol" data-ph="${p}" style="transform:rotate(${hashRot(p,i)}deg)"><div style="background-image:url('${await getPhotoURL(p)}')"></div></div>`));
-    return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}${v.hideFriends && !c.hideFriends ? ' <span class="small">🔒 친구에게 숨김</span>' : ''}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
+    return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}${wxTag(v)}${v.hideFriends && !c.hideFriends ? ' <span class="small">🔒 친구에게 숨김</span>' : ''}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
       <div class="note">${(v.menu||v.price)?`<div class="meta">${esc(v.menu)}${v.menu&&v.price?' · ':''}${won(v.price)}</div>`:''}${esc(v.review || '후기 없음')}</div>
       ${ph.length?`<div class="vphotos">${ph.join('')}</div>`:''}
       <div class="vacts"><button data-ev="${v.id}">수정</button></div></div>`;
@@ -2023,7 +2059,7 @@ function renderCal(){
   const sel = calSel.startsWith(pre) ? (byDay.get(+calSel.slice(8, 10)) || []) : [];
   body.innerHTML = `<div class="calhead"><button class="iconbtn" data-cm="-1" aria-label="이전 달">‹</button><div><b>${y}년 ${m}월</b><div class="small">${cnt ? `방문 ${cnt}번 · ${byDay.size}일` : '기록 없음'}</div></div><button class="iconbtn" data-cm="1" aria-label="다음 달">›</button></div>
     <div class="calgrid">${cells}</div>
-    ${sel.length ? `<div class="sec"><h3>${fmtDate(calSel)}</h3>${sel.map(v => { const c = cafeById(v.cafeId); return `<button class="note tap calv" data-cv="${esc(v.cafeId)}" style="width:100%;text-align:left;margin-top:8px"><div class="meta">${esc(c?.name || '삭제된 카페')}${v.rating ? ` · ${stars(v.rating)}` : ''}</div>${esc([v.menu, v.review].filter(Boolean).join(' · ') || '후기 없음')}</button>`; }).join('')}</div>` : `<p class="small" style="text-align:center;margin-top:14px">${cnt ? '사진이 있는 날을 눌러보세요' : ''}</p>`}`;
+    ${sel.length ? `<div class="sec"><h3>${fmtDate(calSel)}</h3>${sel.map(v => { const c = cafeById(v.cafeId); return `<button class="note tap calv" data-cv="${esc(v.cafeId)}" style="width:100%;text-align:left;margin-top:8px"><div class="meta">${esc(c?.name || '삭제된 카페')}${v.rating ? ` · ${stars(v.rating)}` : ''}${wxTag(v)}</div>${esc([v.menu, v.review].filter(Boolean).join(' · ') || '후기 없음')}</button>`; }).join('')}</div>` : `<p class="small" style="text-align:center;margin-top:14px">${cnt ? '사진이 있는 날을 눌러보세요' : ''}</p>`}`;
   body.querySelectorAll('[data-cph]').forEach(async el => { const u = await getPhotoURL(el.dataset.cph); if (u) el.style.backgroundImage = `url('${u}')`; else { el.outerHTML = `<div class="ccup">${cupIcon(el.closest('.cd')?.dataset.cafe || el.dataset.cph)}</div>`; } });
   body.onclick = e => {
     const mv = e.target.closest('[data-cm]'); if (mv) { const t = new Date(calYM.y, calYM.m - 1 + +mv.dataset.cm, 1); calYM.y = t.getFullYear(); calYM.m = t.getMonth() + 1; calSel = ''; renderCal(); return; }
@@ -3162,7 +3198,7 @@ async function toggleFriendVisits(box){
 function frVisitsHTML(rec, c, uid = frCur){
   const vs = frVisitsOf(rec, c.id);
   return vs.length ? vs.map(v => `<div class="visit">
-      <div class="vh"><span>${v.date ? fmtDate(v.date) : '날짜 없음'}</span><span class="stars">${v.rating ? stars(v.rating) : ''}</span></div>
+      <div class="vh"><span>${v.date ? fmtDate(v.date) : '날짜 없음'}${wxTag(v)}</span><span class="stars">${v.rating ? stars(v.rating) : ''}</span></div>
       <div class="note">${(v.menu || v.price) ? `<div class="meta">${esc(v.menu || '')}${v.menu && v.price ? ' · ' : ''}${v.price ? won(v.price) : ''}</div>` : ''}${esc(v.review || '후기 없음')}</div>
       ${(v.photoIds || []).length ? `<div class="vphotos">${v.photoIds.map((p, i) => `<div class="pol" data-vz="${uid}|${p}" style="transform:rotate(${hashRot(p, i)}deg)"><div data-fvp="${p}"></div></div>`).join('')}</div>` : ''}
     </div>`).join('') : '<div class="emptyPhoto">방문 기록은 아직 없어요</div>';
@@ -3514,7 +3550,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-26'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-27'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
