@@ -2690,13 +2690,15 @@ const FRCFG = (() => { try { const v = JSON.parse(localStorage.getItem('frPinCfg
 const saveFrCfg = () => { try { localStorage.setItem('frPinCfg', JSON.stringify({ off: [...FRCFG.off], kinds: [...FRCFG.kinds] })); } catch {} };
 const HANDLE_RE = /^[a-z0-9_가-힣]{2,20}$/;
 const frName = uid => FR.prof.get(uid)?.handle || '친구';
-// 친구 순서: 친구 탭에서 ≡ 로 끌어 바꾼 순서 (이 기기에 저장)
+// 친구 순서: 친구 탭에서 ≡ 로 끌어 바꾼 순서 (서버 user_prefs에 저장, 이 기기에도 복사)
 const frOrderGet = () => { try { return JSON.parse(localStorage.getItem('frOrder') || '[]'); } catch { return []; } };
 const frSort = list => { const o = frOrderGet(), at = u => { const i = o.indexOf(u); return i < 0 ? 1e9 : i; }; return list.map((u, i) => [u, i]).sort((a, b) => at(a[0]) - at(b[0]) || a[1] - b[1]).map(x => x[0]); };
 async function frLoad(force){
   if (!sb || !session) return false;
   if (!force && Date.now() - FR.loadedAt < 60000) return true;
   const me = session.user.id;
+  // 친구 순서는 서버(user_prefs)에 저장된 걸 우선 사용
+  try { const { data: pr } = await sb.from('user_prefs').select('friend_order').eq('user_id', me).maybeSingle(); if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); } catch {}
   const [p, f] = await Promise.all([
     sb.from('profiles').select('handle,name').eq('user_id', me).maybeSingle(),
     sb.from('friendships').select('requester,addressee,status')
@@ -2796,6 +2798,7 @@ function frListDrag(){
       const ids = [...list.querySelectorAll('.frrow')].map(r => r.dataset.fid);
       try { localStorage.setItem('frOrder', JSON.stringify(ids)); } catch {}
       FR.list = frSort(FR.list);
+      if (session) sb.from('user_prefs').upsert({ user_id: session.user.id, friend_order: ids, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) toast('순서를 서버에 못 올렸어요. 이 기기에는 저장됐어요'); });
     };
     document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
   }));
@@ -3305,7 +3308,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-10'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-11'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
