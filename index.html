@@ -42,6 +42,7 @@ input,textarea{outline:none}
 .pin .fwho{margin-top:2px;font-size:10px;color:#fff;background:#5B8DEF;padding:1px 7px;border-radius:999px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .frme{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--note);border-radius:14px;padding:14px 16px;margin-top:4px}
 .frme.col{flex-direction:column;align-items:stretch}
+.frme .inp{background:var(--bg);border-color:var(--line)}
 .frme b{font-size:18px}
 .frline{display:flex;gap:8px;align-items:center}
 .frline .inp{flex:1;min-width:0}
@@ -2689,7 +2690,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-16'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-17'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
