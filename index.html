@@ -283,6 +283,8 @@ body.sharemode .view{bottom:0}
 .toprow .tn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toprow .tgrip{font-size:22px;color:var(--sub);padding:8px 6px;touch-action:none;cursor:grab;flex:none}
 .toprow.out{opacity:.85}
+.seg.who{padding-top:0}
+.seg.who .chip.on{background:#5B8DEF;border-color:#5B8DEF;color:#fff}
 .seg{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
 .seg::-webkit-scrollbar{display:none}
 .item{display:flex;gap:14px;padding:14px 18px;align-items:center;border-bottom:1px solid var(--line)}
@@ -466,7 +468,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 <section class="view hidden" id="v-rec">
   <div class="scroll" id="recScroll">
     <div class="pagehead"><h1>모아보기</h1></div>
-    <div class="listtools"><div class="seg" id="recSeg"></div></div>
+    <div class="listtools"><div class="seg" id="recSeg"></div><div class="seg who hidden" id="recWho"></div></div>
     <div id="recBody" style="padding:0 18px 40px"></div>
   </div>
 </section>
@@ -1862,9 +1864,23 @@ const nowD = new Date();
 const statPer = { y: nowD.getFullYear(), m: nowD.getMonth() + 1, year: false };
 const cafeById = id => cafes.find(c => c.id === id);
 const areaOf = c => { const p = (c?.address || c?.roadAddress || '').split(' '); return p.length >= 3 ? p[1] + ' ' + p[2] : (p[1] || '기타'); };
+/* 앨범·TOP 10·뱃지는 친구 것도 볼 수 있게: 나 | 친구1 | 친구2 */
+let recWho = 'me', recFrTried = false;
+const recFriend = () => recWho !== 'me' && FR.list.includes(recWho) ? recWho : null;
+function drawRecWho(){
+  const box = $('#recWho'), show = ['album', 'top', 'stamp'].includes(recMode) && session && FR.list.length;
+  box.classList.toggle('hidden', !show);
+  if (!show) { if (recWho !== 'me' && !FR.list.includes(recWho)) recWho = 'me'; return; }
+  box.innerHTML = [['me', '나'], ...FR.list.map(u => [u, '👥 ' + frName(u)])].map(([k, n]) => `<button class="chip ${k === recWho ? 'on' : ''}" data-w="${esc(k)}">${esc(n)}</button>`).join('');
+}
+$('#recWho').onclick = e => { const b = e.target.closest('[data-w]'); if (!b) return; recWho = b.dataset.w; renderRec(); $('#recScroll').scrollTop = 0; };
 function renderRec(){
   const modes = [['album','앨범'],['top','TOP 10'],['stats','결산'],['stamp','뱃지'],['menu','메뉴로 찾기']];
   $('#recSeg').innerHTML = modes.map(([k,n]) => `<button class="chip ${k===recMode?'on':''}" data-k="${k}">${n}</button>`).join('');
+  if (session && !SHARE_ID && !recFrTried && ['album', 'top', 'stamp'].includes(recMode)) { recFrTried = true; frLoad().then(ok => { if (ok && FR.list.length && curTab === 'rec') drawRecWho(); }).catch(() => {}); }
+  drawRecWho();
+  const fu = ['album', 'top', 'stamp'].includes(recMode) ? recFriend() : null;
+  if (fu) { renderFriendRec(fu); return; }
   if (recMode === 'album') renderAlbum();
   if (recMode === 'stats') renderStats();
   if (recMode === 'menu') renderMenu();
@@ -1971,7 +1987,7 @@ async function shareTop(){
   } catch { loading(false); toast('이미지를 못 만들었어요'); }
 }
 $('#recBody').addEventListener('click', async e => {
-  if (recMode !== 'top') return;
+  if (recMode !== 'top' || recFriend()) return;
   if (e.target.closest('#topShare')) { shareTop(); return; }
   if (e.target.closest('#topReset')) { if (await ask('직접 바꾼 순위를 지우고 자동 순위로 돌릴까요?', '돌리기')) { await saveTop([]); renderTop(); } return; }
   const up = e.target.closest('[data-up]'); if (up) { const o = topFull.filter(id => id !== up.dataset.up); o.splice(Math.min(9, o.length), 0, up.dataset.up); topFull = o; await saveTop(o); renderTop(); toast('10위로 올렸어요'); return; }
@@ -2253,6 +2269,50 @@ function checkStamps(){
   const all = [...new Set([...saved, ...now])];
   try { localStorage.setItem('stamps', JSON.stringify(all)); } catch {}
   if (!first && fresh.length) setTimeout(() => toast(`🎉 새 뱃지! ${fresh.map(k => STAMPS.find(s => s[0] === k)[1]).join(', ')}`), 2100);
+}
+// 친구 것 보기 (읽기 전용)
+async function renderFriendRec(u){
+  const body = $('#recBody'), mode = recMode, name = esc(frName(u));
+  albumSeq++; // 내 앨범을 그리던 중이면 덮어쓰지 않게
+  body.innerHTML = '<div class="empty">불러오는 중…</div>';
+  const rec = await frRecords(u);
+  if (recMode !== mode || recFriend() !== u) return;
+  if (mode === 'stamp') {
+    const d = stampData(rec.cafes, rec.visits, false);
+    body.innerHTML = `<p class="small" style="margin:2px 0 0">👥 ${name}님의 뱃지</p>` + stampGrid(d, new Set(STAMPS.filter(s => d[s[3]] >= s[4]).map(s => s[0])));
+    body.onclick = null; return;
+  }
+  const byId = new Map(rec.cafes.map(c => [c.id, c]));
+  if (mode === 'album') {
+    const items = [];
+    [...rec.visits].filter(v => v.photoIds.length).sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.createdAt - a.createdAt)
+      .forEach(v => { const c = byId.get(v.cafeId); v.photoIds.forEach(p => items.push({ id: p, u, cap: `👥 ${frName(u)} · ${c?.name || ''}${v.date ? ' · ' + fmtDate(v.date) : ''}`, date: v.date || '', cafe: c?.name || '' })); });
+    if (!items.length) { body.innerHTML = `<div class="empty"><div class="big">📷</div>${name}님은 아직 올린 사진이 없어요.</div>`; body.onclick = null; return; }
+    const groups = new Map();
+    for (const it of items) { const k = it.date ? it.date.slice(0, 7) : '날짜 모름'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it); }
+    let html = `<p class="small" style="margin:2px 0 0">👥 ${name}님의 앨범</p><div class="album">`;
+    for (const [k, arr] of groups) html += `<h4>${k === '날짜 모름' ? k : `${+k.slice(0, 4)}년 ${+k.slice(5, 7)}월`}<small>${arr.length}장</small></h4><div class="albumgrid">${arr.map((it, i) => `<div class="pol" data-fph="${it.id}" style="transform:rotate(${hashRot(it.id, i)}deg)"><div data-flz="${it.id}"></div><div class="cap">${esc(it.cafe)}</div></div>`).join('')}</div>`;
+    body.innerHTML = html + '</div>';
+    albumIO?.disconnect();
+    const lz = async el => { const url = await frPhoto(u, el.dataset.flz); if (url) el.style.backgroundImage = `url('${url}')`; };
+    albumIO = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { albumIO.unobserve(e.target); lz(e.target); } }), { root: $('#recScroll'), rootMargin: '400px' });
+    body.querySelectorAll('[data-flz]').forEach((el, i) => i < 24 ? lz(el) : albumIO.observe(el));
+    body.onclick = e => { const ph = e.target.closest('[data-fph]'); if (ph) openViewer(items, ph.dataset.fph, u); };
+    return;
+  }
+  // TOP 10: 친구가 정한 순서가 있으면 그대로, 없으면 별점·방문 수 순
+  const pool = rec.cafes.filter(c => !c.wish).map(c => ({ c, st: frStats(rec, c) })).filter(x => x.st.count || x.st.rating);
+  const cmp = (a, b) => (b.st.rating - a.st.rating) || (b.st.count - a.st.count) || (b.st.last?.date || '').localeCompare(a.st.last?.date || '');
+  const ranked = pool.filter(x => +x.c.rank > 0).sort((a, b) => a.c.rank - b.c.rank);
+  let order = ranked.length ? [...ranked] : [...pool].sort(cmp);
+  if (ranked.length) pool.filter(x => !(+x.c.rank > 0)).sort(cmp).forEach(f => { let last = -1; order.forEach((x, i) => { if (cmp(x, f) <= 0) last = i; }); order.splice(last + 1, 0, f); });
+  order = order.slice(0, 31);
+  if (!order.length) { body.innerHTML = `<div class="empty"><div class="big">🏆</div>${name}님은 아직 순위에 들 카페가 없어요.</div>`; body.onclick = null; return; }
+  const row = (x, i) => `<div class="toprow ${i >= 10 ? 'out' : ''}"><div class="trk ${i < 10 ? 'r' + (i + 1) : ''}">${i + 1}</div><div class="tth" data-fcov="${esc(x.st.cover || '')}"></div>
+    <div class="tmain tap" data-ftop="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${esc(areaOf(x.c))}${x.st.rating ? ` · ★ ${x.st.rating.toFixed(1)}` : ''} · 방문 ${x.st.count}번</div></div></div>`;
+  body.innerHTML = `<p class="small" style="margin:6px 0">👥 ${name}님의 TOP 10${ranked.length ? ' (직접 정한 순위)' : ''}</p>${order.slice(0, 10).map(row).join('')}${order.length > 10 ? `<div class="sec"><h3>순위 밖</h3>${order.slice(10).map((x, i) => row(x, i + 10)).join('')}</div>` : ''}`;
+  body.querySelectorAll('[data-fcov]').forEach(async d => { if (d.dataset.fcov) { const url = await frPhoto(u, d.dataset.fcov); if (url) d.style.backgroundImage = `url('${url}')`; } });
+  body.onclick = e => { const t = e.target.closest('[data-ftop]'); if (!t) return; const c = byId.get(t.dataset.ftop); if (c) { showTab('map'); setFriendPins(true).then(() => openFriendSheet(u, c, true)); } };
 }
 function renderStamps(){
   const { d, saved, now } = stampEarned();
@@ -3216,7 +3276,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-8'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-9'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
