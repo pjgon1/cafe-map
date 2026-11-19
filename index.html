@@ -1850,13 +1850,24 @@ function renderRec(){
 }
 
 /* 나의 TOP 10: 별점·방문 수로 자동 순위 → 직접 끌어서 바꾸면 그 순서로 저장(c.rank, 동기화됨) */
+// 순서: 직접 정한 게 있으면 그 순서(순위 밖까지 전부 고정). 새로 생긴 카페만 '자기보다 별점 높은 곳들 바로 아래'에 끼워넣고 그 자리로 고정
+const topCmp = (a, b) => (b.st.rating - a.st.rating) || (b.st.count - a.st.count) || (b.st.last || '').localeCompare(a.st.last || '');
+let topFull = [];
 function topOrder(){
   const pool = cafes.filter(c => !c.wish && !c.deleted).map(c => ({ c, st: cafeStats(c) })).filter(x => x.st.count || x.st.rating);
-  const auto = [...pool].sort((a, b) => (b.st.rating - a.st.rating) || (b.st.count - a.st.count) || (b.st.last || '').localeCompare(a.st.last || ''));
-  const fixed = pool.filter(x => +x.c.rank > 0).sort((a, b) => a.c.rank - b.c.rank);
-  const top = [...fixed, ...auto.filter(x => !(+x.c.rank > 0))].slice(0, 10);
-  const ids = new Set(top.map(x => x.c.id));
-  return { top, rest: auto.filter(x => !ids.has(x.c.id)).slice(0, 15), manual: fixed.length > 0 };
+  const ranked = pool.filter(x => +x.c.rank > 0).sort((a, b) => a.c.rank - b.c.rank);
+  let order, fresh = [];
+  if (!ranked.length) order = [...pool].sort(topCmp);
+  else {
+    order = [...ranked];
+    fresh = pool.filter(x => !(+x.c.rank > 0)).sort(topCmp);
+    for (const f of fresh) {
+      let last = -1; order.forEach((x, i) => { if (topCmp(x, f) <= 0) last = i; }); // f보다 같거나 높은 곳 중 마지막 바로 다음
+      order.splice(last + 1, 0, f);
+    }
+  }
+  topFull = order.map(x => x.c.id);
+  return { top: order.slice(0, 10), rest: order.slice(10, 40), manual: ranked.length > 0, fresh: fresh.length };
 }
 async function saveTop(ids){
   const set = new Set(ids), changed = [];
@@ -1868,7 +1879,8 @@ async function saveTop(ids){
   if (changed.length) Sync.soon();
 }
 async function renderTop(){
-  const body = $('#recBody'), { top, rest, manual } = topOrder();
+  const body = $('#recBody'), { top, rest, manual, fresh } = topOrder();
+  if (manual && fresh) saveTop(topFull); // 새로 끼워넣은 자리도 고정
   if (!top.length) { body.innerHTML = `<div class="empty"><div class="big">🏆</div>별점을 매기거나 방문 기록을 남기면<br>여기 나만의 순위가 생겨요.</div>`; return; }
   const row = (x, i) => `<div class="toprow" data-id="${esc(x.c.id)}"><div class="trk r${i + 1}">${i + 1}</div><div class="tth" data-cover="${esc(coverOf(x.c, x.st) || '')}"></div>
     <div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${esc(areaOf(x.c))}${x.st.rating ? ` · ★ ${x.st.rating.toFixed(1)}` : ''} · 방문 ${x.st.count}번</div></div>
@@ -1876,7 +1888,7 @@ async function renderTop(){
   body.innerHTML = `<div class="rowsb" style="align-items:center;margin:4px 0 6px"><div class="small">${manual ? '내가 정한 순위예요. ≡ 를 끌어서 바꿔요' : '별점·방문 수로 자동으로 매긴 순위예요. ≡ 를 끌어서 바꿔요'}</div>${manual ? '<button class="textbtn" id="topReset">자동 순위로</button>' : ''}</div>
     <div id="topList">${top.map(row).join('')}</div>
     <button class="btn" id="topShare" style="width:100%;margin-top:16px">🏆 이미지로 저장·공유</button>
-    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>올리면 10위로 들어가요</small></h3>${rest.map(x => `<div class="toprow out"><div class="tth" data-cover="${esc(coverOf(x.c, x.st) || '')}"></div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button></div>`).join('')}</div>` : ''}`;
+    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>올리면 10위로, 원래 10위는 여기 첫 번째로</small></h3>${rest.map((x, i) => `<div class="toprow out"><div class="trk">${i + 11}</div><div class="tth" data-cover="${esc(coverOf(x.c, x.st) || '')}"></div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button></div>`).join('')}</div>` : ''}`;
   body.querySelectorAll('[data-cover]').forEach(async d => { if (d.dataset.cover) { const u = await getPhotoURL(d.dataset.cover); if (u) d.style.backgroundImage = `url('${u}')`; } });
   topDrag();
 }
@@ -1898,7 +1910,7 @@ function topDrag(){
     const up = async ev => {
       if (ev.pointerId !== pid) return;
       document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
-      row.classList.remove('drag'); await saveTop(topIds());
+      row.classList.remove('drag'); const t = topIds(); topFull = [...t, ...topFull.filter(id => !t.includes(id))]; await saveTop(topFull);
       const s = list.previousElementSibling?.querySelector('.small'); if (s) s.textContent = '내가 정한 순위예요. ≡ 를 끌어서 바꿔요';
     };
     document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
@@ -1939,7 +1951,7 @@ $('#recBody').addEventListener('click', async e => {
   if (recMode !== 'top') return;
   if (e.target.closest('#topShare')) { shareTop(); return; }
   if (e.target.closest('#topReset')) { if (await ask('직접 바꾼 순위를 지우고 자동 순위로 돌릴까요?', '돌리기')) { await saveTop([]); renderTop(); } return; }
-  const up = e.target.closest('[data-up]'); if (up) { const ids = topIds(); ids.splice(Math.min(9, ids.length), ids.length >= 10 ? 1 : 0, up.dataset.up); await saveTop(ids.slice(0, 10)); renderTop(); toast('10위로 올렸어요'); return; }
+  const up = e.target.closest('[data-up]'); if (up) { const o = topFull.filter(id => id !== up.dataset.up); o.splice(Math.min(9, o.length), 0, up.dataset.up); topFull = o; await saveTop(o); renderTop(); toast('10위로 올렸어요'); return; }
   const op = e.target.closest('[data-open]'); if (op) openDetail(op.dataset.open);
 });
 $('#recSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; recMode = b.dataset.k; renderRec(); $('#recScroll').scrollTop = 0; };
@@ -3181,7 +3193,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-4'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-5'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
