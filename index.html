@@ -40,7 +40,7 @@ input,textarea{outline:none}
 .album h4 small{font-weight:400;color:var(--sub);font-size:12px;margin-left:6px}
 .albumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 10px}
 .albumgrid .pol{position:relative;padding:5px 5px 18px}
-.albumgrid .pol>div:first-child{width:100%;height:auto;aspect-ratio:1/1.05}
+.albumgrid .pol>div:first-of-type{width:100%;height:auto;aspect-ratio:1/1.05}
 .albumgrid .pol .cap{font-size:10px;bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
 .pernav{display:flex;align-items:center;justify-content:space-between;margin:6px 0 14px}
 .pernav .lbl{font-size:18px;font-weight:700}
@@ -154,7 +154,7 @@ body.sharemode .view{bottom:0}
 /* 폴라로이드 */
 .pols{position:relative;height:178px;margin:2px 0 6px}
 .pol{position:absolute;background:var(--frame);padding:7px 7px 22px;border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,.16);border:1px solid var(--line)}
-.pol>div:first-child{width:104px;height:118px;background:var(--ph) center/cover no-repeat}
+.pol>div:first-of-type{width:104px;height:118px;background:var(--ph) center/cover no-repeat}
 .pol .cap{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:11px;color:var(--sub)}
 .pols.empty{height:auto}
 .emptyPhoto{border:1.5px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--sub);font-size:14px}
@@ -227,7 +227,7 @@ body.sharemode .view{bottom:0}
 
 .wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:18px 12px;padding:6px 2px}
 .wall .pol{position:relative}
-.wall .pol>div:first-child{width:100%;height:auto;aspect-ratio:1/1.1}
+.wall .pol>div:first-of-type{width:100%;height:auto;aspect-ratio:1/1.1}
 
 .visit{position:relative;padding-left:20px;margin-bottom:18px}
 .visit:before{content:"";position:absolute;left:5px;top:8px;bottom:-18px;width:2px;background:var(--line)}
@@ -238,7 +238,7 @@ body.sharemode .view{bottom:0}
 .vphotos{display:flex;gap:10px;overflow-x:auto;padding:8px 2px 4px;scrollbar-width:none}
 .vphotos::-webkit-scrollbar{display:none}
 .vphotos .pol{position:relative;flex:none}
-.vphotos .pol>div:first-child{width:84px;height:92px}
+.vphotos .pol>div:first-of-type{width:84px;height:92px}
 .small{font-size:12px;color:var(--sub)}
 .vacts{display:flex;gap:14px;margin-top:6px}
 .vacts button{font-size:12px;color:var(--sub);text-decoration:underline;text-underline-offset:2px}
@@ -261,7 +261,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 .tagpick .chip.on{background:var(--acc);color:var(--onacc)}
 .addph{display:flex;gap:12px;flex-wrap:wrap;padding-top:6px}
 .addph .pol{position:relative}
-.addph .pol>div:first-child{width:86px;height:94px}
+.addph .pol>div:first-of-type{width:86px;height:94px}
 .addph .x{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:14px;display:flex;align-items:center;justify-content:center}
 .addph .plus{width:102px;height:126px;border:1.5px dashed var(--line);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--sub);font-size:13px}
 .addph .plus svg{width:26px;height:26px}
