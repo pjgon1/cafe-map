@@ -858,6 +858,50 @@ function closeSheet(){
   overlays.forEach(o => { o._el.classList.remove('sel'); o.setZIndex(2); });
   removeTemp(); setMapBtnBottom();
 }
+/* 카드 끌어내리기: 손가락으로 아래로 끌면 따라 내려오고, 충분히 내리거나 휙 내리면 닫힘. 덜 내리면 제자리로 */
+(function sheetDrag(){
+  const sh = $('#sheet');
+  let y0 = 0, x0 = 0, t0 = 0, dy = 0, mode = '', lastY = 0, lastT = 0, vel = 0, justDragged = false;
+  const begin = (x, y) => { x0 = x; y0 = y; dy = 0; mode = 'wait'; t0 = lastT = performance.now(); lastY = y; vel = 0; };
+  const move = (x, y, e) => {
+    if (!mode) return;
+    const ddx = x - x0, ddy = y - y0;
+    if (mode === 'wait') {
+      if (Math.abs(ddy) < 6 && Math.abs(ddx) < 6) return;
+      // 아래로, 세로 방향, 카드 내용이 맨 위일 때만 끌기 (아니면 카드 안 스크롤)
+      if (ddy > 0 && Math.abs(ddy) > Math.abs(ddx) && sh.scrollTop <= 0) { mode = 'drag'; sh.style.transition = 'none'; }
+      else { mode = ''; return; }
+    }
+    if (e?.cancelable) e.preventDefault();
+    dy = Math.max(0, ddy);
+    const now = performance.now(); if (now > lastT) { vel = (y - lastY) / (now - lastT); lastY = y; lastT = now; }
+    sh.style.transform = `translateY(${dy}px)`;
+  };
+  const end = () => {
+    if (mode !== 'drag') { mode = ''; return; }
+    mode = ''; justDragged = true; setTimeout(() => justDragged = false, 50);
+    const h = sh.offsetHeight;
+    if (dy > Math.min(120, h * .3) || (vel > .55 && dy > 20)) {
+      sh.style.transition = `transform ${Math.max(.12, Math.min(.26, (h - dy) / 1600))}s cubic-bezier(.3,.7,.4,1)`;
+      sh.style.transform = 'translateY(110%)';
+      const done = () => { sh.removeEventListener('transitionend', done); closeSheet(); requestAnimationFrame(() => { sh.style.transition = ''; sh.style.transform = ''; }); };
+      sh.addEventListener('transitionend', done); setTimeout(() => sh.style.transform && done(), 400);
+    } else {
+      sh.style.transition = 'transform .32s cubic-bezier(.2,1.25,.4,1)'; // 살짝 튕기며 제자리로
+      sh.style.transform = 'translateY(0)';
+      setTimeout(() => { sh.style.transition = ''; sh.style.transform = ''; }, 340);
+    }
+  };
+  sh.addEventListener('touchstart', e => { if (e.touches.length === 1) begin(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+  sh.addEventListener('touchmove', e => move(e.touches[0].clientX, e.touches[0].clientY, e), { passive: false });
+  sh.addEventListener('touchend', end); sh.addEventListener('touchcancel', end);
+  // 마우스(PC)
+  sh.addEventListener('mousedown', e => { if (e.button === 0) begin(e.clientX, e.clientY); });
+  window.addEventListener('mousemove', e => mode && move(e.clientX, e.clientY, e));
+  window.addEventListener('mouseup', end);
+  // 끌고 난 직후 손을 뗄 때 버튼이 눌리지 않게
+  sh.addEventListener('click', e => { if (justDragged) { e.stopPropagation(); e.preventDefault(); } }, true);
+})();
 $('#sheet').onclick = e => {
   const ph = e.target.closest('[data-ph]'); if (ph) { const c = cafes.find(x => x.id === selectedId); openViewer(cafePhotoList(c), ph.dataset.ph); return; }
   if (e.target.closest('[data-bldback]') && lastBld) { showBuilding(lastBld); return; }
@@ -2366,7 +2410,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-10'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-11'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
