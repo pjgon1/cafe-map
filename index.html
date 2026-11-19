@@ -881,6 +881,7 @@ function closeSheet(){
     if (mode !== 'drag') { mode = ''; return; }
     mode = ''; justDragged = true; setTimeout(() => justDragged = false, 50);
     const h = sh.offsetHeight;
+    if (performance.now() - lastT > 100) vel = 0; // 멈췄다가 놓으면 '휙'이 아님
     if (dy > Math.min(120, h * .3) || (vel > .55 && dy > 20)) {
       sh.style.transition = `transform ${Math.max(.12, Math.min(.26, (h - dy) / 1600))}s cubic-bezier(.3,.7,.4,1)`;
       sh.style.transform = 'translateY(110%)';
@@ -2410,7 +2411,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-11'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-12'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
