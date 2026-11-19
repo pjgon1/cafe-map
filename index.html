@@ -200,7 +200,9 @@ body.sharemode .view{bottom:0}
 .subt{font-size:13px;color:var(--sub);margin-top:3px}
 .rowsb{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .pagehead.rowsb{align-items:center}
-#btnFriends{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+#btnFriends{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+#btnFriends.only{background:#5B8DEF;border-color:#5B8DEF;color:#fff;box-shadow:0 0 0 3px rgba(91,141,239,.28),0 2px 8px rgba(0,0,0,.14)}
+#btnFriends.only::after{content:'친구만';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);background:#fff;color:#5B8DEF;border:1.5px solid #5B8DEF;border-radius:999px;font-size:10px;font-weight:700;padding:1px 5px;white-space:nowrap;line-height:1.3}
 .tag{display:inline-block;font-size:12px;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--softt);margin:0 4px 4px 0}
 .tag.heart{background:var(--heart);color:var(--heartt)}
 .tag.wish{background:transparent;color:var(--sub);border:1px dashed var(--sub)}
@@ -802,7 +804,7 @@ async function refreshPins(){
   if (!map) return;
   const day = cupDay(), seen = new Set();
   for (const c of cafes) {
-    if (!passMap(c)) continue;
+    if (!passMap(c) || FR.only) continue; // 친구만 보기면 내 핀은 숨김
     seen.add(c.id);
     const sel = c.id === selectedId, sig = [c.name, c.lat, c.lng, c.wish ? 1 : 0, c.fav ? 1 : 0, day].join('|');
     let o = overlays.get(c.id);
@@ -821,6 +823,12 @@ async function refreshPins(){
   renderChips();
 }
 function fitAll(){
+  if (FR.pinsOn && FR.only) { // 친구만 보기: 친구 핀 전체가 보이게
+    const ps = [...FR.pins.values()].map(o => o.getPosition());
+    if (!map || !ps.length) { toast('보여줄 친구 카페가 없어요'); return; }
+    if (ps.length === 1) { map.setLevel(4); map.panTo(ps[0]); return; }
+    const b = new kakao.maps.LatLngBounds(); ps.forEach(p => b.extend(p)); map.setBounds(b, 80, 40, 120, 40); return;
+  }
   const list = cafes.filter(passMap);
   if (!map || !list.length) { toast('아직 기록한 카페가 없어요'); return; }
   if (list.length === 1) { map.setLevel(4); map.panTo(new kakao.maps.LatLng(list[0].lat, list[0].lng)); return; }
@@ -2340,7 +2348,7 @@ async function renderShares(){
 /* =========================================================
    친구 (서로 수락해야 친구 · 친구 기록은 읽기만, 메모는 안 보임)
    ========================================================= */
-const FR = { me: null, list: [], incoming: [], outgoing: [], prof: new Map(), data: new Map(), loadedAt: 0, pinsOn: false, pins: new Map() };
+const FR = { me: null, list: [], incoming: [], outgoing: [], prof: new Map(), data: new Map(), loadedAt: 0, pinsOn: false, only: false, pins: new Map() };
 // 친구 핀 설정: 안 띄울 친구, 띄울 종류(♪ 다녀왔어 / ♥ 또 갈래 / ☆ 가볼래)
 const FRCFG = (() => { try { const v = JSON.parse(localStorage.getItem('frPinCfg') || '{}'); return { off: new Set(v.off || []), kinds: new Set(v.kinds || ['♪', '♥', '☆']) }; } catch { return { off: new Set(), kinds: new Set(['♪', '♥', '☆']) }; } })();
 const saveFrCfg = () => { try { localStorage.setItem('frPinCfg', JSON.stringify({ off: [...FRCFG.off], kinds: [...FRCFG.kinds] })); } catch {} };
@@ -2566,11 +2574,13 @@ async function sheetFriendRecords(c){
 }
 
 /* 지도에 친구 핀 */
+const frBtnMark = () => { $('#btnFriends').classList.toggle('on', FR.pinsOn && !FR.only); $('#btnFriends').classList.toggle('only', FR.pinsOn && FR.only); };
 async function setFriendPins(on, focusUid){
-  FR.pinsOn = on; $('#btnFriends').classList.toggle('on', on);
-  if (!on) { FR.pins.forEach(o => o.setMap(null)); FR.pins.clear(); return; }
-  if (!await frLoad()) { toast('친구 목록을 못 불러왔어요'); FR.pinsOn = false; $('#btnFriends').classList.remove('on'); return; }
-  if (!FR.list.length) { toast('아직 친구가 없어요. 친구를 추가해 보세요'); FR.pinsOn = false; $('#btnFriends').classList.remove('on'); openFriends(); return; }
+  FR.pinsOn = on;
+  if (!on) { const was = FR.only; FR.only = false; frBtnMark(); FR.pins.forEach(o => o.setMap(null)); FR.pins.clear(); if (was) refreshPins(); return; }
+  frBtnMark();
+  if (!await frLoad()) { toast('친구 목록을 못 불러왔어요'); FR.pinsOn = false; FR.only = false; frBtnMark(); return; }
+  if (!FR.list.length) { toast('아직 친구가 없어요. 친구를 추가해 보세요'); FR.pinsOn = false; FR.only = false; frBtnMark(); openFriends(); return; }
   await drawFriendPins(focusUid);
 }
 // 다녀왔어(♪) / 가볼래만(☆) / 또 갈래(♥)
@@ -2582,7 +2592,7 @@ async function drawFriendPins(focusUid, quiet){
   const users = FR.list.filter(u => u === focusUid || !FRCFG.off.has(u));
   const recs = await Promise.all(users.map(async u => [u, await frRecords(u)]));
   // 지금 지도에 보이는 내 핀만 (칩으로 내 핀이 숨겨졌으면 친구 핀은 보여줌)
-  const mine = new Set(cafes.filter(passMap).map(c => c.kakaoId).filter(Boolean));
+  const mine = new Set(FR.only ? [] : cafes.filter(passMap).map(c => c.kakaoId).filter(Boolean));
   const groups = new Map(); // 같은 카페를 여러 친구가 갔으면 핀 하나로
   for (const [u, rec] of recs) for (const c of rec.cafes) {
     if (!c.lat || !c.lng) continue;
@@ -2688,7 +2698,16 @@ async function frAddWish(c){
   b.addEventListener('pointermove', e => { if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 12) stop(); });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, stop));
   b.addEventListener('contextmenu', e => e.preventDefault());
-  b.onclick = () => { if (long) { long = false; return; } setFriendPins(!FR.pinsOn); };
+  b.onclick = async () => {
+    if (long) { long = false; return; }
+    if (!FR.pinsOn) { setFriendPins(true); return; }
+    if (!FR.only) { // 친구만 보기
+      FR.only = true; frBtnMark(); if (selectedId) closeSheet(); refreshPins(); await drawFriendPins(null, true);
+      toast(FR.pins.size ? `내 핀은 숨기고 친구 카페 ${FR.pins.size}곳만 보여요` : '보여줄 친구 카페가 없어요');
+      return;
+    }
+    setFriendPins(false); toast('다시 내 카페만 보여요');
+  };
 })();
 $('#frSetBtn').onclick = () => openFrSet();
 $('#lFriends').onclick = () => openFriends();
@@ -2868,7 +2887,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-24'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-25'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
