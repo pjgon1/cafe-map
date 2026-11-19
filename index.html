@@ -847,11 +847,11 @@ let pendingPlace = null;
 const qEl = $('#q');
 qEl.addEventListener('focus', () => { $('#qClear').classList.remove('hidden'); if (!qEl.value) showSearchHome(); });
 qEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); qEl.blur(); } });
-let qTimer; qEl.addEventListener('input', () => { clearTimeout(qTimer); if (qEl.value.trim().length >= 2) qTimer = setTimeout(doSearch, 350); else showSearchHome(); });
+let qTimer; qEl.addEventListener('input', () => { clearTimeout(qTimer); if (qEl.value.trim().length >= 2) qTimer = setTimeout(doSearch, 350); else if ($('#results').classList.contains('hidden') || !$('#results').querySelector('.hint.home')) showSearchHome(); });
 $('#qClear').onclick = () => { qEl.value = ''; qEl.blur(); $('#results').classList.add('hidden'); $('#qClear').classList.add('hidden'); };
 function showSearchHome(){
   $('#results').classList.remove('hidden'); closeSheet();
-  $('#results').innerHTML = `<div class="hint">다녀온 카페 이름을 검색해서 고르면<br>지도에 내 핀이 꽂혀요.<br><br><span class="small">예: 모모커피 성수, 동성로 카페</span></div>`;
+  $('#results').innerHTML = `<div class="hint home">다녀온 카페 이름을 검색해서 고르면<br>지도에 내 핀이 꽂혀요.<br><br><span class="small">예: 모모커피 성수, 동성로 카페</span></div>`;
 }
 function doSearch(){
   const q = qEl.value.trim(); if (!q) return;
@@ -1212,15 +1212,18 @@ $('#sortSeg').onclick = async e => {
   renderList();
 };
 $('#listChips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; listFilter = b.dataset.t; renderList(); };
-$('#lq').oninput = () => renderList();
+$('#lq').oninput = () => applyListQuery();
+function applyListQuery(){
+  const q = $('#lq').value.trim().toLowerCase(), items = $('#list').querySelectorAll('.item'); let n = 0;
+  items.forEach(b => { const ok = !q || b.dataset.s.includes(q); b.classList.toggle('hidden', !ok); if (ok) n++; });
+  const em = $('#lqEmpty'); if (em) em.classList.toggle('hidden', !items.length || n > 0);
+}
 let listSeq = 0;
 async function renderList(){
   const seq = ++listSeq;
   renderSort();
-  const q = $('#lq').value.trim().toLowerCase();
   const base = myPos || (map ? { lat: map.getCenter().getLat(), lng: map.getCenter().getLng() } : null);
   let rows = cafes.filter(c => passFilter(c, listFilter)).map(c => ({ c, st: cafeStats(c), d: base ? distKm(base, c) : null }));
-  if (q) rows = rows.filter(({c}) => [c.name, c.address, c.roadAddress, c.memo, ...(c.tags||[]), ...visitsOf(c.id).flatMap(v => [v.menu, v.review])].join(' ').toLowerCase().includes(q));
   const by = {
     recent: (a,b) => (b.st.last||'').localeCompare(a.st.last||'') || b.c.createdAt - a.c.createdAt,
     name: (a,b) => a.c.name.localeCompare(b.c.name, 'ko'),
@@ -1234,14 +1237,16 @@ async function renderList(){
   if (!rows.length) { $('#list').innerHTML = `<div class="empty">조건에 맞는 카페가 없어요.</div>`; return; }
   const html = await Promise.all(rows.map(async ({c, st, d}) => {
     const cover = coverOf(c, st); const url = cover ? await getPhotoURL(cover) : '';
-    return `<button class="item" data-id="${c.id}" style="width:100%;text-align:left">
+    const sk = [c.name, c.address, c.roadAddress, c.memo, ...(c.tags||[]), ...visitsOf(c.id).flatMap(v => [v.menu, v.review])].join(' ').toLowerCase();
+    return `<button class="item" data-id="${c.id}" data-s="${esc(sk)}" style="width:100%;text-align:left">
       <div class="thumbpol" style="transform:rotate(${hashRot(c.id,0)}deg)"><div style="${url?`background-image:url('${url}')`:''}">${url?'':cupIcon(c.id)}</div></div>
       <div class="info"><div class="nm">${c.wish?'<span style="color:var(--sub)">☆</span> ':c.fav?'<span style="color:var(--heartt)">♥</span> ':''}${esc(c.name)}</div>
       <div class="ad">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''}</div>
       <div class="mini">${st.rating?`<b>★ ${st.rating.toFixed(1)}</b>`:''}<span>${c.wish && !st.count ? '가볼래' : `방문 기록 ${st.count}개`}</span>${st.last?`<span>${fmtDate(st.last)}</span>`:''}</div></div></button>`;
   }));
   if (seq !== listSeq) return;
-  $('#list').innerHTML = html.join('');
+  $('#list').innerHTML = html.join('') + `<div class="empty hidden" id="lqEmpty">검색 결과가 없어요.</div>`;
+  applyListQuery();
 }
 $('#list').onclick = e => { const b = e.target.closest('.item'); if (b) openDetail(b.dataset.id); };
 
@@ -1552,7 +1557,7 @@ function renderMenu(){
         <div class="s">${esc(h.m)}${h.v.price ? ' · ' + won(h.v.price) : ''}${h.v.date ? ' · ' + fmtDate(h.v.date) : ''}</div>
         ${h.v.review ? `<div class="r">${esc(h.v.review)}</div>` : ''}</button>`).join('');
   };
-  $('#mq').oninput = draw;
+  let mt; $('#mq').oninput = () => { clearTimeout(mt); mt = setTimeout(draw, 120); };
   body.onclick = e => {
     const m = e.target.closest('[data-m]'); if (m) { $('#mq').value = m.dataset.m; draw(); return; }
     const r = e.target.closest('.mres'); if (r) openDetail(r.dataset.id);
@@ -1982,7 +1987,7 @@ function openShareMaker(){
     <div id="shList"></div>`;
   $('#shRev').onclick = e => { e.currentTarget.classList.toggle('on'); shOpt.review = e.currentTarget.classList.contains('on'); };
   $('#shPh').onclick = e => { e.currentTarget.classList.toggle('on'); shOpt.photo = e.currentTarget.classList.contains('on'); };
-  $('#shQ').oninput = e => { shOpt.q = e.target.value.trim().toLowerCase(); drawShList(); };
+  let st; $('#shQ').oninput = e => { clearTimeout(st); st = setTimeout(() => { shOpt.q = e.target.value.trim().toLowerCase(); drawShList(); }, 120); };
   $('#shQuick').onclick = e => { const b = e.target.closest('[data-q]'); if (!b) return; const q = b.dataset.q; if (q === '__none') shSel.clear(); else cafes.filter(c => passFilter(c, q)).forEach(c => shSel.add(c.id)); drawShList(); };
   $('#shList').onclick = e => { const r = e.target.closest('.ckrow'); if (!r) return; const id = r.dataset.id; shSel.has(id) ? shSel.delete(id) : shSel.add(id); r.classList.toggle('on'); updShCount(); };
   $('#shMake').disabled = false; $('#shMake').textContent = '링크 만들기'; $('#shMake').onclick = shMakeHandler;
