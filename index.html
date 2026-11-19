@@ -260,6 +260,7 @@ body.sharemode .view{bottom:0}
 .res .nm{font-size:16px}
 .res .ad{font-size:13px;color:var(--sub);margin-top:2px}
 .res .cat{font-size:12px;color:var(--sub);margin-top:2px}
+.res .frmark{font-size:11px;background:#E6EEFD;color:#3F6FD8;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:2px;font-weight:600}
 .res .mine{font-size:11px;background:var(--acc);color:var(--onacc);padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:2px}
 .res .dist{margin-left:auto;font-size:12px;color:var(--sub);flex:none;padding-top:3px}
 .hint{padding:28px 18px;text-align:center;color:var(--sub);font-size:14px;line-height:1.7}
@@ -1114,7 +1115,7 @@ function doSearch(){
   if (!places) { $('#results').innerHTML = '<div class="hint">지도가 아직 준비되지 않았어요.</div>'; return; }
   const opt = { size: 15 };
   if (map) { opt.location = map.getCenter(); opt.sort = kakao.maps.services.SortBy.ACCURACY; }
-  places.keywordSearch(q, (data, status) => {
+  places.keywordSearch(q, async (data, status) => {
     if (seq !== searchSeq || $('#results').classList.contains('hidden')) return; // 늦게 온 옛 검색 결과는 버림
     if (status === kakao.maps.services.Status.ZERO_RESULT) {
       $('#results').innerHTML = `<div class="hint">'${esc(q)}' 검색 결과가 없어요.<br><br><button class="textbtn" id="manualAdd">지도 가운데 위치에 직접 등록하기</button></div>`;
@@ -1122,18 +1123,40 @@ function doSearch(){
     }
     if (status !== kakao.maps.services.Status.OK) { $('#results').innerHTML = '<div class="hint">검색 중 문제가 생겼어요. 잠시 후 다시 해주세요.</div>'; return; }
     const here = myPos || (map ? { lat: map.getCenter().getLat(), lng: map.getCenter().getLng() } : null);
+    // 친구가 다녀온 곳 표시: 친구 기록에서 같은 카카오 장소 찾기 (오래 걸리면 1.5초에서 끊음)
+    const frMap = new Map();
+    if (session && !SHARE_ID) {
+      try {
+        await Promise.race([(async () => {
+          if (!await frLoad()) return;
+          const recs = await Promise.all(FR.list.map(async u => [u, await frRecords(u)]));
+          for (const [u, rec] of recs) for (const c of rec.cafes) if (c.kakaoId) { const st = frStats(rec, c); if (!frMap.has(c.kakaoId)) frMap.set(c.kakaoId, []); frMap.get(c.kakaoId).push({ uid: u, c, st }); }
+        })(), new Promise(r => setTimeout(r, 1500))]);
+      } catch {}
+      if (seq !== searchSeq || $('#results').classList.contains('hidden')) return;
+    }
+    // 내 카페·친구 카페를 위로 (원래 순서는 유지)
+    const rank = p => (cafes.some(c => c.kakaoId === p.id) || frMap.has(p.id)) ? 0 : 1;
+    data = data.map((p, i) => [p, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
     $('#results').innerHTML = data.map((p, i) => {
-      const mine = cafes.find(c => c.kakaoId === p.id);
+      const mine = cafes.find(c => c.kakaoId === p.id), fw = frMap.get(p.id) || [];
+      const frTag = fw.length ? `<span class="frmark">👥 ${esc(frName(fw[0].uid))}${fw.length > 1 ? ` 외 ${fw.length - 1}명` : ''}${fw[0].st.rating ? ` ★${fw[0].st.rating.toFixed(1)}` : fw[0].c.wish ? ' 가볼래' : ''}</span>` : '';
       const d = here ? distKm(here, {lat:+p.y, lng:+p.x}) : null;
       const isCafe = /카페|커피|디저트|베이커리|제과/.test(p.category_name);
       return `<button class="res" data-i="${i}" style="width:100%;text-align:left">
         <div class="ic">${isCafe ? '☕' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'}</div>
-        <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${mine?`<span class="mine">${mine.wish?'가볼 곳':'기록됨'}</span>`:''}</div>
+        <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${mine?`<span class="mine">${mine.wish?'가볼 곳':'기록됨'}</span>`:''}${frTag}</div>
         <div class="ad">${esc(p.road_address_name || p.address_name)}</div>
         <div class="cat">${esc((p.category_name||'').split(' > ').slice(-2).join(' · '))}</div></div>
         <div class="dist">${fmtDist(d)}</div></button>`;
     }).join('') + `<div class="hint"><button class="textbtn" id="manualAdd">찾는 곳이 없나요? 지도 가운데에 직접 등록</button></div>`;
-    $('#results').onclick = e => { const b = e.target.closest('.res'); if (b) pickPlace(data[+b.dataset.i]); };
+    $('#results').onclick = e => {
+      const b = e.target.closest('.res'); if (!b) return;
+      const p = data[+b.dataset.i], fw = frMap.get(p.id);
+      // 내 기록이 없고 친구만 다녀온 곳이면 친구 기록 카드로
+      if (fw && !cafes.some(c => c.kakaoId === p.id)) { $('#results').classList.add('hidden'); openFriendSheet(fw[0].uid, fw[0].c, true, fw.map(w => ({ uid: w.uid, c: w.c }))); return; }
+      pickPlace(p);
+    };
     $('#manualAdd').onclick = () => manualAdd(q);
   }, opt);
 }
@@ -3193,7 +3216,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-7'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-8'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
