@@ -186,6 +186,10 @@ body.sharemode .view{bottom:0}
 
 /* 폴라로이드 */
 .pols{position:relative;height:178px;margin:2px 0 6px}
+.pols.strip{display:flex;align-items:flex-start;overflow-x:auto;overflow-y:hidden;height:184px;padding:0 4px;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+.pols.strip::-webkit-scrollbar{display:none}
+.pols.strip .pol{position:relative;flex:none;margin-right:-6px;scroll-snap-align:start}
+.pol .polwho{position:absolute;left:0;right:0;bottom:3px;text-align:center;font-size:11px;color:#5B8DEF;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
 .pol{position:absolute;background:var(--frame);padding:7px 7px 22px;border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,.16);border:1px solid var(--line)}
 .pol>div:first-of-type{width:104px;height:118px;background:var(--ph) center/cover no-repeat}
 .pol .cap{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:11px;color:var(--sub)}
@@ -865,10 +869,13 @@ function setMapBtnBottom(){
   $('#mapBtns').style.bottom = '20px';
   $('#mapBtns').style.visibility = open ? 'hidden' : 'visible';
 }
-function polaroids(ids, urls){
-  if (!ids.length) return '';
-  const pos = [[-6,0,8],[5,96,0],[-2,190,16]];
-  return `<div class="pols">${ids.slice(0,3).map((id,i) => `<div class="pol" data-ph="${id}" style="left:${pos[i][1]}px;top:${pos[i][2]}px;transform:rotate(${pos[i][0]}deg);z-index:${3-i}"><div style="background-image:url('${urls[i]}')"></div></div>`).join('')}</div>`;
+// 사진 묶음: 3장까지는 겹쳐 놓고, 더 많으면 옆으로 넘겨 보는 줄로. 친구 사진(u)은 아래에 이름
+function polaroids(ids, urls, items){
+  items = items || ids.map((id, i) => ({ mine: id, url: urls[i] }));
+  if (!items.length) return '';
+  const one = (x, st) => `<div class="pol${x.u ? ' frpol' : ''}" ${x.mine ? `data-ph="${x.mine}"` : `data-sfrt="${x.u}"`} style="${st}"><div style="background-image:url('${x.url}')"></div>${x.u ? `<span class="polwho">👥 ${esc(frName(x.u))}</span>` : ''}</div>`;
+  if (items.length <= 3) { const pos = [[-6,0,8],[5,96,0],[-2,190,16]]; return `<div class="pols">${items.map((x, i) => one(x, `left:${pos[i][1]}px;top:${pos[i][2]}px;transform:rotate(${pos[i][0]}deg);z-index:${3-i}`)).join('')}</div>`; }
+  return `<div class="pols strip">${items.map((x, i) => one(x, `transform:rotate(${[-4,3,-2,4,-3,2][i % 6]}deg);margin-top:${[8,0,14,4,10,2][i % 6]}px`)).join('')}</div>`;
 }
 async function openSheet(id){
   const c = cafes.find(x => x.id === id); if (!c) return;
@@ -876,7 +883,7 @@ async function openSheet(id){
   overlays.forEach((o, k) => { o._el.classList.toggle('sel', k === id); o.setZIndex(k === id ? 5 : 2); });
   removeTemp();
   const st = cafeStats(c);
-  const ids = [coverOf(c, st), ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,3);
+  const ids = [coverOf(c, st), ...st.photos].filter((v,i,a) => v && a.indexOf(v) === i).slice(0,12);
   const urls = await Promise.all(ids.map(i => getPhotoURL(i)));
   const lv = st.lastVisit;
   const d = myPos ? distKm(myPos, c) : null;
@@ -902,6 +909,7 @@ async function openSheet(id){
   $('#sheet').classList.add('open');
   $('#sheet').scrollTop = 0;
   requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(c.lat, c.lng); });
+  $('#sheet')._my = { ids, urls };
   if (FR.pinsOn) sheetFriendRecords(c);
 }
 // 고른 카페 핀이 위 검색창과 아래 카드 사이 빈 곳 가운데 오게
@@ -969,6 +977,7 @@ $('#sheet').onclick = e => {
   if (e.target.closest('[data-bldback]') && lastBld) { showBuilding(lastBld); return; }
   if (e.target.closest('[data-fwish]') && $('#sheet')._fr) { frAddWish($('#sheet')._fr.c); return; }
   const fo = e.target.closest('[data-fopen]'); if (fo) { closeSheet(); openFriend(fo.dataset.fopen); return; }
+  const fp = e.target.closest('.frpol'); if (fp) { const t = $(`#sheetFr button[data-sfrt="${fp.dataset.sfrt}"]`); if (t) { if (t.nextElementSibling.classList.contains('hidden')) t.click(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); } return; }
   const sf = e.target.closest('[data-sfrt]'); if (sf) {
     const wrap = sf.parentElement, el = wrap.querySelector('.fvis'), h = $('#sheetFr')._hits?.find(x => x.u === sf.dataset.sfrt); if (!h) return;
     const open = el.classList.toggle('hidden') === false;
@@ -2523,6 +2532,20 @@ function frVisitsHTML(rec, c){
       ${(v.photoIds || []).length ? `<div class="vphotos">${v.photoIds.map((p, i) => `<div class="pol" style="transform:rotate(${hashRot(p, i)}deg)"><div data-fvp="${p}"></div></div>`).join('')}</div>` : ''}
     </div>`).join('') : '<div class="emptyPhoto">방문 기록은 아직 없어요</div>';
 }
+// 내 사진 사이에 친구 사진도 섞기 (내 것 2장 → 친구 사진 → 나머지 내 사진, 많으면 옆으로 넘겨 보기)
+async function sheetFriendPhotos(c, hits){
+  const fr = [], lists = hits.map(h => [h.st.cover, ...h.st.photos].filter((v, i, a) => v && a.indexOf(v) === i).map(p => ({ u: h.u, p })));
+  for (let i = 0; fr.length < 12 && lists.some(l => l[i]); i++) lists.forEach(l => { if (l[i] && fr.length < 12) fr.push(l[i]); });
+  if (!fr.length) return;
+  const furls = await Promise.all(fr.map(x => frPhoto(x.u, x.p)));
+  if (selectedId !== c.id) return;
+  const my = ($('#sheet')._my || { ids: [], urls: [] }), mine = my.ids.map((id, i) => ({ mine: id, url: my.urls[i] }));
+  const frs = fr.map((x, i) => ({ u: x.u, url: furls[i] })).filter(x => x.url);
+  if (!frs.length) return;
+  const html = polaroids(null, null, [...mine.slice(0, 2), ...frs, ...mine.slice(2)]);
+  const old = $('#sheet .pols');
+  if (old) old.outerHTML = html; else $('#sheet .grab').insertAdjacentHTML('afterend', html);
+}
 const frFillPhotos = (el, uid) => el.querySelectorAll('[data-fvp]').forEach(async d => { const u = await frPhoto(uid, d.dataset.fvp); if (u) d.style.backgroundImage = `url('${u}')`; });
 // 친구 버튼이 켜져 있을 때 내 카페 카드에 같은 카페를 간 친구 기록도 붙이기
 async function sheetFriendRecords(c){
@@ -2535,6 +2558,7 @@ async function sheetFriendRecords(c){
   }))).filter(Boolean);
   if (selectedId !== c.id || !$('#sheetFr')) return;
   if (!hits.length) return;
+  sheetFriendPhotos(c, hits);
   box.innerHTML = `<div class="small" style="margin:16px 0 6px">👥 친구도 여기 기록했어요</div>` + hits.map(h => `<div class="sfr" data-sfr="${h.u}">
       <button class="note tap" data-sfrt="${h.u}" style="width:100%;text-align:left;margin-top:6px"><div class="meta">${esc(frName(h.u))}${h.st.rating ? ' · ★ ' + h.st.rating.toFixed(1) : ''}${h.fc.fav ? ' · ♥ 또 갈래' : ''}${h.fc.wish && !h.st.count ? ' · 가볼래에 담아둠' : ` · 방문 ${h.st.count}번`} <span style="float:right">펼치기 ›</span></div>${esc(h.st.last?.review || (h.fc.wish && !h.st.count ? '아직 안 가봤대요' : '후기는 없어요'))}</button>
       <div class="fvis hidden"></div></div>`).join('');
@@ -2844,7 +2868,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-23'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-24'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
