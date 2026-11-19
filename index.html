@@ -1840,7 +1840,7 @@ const statPer = { y: nowD.getFullYear(), m: nowD.getMonth() + 1, year: false };
 const cafeById = id => cafes.find(c => c.id === id);
 const areaOf = c => { const p = (c?.address || c?.roadAddress || '').split(' '); return p.length >= 3 ? p[1] + ' ' + p[2] : (p[1] || '기타'); };
 function renderRec(){
-  const modes = [['album','앨범'],['top','TOP 10'],['stats','결산'],['stamp','도장'],['menu','메뉴로 찾기']];
+  const modes = [['album','앨범'],['top','TOP 10'],['stats','결산'],['stamp','뱃지'],['menu','메뉴로 찾기']];
   $('#recSeg').innerHTML = modes.map(([k,n]) => `<button class="chip ${k===recMode?'on':''}" data-k="${k}">${n}</button>`).join('');
   if (recMode === 'album') renderAlbum();
   if (recMode === 'stats') renderStats();
@@ -2181,7 +2181,7 @@ $('#btnSnap').onclick = () => $('#snapInput').click();
 $('#lSnap').onclick = () => $('#snapInput').click();
 
 /* =========================================================
-   도장 모으기
+   뱃지 모으기
    ========================================================= */
 function stampData(cs = cafes, vs = visits, local = true){
   const byId = new Map(cs.map(c => [c.id, c]));
@@ -2229,7 +2229,7 @@ function checkStamps(){
   const fresh = now.filter(k => !saved.includes(k));
   const all = [...new Set([...saved, ...now])];
   try { localStorage.setItem('stamps', JSON.stringify(all)); } catch {}
-  if (!first && fresh.length) setTimeout(() => toast(`🎉 새 도장! ${fresh.map(k => STAMPS.find(s => s[0] === k)[1]).join(', ')}`), 2100);
+  if (!first && fresh.length) setTimeout(() => toast(`🎉 새 뱃지! ${fresh.map(k => STAMPS.find(s => s[0] === k)[1]).join(', ')}`), 2100);
 }
 function renderStamps(){
   const { d, saved, now } = stampEarned();
@@ -2239,7 +2239,7 @@ function renderStamps(){
 }
 function stampGrid(d, got){
   const n = STAMPS.filter(s => got.has(s[0])).length;
-  return `<p class="small" style="margin:6px 0 16px">모은 도장 <b style="color:var(--acc);font-size:16px">${n}</b> / ${STAMPS.length}</p>
+  return `<p class="small" style="margin:6px 0 16px">모은 뱃지 <b style="color:var(--acc);font-size:16px">${n}</b> / ${STAMPS.length}</p>
     <div class="stampgrid">${STAMPS.map(([k, name, desc, key, goal], i) => {
       const on = got.has(k), v = Math.min(d[key], goal);
       return `<div class="stamp ${on ? 'on' : ''}"><div class="disc" style="transform:rotate(${on ? hashRot(k, i) * 2 : 0}deg)"><svg class="cup" viewBox="0 0 32 32" aria-hidden="true">${CUP_ARTS[i % CUP_ARTS.length]}</svg></div>
@@ -2789,7 +2789,7 @@ $('#frBody').onclick = async e => {
 };
 $('#frBody').addEventListener('keydown', e => { if (e.key !== 'Enter') return; if (e.target.id === 'frAdd') $('#frAddGo').click(); if (e.target.id === 'frMyHandle') $('#frSaveMe').click(); });
 
-/* 친구 한 명 보기: 카페 목록 / 도장 */
+/* 친구 한 명 보기: 카페 목록 / 뱃지 */
 let frCur = null, frMode = 'list';
 async function openFriend(uid, mode){
   frCur = uid; frMode = mode || 'list';
@@ -2801,7 +2801,7 @@ async function openFriend(uid, mode){
 }
 async function drawFriend(){
   const uid = frCur, rec = FR.data.get(uid) || { cafes: [], visits: [] };
-  const seg = `<div class="seg" style="padding-top:2px">${[['list', `카페 ${rec.cafes.length}곳`], ['stamp', '도장']].map(([k, n]) => `<button class="chip ${frMode === k ? 'on' : ''}" data-fm="${k}">${n}</button>`).join('')}<button class="chip" data-fmap="1">🗺 지도에서 보기</button><button class="chip" data-funf="1" style="margin-left:auto">친구 끊기</button></div>`;
+  const seg = `<div class="seg" style="padding-top:2px">${[['list', `카페 ${rec.cafes.length}곳`], ['stamp', '뱃지']].map(([k, n]) => `<button class="chip ${frMode === k ? 'on' : ''}" data-fm="${k}">${n}</button>`).join('')}<button class="chip" data-fmap="1">🗺 지도에서 보기</button><button class="chip" data-funf="1" style="margin-left:auto">친구 끊기</button></div>`;
   if (frMode === 'stamp') {
     const d = stampData(rec.cafes, rec.visits, false);
     $('#fBody').innerHTML = seg + stampGrid(d, new Set(STAMPS.filter(s => d[s[3]] >= s[4]).map(s => s[0])));
@@ -3193,7 +3193,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-6'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-7'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
