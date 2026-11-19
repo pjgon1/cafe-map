@@ -1495,7 +1495,8 @@ async function renderAlbum(){
   // 사진은 화면 근처에 올 때만 불러오기
   albumIO?.disconnect();
   albumIO = new IntersectionObserver(es => es.forEach(async e => { if (!e.isIntersecting) return; albumIO.unobserve(e.target); const u = await getPhotoURL(e.target.dataset.lz); if (u) e.target.style.backgroundImage = `url('${u}')`; }), { root: $('#recScroll'), rootMargin: '600px 0px' });
-  body.querySelectorAll('[data-lz]').forEach(el => albumIO.observe(el));
+  const lz = async el => { const u = await getPhotoURL(el.dataset.lz); if (u) el.style.backgroundImage = `url('${u}')`; };
+  body.querySelectorAll('[data-lz]').forEach((el, i) => i < 24 ? lz(el) : albumIO.observe(el));
   body.onclick = e => { const ph = e.target.closest('[data-ph]'); if (ph) openViewer(items, ph.dataset.ph); };
 }
 
