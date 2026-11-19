@@ -262,6 +262,7 @@ body.sharemode .view{bottom:0}
 
 /* 검색 결과 */
 #results{position:absolute;inset:0;z-index:7;background:var(--bg);padding-top:calc(74px + var(--safe-t));overflow-y:auto}
+.nearh{padding:14px 18px 4px;font-size:13px;font-weight:700;color:var(--sub)}
 .res{display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);align-items:flex-start}
 .res .ic{width:36px;height:36px;border-radius:50%;background:var(--soft);color:var(--softt);display:flex;align-items:center;justify-content:center;flex:none}
 .res .ic svg{width:18px;height:18px}
@@ -1187,7 +1188,30 @@ let qTimer; qEl.addEventListener('input', () => { clearTimeout(qTimer); if (qEl.
 $('#qClear').onclick = () => { qEl.value = ''; qEl.blur(); $('#results').classList.add('hidden'); $('#qClear').classList.add('hidden'); };
 function showSearchHome(){
   $('#results').classList.remove('hidden'); closeSheet();
-  $('#results').innerHTML = `<div class="hint home">다녀온 카페 이름을 검색해서 고르면<br>지도에 내 핀이 꽂혀요.<br><br><span class="small">예: 모모커피 성수, 동성로 카페</span></div>`;
+  $('#results').innerHTML = `<div id="nearBox"></div><div class="hint home">다녀온 카페 이름을 검색해서 고르면<br>지도에 내 핀이 꽂혀요.<br><br><span class="small">예: 모모커피 성수, 동성로 카페</span></div>`;
+  showNearby();
+}
+/* 검색창 비어 있을 때: 가까운 카페 3곳 (내 위치, 못 받으면 지도 가운데 기준) */
+let nearSeq = 0;
+async function showNearby(){
+  const seq = ++nearSeq; if (!places || !map) return;
+  const quickPos = () => new Promise(r => { if (!navigator.geolocation) return r(null); navigator.geolocation.getCurrentPosition(p => r({ lat: p.coords.latitude, lng: p.coords.longitude }), () => r(null), { enableHighAccuracy: false, timeout: 4000, maximumAge: 120000 }); });
+  let here = myPos, mine = !!myPos;
+  if (!here) { here = await quickPos(); if (here) { myPos = here; mine = true; } }
+  if (!here) { const c = map.getCenter(); here = { lat: c.getLat(), lng: c.getLng() }; }
+  const ok = () => seq === nearSeq && !qEl.value.trim() && $('#nearBox') && !$('#results').classList.contains('hidden');
+  if (!ok()) return;
+  const found = await new Promise(r => places.categorySearch('CE7', (d, st) => r(st === kakao.maps.services.Status.OK ? d : []), { x: here.lng, y: here.lat, radius: 2000, sort: kakao.maps.services.SortBy.DISTANCE }));
+  if (!ok() || !found.length) return;
+  const list = found.slice(0, 3);
+  $('#nearBox').innerHTML = `<div class="nearh">${mine ? '📍 지금 가까운 카페' : '지도 가운데에서 가까운 카페'}</div>` + list.map((p, i) => {
+    const my = cafes.find(c => c.kakaoId === p.id);
+    return `<button class="res" data-ni="${i}" style="width:100%;text-align:left"><div class="ic">☕</div>
+      <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${my ? `<span class="mine">${my.wish ? '가볼 곳' : '기록됨'}</span>` : ''}</div>
+      <div class="ad">${esc(p.road_address_name || p.address_name)}</div></div>
+      <div class="dist">${fmtDist(distKm(here, { lat: +p.y, lng: +p.x }))}</div></button>`;
+  }).join('');
+  $('#nearBox').onclick = e => { const b = e.target.closest('[data-ni]'); if (b) pickPlace(list[+b.dataset.ni]); };
 }
 let searchSeq = 0;
 function doSearch(){
@@ -3483,7 +3507,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-23'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-24'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
