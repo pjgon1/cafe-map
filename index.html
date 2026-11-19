@@ -167,6 +167,10 @@ body.sharemode .view{bottom:0}
 .searchbar svg{width:20px;height:20px;color:var(--sub);flex:none}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
+.menusug{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.menusug:empty{display:none}
+.menusug .small{width:100%}
+.menusug .chip{padding:6px 11px}
 .chip{flex:none;font-size:13px;padding:7px 12px;border-radius:999px;background:var(--bg);color:var(--ink);border:1px solid var(--line);white-space:nowrap}
 .chip.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
 .mapbtns{position:absolute;right:14px;z-index:5;display:flex;flex-direction:column;gap:10px;transition:bottom .25s}
@@ -1317,7 +1321,7 @@ async function openVisitEditor(cafeId, visitId, pre){
     <label class="f" style="margin-top:4px">사진</label><div class="addph" id="vPhotos"></div>
     <label class="f">이번 방문 별점</label><div class="starpick" id="vStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점">★</button>`).join('')}</div>
     <label class="f">언제 갔어요?</label><input class="inp" type="date" id="vDate" value="${esc(v.date)}">
-    <label class="f">뭐 먹었어요?</label><input class="inp" id="vMenu" value="${esc(v.menu)}" placeholder="아인슈페너, 바스크치즈케이크">
+    <label class="f">뭐 먹었어요?</label><input class="inp" id="vMenu" value="${esc(v.menu)}" placeholder="아인슈페너, 바스크치즈케이크" autocomplete="off"><div class="menusug" id="vMenuSug"></div>
     ${c.nextTry ? `<div class="small" style="margin-top:6px">🍰 다음엔 이거: ${esc(c.nextTry)} <button class="textbtn" id="vUseNext" type="button">메뉴에 넣기</button></div>` : ''}
     <label class="f">얼마 썼어요?</label><input class="inp" id="vPrice" inputmode="numeric" value="${v.price?Number(v.price).toLocaleString('ko-KR'):''}" placeholder="13,500">
     <label class="f">후기</label><textarea class="inp" id="vReview" placeholder="맛, 분위기, 자리, 웨이팅… 생각나는 대로">${esc(v.review)}</textarea>
@@ -1328,7 +1332,28 @@ async function openVisitEditor(cafeId, visitId, pre){
   $('#vPrice').oninput = e => { const n = e.target.value.replace(/[^\d]/g,''); e.target.value = n ? Number(n).toLocaleString('ko-KR') : ''; };
   $('#vHide').onclick = e => e.currentTarget.classList.toggle('on');
   if (visitId) $('#vDel').onclick = () => deleteVisit(visitId);
-  if ($('#vUseNext')) $('#vUseNext').onclick = () => { const m = $('#vMenu'); m.value = m.value.trim() ? m.value.trim() + ', ' + c.nextTry : c.nextTry; };
+  if ($('#vUseNext')) $('#vUseNext').onclick = () => { const m = $('#vMenu'); m.value = m.value.trim() ? m.value.trim() + ', ' + c.nextTry : c.nextTry; drawMenuSug(); };
+  // 메뉴 자동완성: 이 가게에서 예전에 먹은 메뉴를 하나씩 (자주 먹은 순)
+  const split = t => (t || '').split(/[,，]/).map(x => x.trim()).filter(Boolean);
+  const freq = new Map();
+  visitsOf(c.id).filter(x => x.id !== visitId).forEach(x => new Set(split(x.menu)).forEach(m => freq.set(m, (freq.get(m) || 0) + 1)));
+  const past = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([m]) => m);
+  const drawMenuSug = () => {
+    const box = $('#vMenuSug'); if (!box) return;
+    const val = $('#vMenu').value, parts = val.split(/[,，]/), cur = parts[parts.length - 1].trim().toLowerCase();
+    const have = new Set(parts.slice(0, -1).map(x => x.trim()).concat(cur ? [] : [parts[parts.length - 1].trim()]).filter(Boolean));
+    const list = past.filter(m => !have.has(m) && m.toLowerCase() !== cur && (!cur || m.toLowerCase().includes(cur))).slice(0, 12);
+    box.innerHTML = list.length ? `<span class="small">이 가게에서 먹었던 메뉴</span>${list.map(m => `<button type="button" class="chip" data-m="${esc(m)}">${esc(m)}</button>`).join('')}` : '';
+  };
+  $('#vMenu').addEventListener('input', drawMenuSug);
+  $('#vMenuSug').onclick = e => {
+    const b = e.target.closest('[data-m]'); if (!b) return;
+    const inp = $('#vMenu'), parts = inp.value.split(/[,，]/).map(x => x.trim());
+    parts[parts.length - 1] = b.dataset.m; // 지금 치고 있던 글자는 고른 메뉴로 바꾸기
+    inp.value = parts.filter(Boolean).join(', ') + ', ';
+    drawMenuSug(); inp.focus();
+  };
+  drawMenuSug();
   await renderVisitPhotos();
   openPage('pVisit');
 }
@@ -1355,7 +1380,7 @@ $('#photoInput').onchange = e => {
 $('#vSave').onclick = once(async () => {
   const ev = editingVisit, v = ev.data;
   v.date = $('#vDate').value || todayStr();
-  v.menu = $('#vMenu').value.trim();
+  v.menu = $('#vMenu').value.trim().replace(/[,，\s]+$/, '');
   v.price = $('#vPrice').value.replace(/[^\d]/g,'');
   v.review = $('#vReview').value.trim();
   v.hideFriends = $('#vHide').classList.contains('on');
@@ -3050,7 +3075,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-41'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-1'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
