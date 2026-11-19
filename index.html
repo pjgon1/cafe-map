@@ -2493,7 +2493,12 @@ async function frRecords(uid, force){
   if (c && !force && Date.now() - c.at < 300000) return c;
   const { data, error } = await sb.rpc('friend_records', { fid: uid });
   if (error || !data) return c || { cafes: [], visits: [], at: 0 };
-  const rec = { cafes: data.cafes || [], visits: data.visits || [], at: Date.now() };
+  // 친구가 보낸 데이터는 믿지 않기: 화면 속성에 들어가는 id·사진 id·숫자는 안전한 모양만 통과
+  const okId = x => typeof x === 'string' && /^[\w-]{1,80}$/.test(x);
+  const num = x => (Number.isFinite(+x) ? +x : 0);
+  const cafes = (Array.isArray(data.cafes) ? data.cafes : []).filter(c => c && okId(c.id)).map(c => ({ ...c, name: String(c.name || ''), kakaoId: okId(String(c.kakaoId || '')) ? String(c.kakaoId) : '', lat: num(c.lat), lng: num(c.lng), coverPhotoId: okId(c.coverPhotoId) ? c.coverPhotoId : '', tags: Array.isArray(c.tags) ? c.tags.map(String) : [] }));
+  const visits = (Array.isArray(data.visits) ? data.visits : []).filter(v => v && okId(v.id) && okId(v.cafeId)).map(v => ({ ...v, rating: num(v.rating), price: num(v.price), createdAt: num(v.createdAt), date: /^\d{4}-\d{2}-\d{2}$/.test(v.date || '') ? v.date : '', photoIds: Array.isArray(v.photoIds) ? v.photoIds.filter(okId) : [] }));
+  const rec = { cafes, visits, at: Date.now() };
   FR.data.set(uid, rec);
   return rec;
 }
@@ -3045,7 +3050,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-40'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-41'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
