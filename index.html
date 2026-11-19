@@ -273,6 +273,15 @@ body.sharemode .view{bottom:0}
 .listsearch{display:flex;align-items:center;gap:8px;background:var(--note);border-radius:12px;padding:0 12px;height:42px}
 .listsearch input{flex:1;border:0;background:none;font-size:15px}
 .listsearch svg{width:18px;height:18px;color:var(--sub)}
+.toprow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);background:var(--bg)}
+.toprow.drag{position:relative;z-index:2;box-shadow:0 6px 18px rgba(0,0,0,.15);border-radius:12px;transform:scale(1.02)}
+.toprow .trk{width:30px;text-align:center;font-size:20px;font-weight:800;color:var(--sub);flex:none}
+.toprow .trk.r1{color:#D4A017}.toprow .trk.r2{color:#8C98AE}.toprow .trk.r3{color:#B5743C}
+.toprow .tth{width:52px;height:52px;border-radius:12px;background:var(--ph) center/cover no-repeat;flex:none}
+.toprow .tmain{flex:1;min-width:0}
+.toprow .tn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toprow .tgrip{font-size:22px;color:var(--sub);padding:8px 6px;touch-action:none;cursor:grab;flex:none}
+.toprow.out{opacity:.85}
 .seg{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
 .seg::-webkit-scrollbar{display:none}
 .item{display:flex;gap:14px;padding:14px 18px;align-items:center;border-bottom:1px solid var(--line)}
@@ -1831,13 +1840,105 @@ const statPer = { y: nowD.getFullYear(), m: nowD.getMonth() + 1, year: false };
 const cafeById = id => cafes.find(c => c.id === id);
 const areaOf = c => { const p = (c?.address || c?.roadAddress || '').split(' '); return p.length >= 3 ? p[1] + ' ' + p[2] : (p[1] || '기타'); };
 function renderRec(){
-  const modes = [['album','앨범'],['stats','결산'],['stamp','도장'],['menu','메뉴로 찾기']];
+  const modes = [['album','앨범'],['top','TOP 10'],['stats','결산'],['stamp','도장'],['menu','메뉴로 찾기']];
   $('#recSeg').innerHTML = modes.map(([k,n]) => `<button class="chip ${k===recMode?'on':''}" data-k="${k}">${n}</button>`).join('');
   if (recMode === 'album') renderAlbum();
   if (recMode === 'stats') renderStats();
   if (recMode === 'menu') renderMenu();
   if (recMode === 'stamp') renderStamps();
+  if (recMode === 'top') renderTop();
 }
+
+/* 나의 TOP 10: 별점·방문 수로 자동 순위 → 직접 끌어서 바꾸면 그 순서로 저장(c.rank, 동기화됨) */
+function topOrder(){
+  const pool = cafes.filter(c => !c.wish && !c.deleted).map(c => ({ c, st: cafeStats(c) })).filter(x => x.st.count || x.st.rating);
+  const auto = [...pool].sort((a, b) => (b.st.rating - a.st.rating) || (b.st.count - a.st.count) || (b.st.last || '').localeCompare(a.st.last || ''));
+  const fixed = pool.filter(x => +x.c.rank > 0).sort((a, b) => a.c.rank - b.c.rank);
+  const top = [...fixed, ...auto.filter(x => !(+x.c.rank > 0))].slice(0, 10);
+  const ids = new Set(top.map(x => x.c.id));
+  return { top, rest: auto.filter(x => !ids.has(x.c.id)).slice(0, 15), manual: fixed.length > 0 };
+}
+async function saveTop(ids){
+  const set = new Set(ids), changed = [];
+  for (const c of cafes) {
+    const r = ids.indexOf(c.id) + 1, want = r > 0 ? r : 0;
+    if ((+c.rank || 0) !== want) { if (want) c.rank = want; else delete c.rank; c.updatedAt = Date.now(); c.dirty = true; changed.push(c); }
+  }
+  for (const c of changed) await DB.put('cafes', c);
+  if (changed.length) Sync.soon();
+}
+async function renderTop(){
+  const body = $('#recBody'), { top, rest, manual } = topOrder();
+  if (!top.length) { body.innerHTML = `<div class="empty"><div class="big">🏆</div>별점을 매기거나 방문 기록을 남기면<br>여기 나만의 순위가 생겨요.</div>`; return; }
+  const row = (x, i) => `<div class="toprow" data-id="${esc(x.c.id)}"><div class="trk r${i + 1}">${i + 1}</div><div class="tth" data-cover="${esc(coverOf(x.c, x.st) || '')}"></div>
+    <div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${esc(areaOf(x.c))}${x.st.rating ? ` · ★ ${x.st.rating.toFixed(1)}` : ''} · 방문 ${x.st.count}번</div></div>
+    <button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`;
+  body.innerHTML = `<div class="rowsb" style="align-items:center;margin:4px 0 6px"><div class="small">${manual ? '내가 정한 순위예요. ≡ 를 끌어서 바꿔요' : '별점·방문 수로 자동으로 매긴 순위예요. ≡ 를 끌어서 바꿔요'}</div>${manual ? '<button class="textbtn" id="topReset">자동 순위로</button>' : ''}</div>
+    <div id="topList">${top.map(row).join('')}</div>
+    <button class="btn" id="topShare" style="width:100%;margin-top:16px">🏆 이미지로 저장·공유</button>
+    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>올리면 10위로 들어가요</small></h3>${rest.map(x => `<div class="toprow out"><div class="tth" data-cover="${esc(coverOf(x.c, x.st) || '')}"></div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button></div>`).join('')}</div>` : ''}`;
+  body.querySelectorAll('[data-cover]').forEach(async d => { if (d.dataset.cover) { const u = await getPhotoURL(d.dataset.cover); if (u) d.style.backgroundImage = `url('${u}')`; } });
+  topDrag();
+}
+function topIds(){ return [...document.querySelectorAll('#topList .toprow')].map(r => r.dataset.id); }
+function topRenumber(){ document.querySelectorAll('#topList .toprow').forEach((r, i) => { const k = r.querySelector('.trk'); k.textContent = i + 1; k.className = 'trk r' + (i + 1); }); }
+function topDrag(){
+  const list = $('#topList'); if (!list) return;
+  list.querySelectorAll('.tgrip').forEach(g => g.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const row = g.closest('.toprow'); row.classList.add('drag'); g.setPointerCapture(e.pointerId);
+    const move = ev => {
+      const rows = [...list.querySelectorAll('.toprow')].filter(r => r !== row);
+      const after = rows.find(r => { const b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+      if (after) { if (row.nextElementSibling !== after) list.insertBefore(row, after); } else if (list.lastElementChild !== row) list.appendChild(row);
+      topRenumber();
+    };
+    const up = async () => {
+      g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+      row.classList.remove('drag'); await saveTop(topIds());
+      const s = list.previousElementSibling?.querySelector('.small'); if (s) s.textContent = '내가 정한 순위예요. ≡ 를 끌어서 바꿔요';
+    };
+    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+  }));
+}
+async function shareTop(){
+  const { top } = topOrder(); if (!top.length) return;
+  loading(true, '이미지 만드는 중…');
+  try {
+    const W = 1080, rowH = 128, H = 250 + top.length * rowH + 90, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), F = "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+    g.fillStyle = '#FFF8F4'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#3B2A26'; g.font = `800 64px ${F}`; g.fillText('나의 카페 TOP ' + top.length, 70, 130);
+    g.fillStyle = '#9A8580'; g.font = `400 32px ${F}`; g.fillText('커피로그 · ' + new Date().toLocaleDateString('ko-KR'), 72, 185);
+    const medal = ['#D4A017', '#9AA4B5', '#B5743C'];
+    for (let i = 0; i < top.length; i++) {
+      const { c, st } = top[i], y = 230 + i * rowH;
+      g.fillStyle = i < 3 ? medal[i] : '#C9B8B3'; g.font = `800 52px ${F}`; g.textAlign = 'center'; g.fillText(String(i + 1), 115, y + 78); g.textAlign = 'left';
+      const id = coverOf(c, st), x0 = 170, sz = 100;
+      g.save(); g.beginPath(); g.roundRect ? g.roundRect(x0, y + 12, sz, sz, 18) : g.rect(x0, y + 12, sz, sz); g.clip();
+      g.fillStyle = '#F1E6E2'; g.fillRect(x0, y + 12, sz, sz);
+      if (id) { try { const u = await getPhotoURL(id); const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = u; }); const k = Math.max(sz / img.width, sz / img.height); g.drawImage(img, x0 + (sz - img.width * k) / 2, y + 12 + (sz - img.height * k) / 2, img.width * k, img.height * k); } catch {} }
+      g.restore();
+      let name = c.name; g.fillStyle = '#3B2A26'; g.font = `700 40px ${F}`;
+      while (g.measureText(name).width > 700 && name.length > 2) name = name.slice(0, -2) + '…';
+      g.fillText(name, 300, y + 60);
+      g.fillStyle = '#9A8580'; g.font = `400 30px ${F}`; g.fillText(`${st.rating ? '★ ' + st.rating.toFixed(1) + '  ·  ' : ''}방문 ${st.count}번  ·  ${areaOf(c)}`, 300, y + 104);
+    }
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const file = new File([blob], '나의카페TOP10.png', { type: 'image/png' });
+    loading(false);
+    if (navigator.canShare?.({ files: [file] })) { try { await navigator.share({ files: [file], title: '나의 카페 TOP 10' }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast('이미지를 저장했어요');
+  } catch { loading(false); toast('이미지를 못 만들었어요'); }
+}
+$('#recBody').addEventListener('click', async e => {
+  if (recMode !== 'top') return;
+  if (e.target.closest('#topShare')) { shareTop(); return; }
+  if (e.target.closest('#topReset')) { if (await ask('직접 바꾼 순위를 지우고 자동 순위로 돌릴까요?', '돌리기')) { await saveTop([]); renderTop(); } return; }
+  const up = e.target.closest('[data-up]'); if (up) { const ids = topIds(); ids.splice(Math.min(9, ids.length), ids.length >= 10 ? 1 : 0, up.dataset.up); await saveTop(ids.slice(0, 10)); renderTop(); toast('10위로 올렸어요'); return; }
+  const op = e.target.closest('[data-open]'); if (op) openDetail(op.dataset.open);
+});
 $('#recSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; recMode = b.dataset.k; renderRec(); $('#recScroll').scrollTop = 0; };
 
 // 앨범: 찍은 사진을 날짜순 폴라로이드로
@@ -3077,7 +3178,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-2'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-3'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
