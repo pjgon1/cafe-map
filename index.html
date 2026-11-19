@@ -205,6 +205,9 @@ body.sharemode .view{bottom:0}
 .pin.fav .nm{border-color:var(--heartt);color:var(--heartt);font-weight:700}
 @keyframes favbeat{0%,68%,100%{transform:scale(1)}76%{transform:scale(1.28)}84%{transform:scale(.94)}92%{transform:scale(1.12)}}
 @media (prefers-reduced-motion:reduce){.pin.fav .ring::after{animation:none}}
+.tag.closedt{background:var(--line);color:var(--sub)}
+.pin.closed{filter:grayscale(1);opacity:.55}
+.pin.closed.sel{opacity:.85}
 .pin.wish .ring{border-style:dashed;border-color:var(--sub);background:var(--bg)}
 .pin.wish .ring>div{background:var(--soft);color:var(--softt);font-size:20px}
 .pin.wish .tip{border-top-color:var(--sub)}
@@ -947,7 +950,7 @@ async function refreshPins(){
     if (o && o._sig === sig) { if (o._el.classList.contains('sel') !== sel) { o._el.classList.toggle('sel', sel); o.setZIndex(sel ? 5 : 2); } continue; }
     if (o) o.setMap(null);
     const el = document.createElement('div');
-    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '') + (sel ? ' sel' : '');
+    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '') + (c.closed ? ' closed' : '') + (sel ? ' sel' : '');
     el.innerHTML = `<div class="ring"><div>${cupIcon(c.id)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); openSheet(c.id); });
     o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.lat, c.lng), content: el, yAnchor: 1, clickable: true, zIndex: sel ? 5 : 2 });
@@ -1061,7 +1064,7 @@ async function openSheet(id){
       ${st.rating || subLine(c.sub) ? `<button class="score tap" data-subtog="1">★ ${st.rating ? st.rating.toFixed(1) : '-'} <span class="caret">›</span></button>` : ''}
     </div>
     ${subPanelHTML(st.rating, c, st.my ? '내 별점' : '평균')}
-    <div style="margin-top:10px">${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:10px">${c.closed?'<span class="tag closedt">🚪 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.nextTry ? `<div class="nextbar">🍰 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     <div class="btnrow">
       <button class="btn" data-act="visit">${c.wish ? '가봤어요! 기록 남기기' : '방문 기록 추가'}</button>
@@ -1389,6 +1392,7 @@ function openCafeEditor(id, seed){
     <div class="toggle"><div>가볼래 ☆<div class="small">아직 안 가본 곳이에요. 다녀와서 기록을 남기면 자동으로 꺼져요</div></div><button class="sw ${c.wish?'on':''}" id="cWish" aria-label="가볼래"></button></div>
     <div class="toggle"><div>또 갈래 ♥<div class="small">다시 가고 싶은 곳은 핀이 하트 색으로 바뀌어요</div></div><button class="sw ${c.fav?'on':''}" id="cFav" aria-label="또 갈래"></button></div>
     <div class="toggle"><div>🔒 친구에게 숨기기<div class="small">켜면 이 카페와 방문 기록 전부 친구 화면·지도에 안 보여요</div></div><button class="sw ${c.hideFriends?'on':''}" id="cHide" aria-label="친구에게 숨기기"></button></div>
+    <div class="toggle"><div>🚪 문 닫은 곳<div class="small">폐업·휴업한 곳은 켜두세요. 핀이 회색으로 바뀌고 뽑기에서 빠져요. 기록은 그대로 남아요</div></div><button class="sw ${c.closed?'on':''}" id="cClosed" aria-label="문 닫은 곳"></button></div>
     <label class="f">어떤 곳이에요?</label>
     <div class="tagpick" id="cTags">${TAGS.map(t => `<button class="chip ${c.tags.includes(t)?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     <label class="f">메모 (와이파이 비번, 주차 팁 같은 거)</label>
@@ -1396,6 +1400,7 @@ function openCafeEditor(id, seed){
     ${id ? `<div class="sec"><button class="btn danger" id="cDel" style="width:100%">이 카페 기록 전체 삭제</button></div>` : ''}`;
   $('#cFav').onclick = e => e.currentTarget.classList.toggle('on');
   $('#cHide').onclick = e => e.currentTarget.classList.toggle('on');
+  $('#cClosed').onclick = e => e.currentTarget.classList.toggle('on');
   c.sub = { ...(c.sub || {}) };
   const drawCStars = () => {
     const m = subMean(c), v = m || +c.myRating || 0;
@@ -1420,6 +1425,7 @@ $('#cSave').onclick = once(async () => {
   if (addr !== (c.roadAddress || c.address)) { c.roadAddress = addr; }
   c.fav = $('#cFav').classList.contains('on');
   c.hideFriends = $('#cHide').classList.contains('on');
+  if ($('#cClosed').classList.contains('on')) c.closed = true; else delete c.closed;
   c.wish = $('#cWish').classList.contains('on');
   c.tags = [...document.querySelectorAll('#cTags .chip.on')].map(b => b.dataset.t);
   c.memo = $('#cMemo').value.trim();
@@ -1603,7 +1609,7 @@ async function openDetail(id, keep){
     <div class="myrate"><span class="lb">내 별점</span>${subMean(c) ? `<span class="myauto">${starBar(st.my)}<b>${st.my.toFixed(1)}</b><span class="small">항목 평균</span></span>` : `<div class="starpick" id="dStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= st.my ? 'on' : ''}">★</button>`).join('')}</div>`}
       <span class="avg">${st.rated ? `방문 평균<br>★ ${st.visitAvg.toFixed(1)} · ${st.rated}번` : ''}</span></div>
     <div class="subpick" id="dSub">${SUBS.map(([k, n]) => `<div class="srow" data-k="${k}"><span class="sl">${n}</span><div class="starpick">${[1,2,3,4,5].map(i => `<button data-n="${i}" aria-label="${n} ${i}점" class="${i <= (+c.sub?.[k] || 0) ? 'on' : ''}">★</button>`).join('')}</div></div>`).join('')}<div class="small" style="margin-top:2px">골라서만 매겨도 돼요. 다시 누르면 지워져요.</div></div>
-    <div style="margin-top:12px">${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:12px">${c.closed?'<span class="tag closedt">🚪 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
     <div class="nexttry" id="dNext"><span class="lb">🍰 다음엔 이거</span><span class="v">${c.nextTry ? esc(c.nextTry) : '<span style="color:var(--sub)">먹어보고 싶은 메뉴를 적어두세요</span>'}</span><button class="textbtn" id="dNextEdit">${c.nextTry ? '수정' : '적기'}</button></div>
@@ -2700,6 +2706,7 @@ async function doPick(){
 async function doPickInner(){
   if (pickOpt.dist && !myPos) { toast('내 위치를 확인하는 중…'); await locate(false); if (!myPos) { $('#pickRes').innerHTML = `<div class="pickres">위치를 못 받아서 거리 조건을 쓸 수 없어요.<br><span class="small">"상관없음"으로 바꾸거나 위치 권한을 허용해 주세요.</span></div>`; return; } }
   let cand = cafes.filter(c => {
+    if (c.closed) return false;
     if (pickOpt.scope === '다녀왔어 ♪' && c.wish) return false;
     if (pickOpt.scope === '가볼래' && !c.wish) return false;
     if (pickOpt.scope === '또 갈래' && !c.fav) return false;
@@ -2713,7 +2720,7 @@ async function doPickInner(){
     for (const u of FR.list) {
       const rec = await frRecords(u);
       for (const c of rec.cafes) {
-        const key = c.kakaoId || c.name + c.lat; if (!c.lat || (c.kakaoId && have.has(c.kakaoId)) || seen.has(key)) continue;
+        const key = c.kakaoId || c.name + c.lat; if (!c.lat || c.closed || (c.kakaoId && have.has(c.kakaoId)) || seen.has(key)) continue;
         const st = frStats(rec, c);
         if (pickOpt.scope === '다녀왔어 ♪' && !st.count) continue;
         if (pickOpt.scope === '또 갈래' && !c.fav) continue;
@@ -3228,7 +3235,7 @@ async function drawFriendPins(focusUid, quiet){
     // 다녀왔어(실선) / 가볼래만(점선) / 또 갈래(하트) 구분
     const marks = g.who.map(w => w.m), anyWent = marks.some(m => m !== '☆'), anyFav = marks.includes('♥');
     const el = document.createElement('div');
-    el.className = 'pin friend' + (anyWent ? '' : ' wish') + (anyFav ? ' ffav' : '');
+    el.className = 'pin friend' + (anyWent ? '' : ' wish') + (anyFav ? ' ffav' : '') + (g.c.closed ? ' closed' : '');
     el.innerHTML = `<div class="ring"><div>${cupIcon(g.c.id)}</div></div><div class="tip"></div><div class="nm">${esc(g.c.name)}</div><div class="fwho">${g.who.map((w, i) => esc(marks[i] + ' ' + frName(w.uid))).join(', ')}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); openFriendSheet(g.who[0].uid, g.c, false, g.who); });
     const o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(g.c.lat, g.c.lng), content: el, yAnchor: 1, clickable: true, zIndex: 1 });
@@ -3350,7 +3357,7 @@ async function startShareView(){
   const b = new kakao.maps.LatLngBounds();
   for (const c of list) {
     const el = document.createElement('div');
-    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '');
+    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '') + (c.closed ? ' closed' : '');
     el.innerHTML = `<div class="ring"><div>${cupIcon(c.id)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); shareSheet(c); });
     const o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.lat, c.lng), content: el, yAnchor: 1, clickable: true, zIndex: 2 });
@@ -3377,7 +3384,7 @@ function shareSheet(c, pan){
   $('#sheet').innerHTML = `<div class="grab"></div>
     ${c.thumb ? `<div class="pols" style="height:150px"><div class="pol" style="left:0;top:4px;transform:rotate(-3deg)"><div style="background-image:url('${c.thumb}')"></div></div></div>` : ''}
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(shortAddr(c))}${c.category ? ' · ' + esc(c.category.split(' > ').pop()) : ''}</div></div>${c.rating ? `<div class="score">★ ${c.rating.toFixed(1)}</div>` : ''}</div>
-    <div style="margin-top:10px">${c.wish ? '<span class="tag wish">가볼래 ☆</span>' : ''}${c.fav ? '<span class="tag heart">또 갈래 ♥</span>' : ''}${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:10px">${c.closed?'<span class="tag closedt">🚪 문 닫음</span>':''}${c.wish ? '<span class="tag wish">가볼래 ☆</span>' : ''}${c.fav ? '<span class="tag heart">또 갈래 ♥</span>' : ''}${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.review || c.menu ? `<div class="note" style="margin-top:8px">${c.menu ? `<div class="meta">${esc(c.menu)}</div>` : ''}${esc(c.review || '')}</div>` : ''}
     <div class="linkrow" style="margin-top:14px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
@@ -3507,7 +3514,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-24'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-25'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
