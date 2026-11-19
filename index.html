@@ -308,6 +308,8 @@ body.sharemode .view{bottom:0}
 .seg.who{padding-top:0}
 .seg.who .chip.on{background:#5B8DEF;border-color:#5B8DEF;color:#fff}
 .seg{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
+#recSeg .chip{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#recSeg .chip.drag{transform:scale(1.08);box-shadow:0 4px 12px rgba(0,0,0,.18);position:relative;z-index:2}
 .seg::-webkit-scrollbar{display:none}
 .item{display:flex;gap:14px;padding:14px 18px;align-items:center;border-bottom:1px solid var(--line)}
 .thumbpol{flex:none;background:var(--frame);padding:4px 4px 12px;border-radius:2px;box-shadow:0 1px 5px rgba(0,0,0,.15);border:1px solid var(--line)}
@@ -1917,7 +1919,14 @@ window.addEventListener('online', () => Sync.run());
 /* =========================================================
    모아보기 탭: 앨범 / 결산 / 메뉴로 찾기
    ========================================================= */
-let recMode = 'album';
+const REC_MODES = [['album','앨범'],['cal','달력'],['top','TOP 10'],['stats','결산'],['stamp','뱃지'],['menu','메뉴로 찾기']];
+function recModes(){
+  let o = []; try { o = JSON.parse(localStorage.getItem('recOrder') || '[]'); } catch {}
+  const by = new Map(REC_MODES), out = (Array.isArray(o) ? o : []).filter(k => by.has(k)).map(k => [k, by.get(k)]);
+  REC_MODES.forEach(m => { if (!out.some(x => x[0] === m[0])) out.push(m); });
+  return out;
+}
+let recMode = recModes()[0][0];
 const nowD = new Date();
 const statPer = { y: nowD.getFullYear(), m: nowD.getMonth() + 1, year: false };
 const cafeById = id => cafes.find(c => c.id === id);
@@ -1933,7 +1942,7 @@ function drawRecWho(){
 }
 $('#recWho').onclick = e => { const b = e.target.closest('[data-w]'); if (!b) return; recWho = b.dataset.w; renderRec(); $('#recScroll').scrollTop = 0; };
 function renderRec(){
-  const modes = [['album','앨범'],['cal','달력'],['top','TOP 10'],['stats','결산'],['stamp','뱃지'],['menu','메뉴로 찾기']];
+  const modes = recModes();
   $('#recSeg').innerHTML = modes.map(([k,n]) => `<button class="chip ${k===recMode?'on':''}" data-k="${k}">${n}</button>`).join('');
   if (session && !SHARE_ID && !recFrTried && ['album', 'top', 'stamp'].includes(recMode)) { recFrTried = true; frLoad().then(ok => { if (ok && FR.list.length && curTab === 'rec') drawRecWho(); }).catch(() => {}); }
   drawRecWho();
@@ -2078,7 +2087,42 @@ $('#recBody').addEventListener('click', async e => {
   const up = e.target.closest('[data-up]'); if (up) { const o = topFull.filter(id => id !== up.dataset.up); o.splice(Math.min(9, o.length), 0, up.dataset.up); topFull = o; await saveTop(o); renderTop(); toast('10위로 올렸어요'); return; }
   const op = e.target.closest('[data-open]'); if (op) openDetail(op.dataset.open);
 });
-$('#recSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; recMode = b.dataset.k; renderRec(); $('#recScroll').scrollTop = 0; };
+/* 모아보기 칸 순서: 꾹 눌러서 옆으로 끌기 */
+let recSegDragged = 0;
+(() => {
+  const seg = $('#recSeg'); let drag = null;
+  seg.addEventListener('pointerdown', e => {
+    const chip = e.target.closest('.chip'); if (!chip || drag) return;
+    const pid = e.pointerId, x0 = e.clientX, y0 = e.clientY;
+    const st = { chip, pid, on: false, timer: 0 }; drag = st;
+    st.timer = setTimeout(() => { st.on = true; chip.classList.add('drag'); try { navigator.vibrate?.(15); } catch {} }, 380);
+    const move = ev => {
+      if (ev.pointerId !== pid) return;
+      if (!st.on) { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) end(ev, true); return; }
+      ev.preventDefault();
+      const r = seg.getBoundingClientRect();
+      if (ev.clientX < r.left + 24) seg.scrollLeft -= 8; else if (ev.clientX > r.right - 24) seg.scrollLeft += 8;
+      const others = [...seg.querySelectorAll('.chip')].filter(c => c !== chip);
+      const after = others.find(c => { const b = c.getBoundingClientRect(); return ev.clientX < b.left + b.width / 2; });
+      if (after) { if (chip.nextElementSibling !== after) seg.insertBefore(chip, after); } else if (seg.lastElementChild !== chip) seg.appendChild(chip);
+    };
+    const end = (ev, cancel) => {
+      if (ev && ev.pointerId !== pid) return;
+      clearTimeout(st.timer); drag = null;
+      document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', end); document.removeEventListener('pointercancel', end);
+      if (st.on && !cancel) {
+        chip.classList.remove('drag'); recSegDragged = Date.now();
+        const ids = [...seg.querySelectorAll('.chip')].map(c => c.dataset.k);
+        try { localStorage.setItem('recOrder', JSON.stringify(ids)); } catch {}
+        toast('순서를 바꿨어요');
+      } else chip.classList.remove('drag');
+    };
+    document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+  });
+  seg.addEventListener('touchmove', e => { if (drag?.on) e.preventDefault(); }, { passive: false });
+  seg.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
+})();
+$('#recSeg').onclick = e => { const b = e.target.closest('.chip'); if (!b || Date.now() - recSegDragged < 400) return; recMode = b.dataset.k; renderRec(); $('#recScroll').scrollTop = 0; };
 
 // 앨범: 찍은 사진을 날짜순 폴라로이드로
 let albumSeq = 0, albumIO = null;
@@ -3390,7 +3434,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-19'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-20'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
