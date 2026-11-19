@@ -399,6 +399,13 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
   </div>
 </section>
 
+<section class="view hidden" id="v-fr">
+  <div class="scroll" id="frScroll">
+    <div class="pagehead"><h1>친구</h1></div>
+    <div style="padding:0 18px 30px" id="frBody"></div>
+  </div>
+</section>
+
 <section class="view hidden" id="v-set">
   <div class="scroll">
     <div class="pagehead"><h1>설정</h1></div>
@@ -430,6 +437,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
   <button data-tab="map" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>지도</button>
   <button data-tab="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>목록</button>
   <button data-tab="rec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="M7 5V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-3"/><path d="M3 15l4-4 4 4 2-2 4 4"/></svg>모아보기</button>
+  <button data-tab="fr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2c2.6-.3 4.6 1.3 5.1 4.3"/></svg>친구</button>
   <button data-tab="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>설정</button>
 </nav>
 
@@ -462,13 +470,6 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 </div>
 
 <!-- 친구 -->
-<div class="page" id="pFriends">
-  <div class="bar">
-    <button class="iconbtn" data-close="pFriends" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    <div class="t">친구</div><div style="width:40px"></div>
-  </div>
-  <div class="body" id="frBody"></div>
-</div>
 <div class="page" id="pFriend">
   <div class="bar">
     <button class="iconbtn" data-close="pFriend" aria-label="뒤로"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -2310,9 +2311,15 @@ async function frLoad(force){
   FR.me = p.data || null;
   const rows = f.data || [];
   const other = r => r.requester === me ? r.addressee : r.requester;
-  FR.list = rows.filter(r => r.status === 'accepted').map(other);
-  FR.incoming = rows.filter(r => r.status === 'pending' && r.addressee === me).map(r => r.requester);
-  FR.outgoing = rows.filter(r => r.status === 'pending' && r.requester === me).map(r => r.addressee);
+  const acc = new Set(rows.filter(r => r.status === 'accepted').map(other));
+  const inc = new Set(rows.filter(r => r.status === 'pending' && r.addressee === me).map(r => r.requester));
+  const out = new Set(rows.filter(r => r.status === 'pending' && r.requester === me).map(r => r.addressee));
+  // 서로 요청을 보낸 상태(꼬임)는 서버에서 친구로 합침
+  const both = [...inc].filter(u => out.has(u) && !acc.has(u));
+  if (both.length) { await Promise.all(both.map(u => sb.rpc('friend_request', { target: u }))); both.forEach(u => acc.add(u)); }
+  FR.list = [...acc];
+  FR.incoming = [...inc].filter(u => !acc.has(u));
+  FR.outgoing = [...out].filter(u => !acc.has(u) && !inc.has(u));
   const ids = [...new Set([...FR.list, ...FR.incoming, ...FR.outgoing])];
   if (ids.length) { const { data } = await sb.from('profiles').select('user_id,handle,name').in('user_id', ids); (data || []).forEach(x => FR.prof.set(x.user_id, x)); }
   FR.loadedAt = Date.now();
@@ -2346,12 +2353,12 @@ async function frPhoto(uid, pid){
 }
 
 /* 친구 창 */
-async function openFriends(){
-  if (!session) { if (await ask('친구 기능은 로그인해야 쓸 수 있어요.\n카카오로 로그인할까요?', '카카오로 로그인')) Sync.login(); return; }
-  $('#frBody').innerHTML = '<div class="empty">불러오는 중…</div>';
-  openPage('pFriends');
-  if (!await frLoad(true)) { $('#frBody').innerHTML = '<div class="empty">친구 목록을 못 불러왔어요.<br><span class="small">인터넷 연결을 확인해 주세요.</span></div>'; return; }
-  drawFriends();
+function openFriends(){ showTab('fr'); }
+async function loadFriendsTab(){
+  if (!session) { $('#frBody').innerHTML = `<div class="empty">친구 기능은 로그인해야 쓸 수 있어요.<br><br><button class="btn kakaologin" id="frLogin">카카오로 로그인</button></div>`; $('#frLogin').onclick = () => Sync.login(); return; }
+  if (!FR.loadedAt) $('#frBody').innerHTML = '<div class="empty">불러오는 중…</div>'; else drawFriends();
+  if (!await frLoad(true)) { if (!FR.loadedAt) $('#frBody').innerHTML = '<div class="empty">친구 목록을 못 불러왔어요.<br><span class="small">인터넷 연결을 확인해 주세요.</span></div>'; return; }
+  if (curTab === 'fr') drawFriends();
 }
 function drawFriends(){
   const row = (uid, btns) => `<div class="frrow"><div class="av">${esc((frName(uid)[0] || '?').toUpperCase())}</div><div class="nm">${esc(frName(uid))}</div>${btns}</div>`;
@@ -2385,14 +2392,20 @@ async function frRequest(h){
   FR.prof.set(p.user_id, p);
   if (FR.list.includes(p.user_id)) { toast('이미 친구예요'); return; }
   if (FR.outgoing.includes(p.user_id)) { toast('이미 요청을 보냈어요'); return; }
-  if (FR.incoming.includes(p.user_id)) { await frAccept(p.user_id); return; } // 상대가 먼저 보냈으면 바로 수락
-  const { error } = await sb.from('friendships').insert({ requester: session.user.id, addressee: p.user_id });
-  if (error) { toast('요청을 보내지 못했어요'); return; }
-  toast(`${h}님에게 친구 요청을 보냈어요`);
-  await frLoad(true); drawFriends();
+  if (frBusy) return; frBusy = true;
+  try {
+    const { data, error } = await sb.rpc('friend_request', { target: p.user_id });
+    if (error) { toast('요청을 보내지 못했어요'); return; }
+    toast(data === 'accepted' ? `${h}님도 요청을 보냈었어요. 바로 친구가 됐어요` : data === 'already' ? '이미 친구예요' : `${h}님에게 친구 요청을 보냈어요`);
+    $('#frAdd') && ($('#frAdd').value = '');
+    await frLoad(true); drawFriends(); if (FR.pinsOn) drawFriendPins();
+  } finally { frBusy = false; }
 }
+let frBusy = false;
 async function frAccept(uid){
-  const { error } = await sb.from('friendships').update({ status: 'accepted' }).eq('requester', uid).eq('addressee', session.user.id);
+  if (frBusy) return; frBusy = true;
+  const { error } = await sb.rpc('friend_request', { target: uid }); // 상대 요청을 받아들임 (내가 보낸 요청이 있으면 같이 정리)
+  frBusy = false;
   if (error) { toast('수락하지 못했어요'); return; }
   toast(`${frName(uid)}님과 친구가 됐어요`);
   await frLoad(true); drawFriends(); if (FR.pinsOn) drawFriendPins();
@@ -2447,8 +2460,8 @@ async function drawFriend(){
 $('#fBody').onclick = async e => {
   const m = e.target.closest('[data-fm]'); if (m) { frMode = m.dataset.fm; drawFriend(); return; }
   if (e.target.closest('[data-funf]')) { await frRemove(frCur, `${frName(frCur)}님과 친구를 끊을까요?\n서로의 기록이 더 이상 안 보여요.`); closePage('pFriend'); return; }
-  if (e.target.closest('[data-fmap]')) { closePage('pFriend'); closePage('pFriends'); showTab('map'); await setFriendPins(true, frCur); return; }
-  const fc = e.target.closest('[data-fc]'); if (fc) { const rec = FR.data.get(frCur); const c = rec?.cafes.find(x => x.id === fc.dataset.fc); if (c) { closePage('pFriend'); closePage('pFriends'); showTab('map'); await setFriendPins(true); openFriendSheet(frCur, c, true); } }
+  if (e.target.closest('[data-fmap]')) { closePage('pFriend'); showTab('map'); await setFriendPins(true, frCur); return; }
+  const fc = e.target.closest('[data-fc]'); if (fc) { const rec = FR.data.get(frCur); const c = rec?.cafes.find(x => x.id === fc.dataset.fc); if (c) { closePage('pFriend'); showTab('map'); await setFriendPins(true); openFriendSheet(frCur, c, true); } }
 };
 
 /* 지도에 친구 핀 */
@@ -2581,11 +2594,12 @@ function showTab(t, fromBack){
   if (!fromBack && t !== curTab) { tabHist.push(curTab); if (tabHist.length > 30) tabHist.shift(); armBack(); }
   curTab = t;
   document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  ['map','list','rec','set'].forEach(k => $('#v-'+k).classList.toggle('hidden', k !== t));
+  ['map','list','rec','fr','set'].forEach(k => $('#v-'+k).classList.toggle('hidden', k !== t));
   if (t === 'map' && map) { map.relayout(); }
   if (t === 'list') renderList();
   if (t === 'set') renderSettings();
   if (t === 'rec') renderRec();
+  if (t === 'fr') loadFriendsTab();
 }
 $('#tabbar').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
 const pageStack = [];
@@ -2690,7 +2704,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-17'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-18'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
