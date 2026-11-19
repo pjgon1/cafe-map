@@ -436,6 +436,23 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
   <div class="savebar"><button class="btn" id="shMake" style="width:100%">링크 만들기</button></div>
 </div>
 
+<!-- 로그인 (카카오 / 아이디) -->
+<div class="page" id="pLogin">
+  <div class="bar">
+    <button class="iconbtn" data-close="pLogin" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="t">로그인</div><div style="width:40px"></div>
+  </div>
+  <div class="body">
+    <p style="font-size:15px;line-height:1.7;margin:6px 0 16px">로그인하면 폰, PC 어디서든 같은 기록과 사진을 볼 수 있어요.</p>
+    <button class="btn kakaologin" id="lgKakao" style="width:100%">카카오로 로그인</button>
+    <div class="small" style="text-align:center;margin:22px 0 12px">또는 아이디로</div>
+    <label class="f">아이디</label><input class="inp" id="lgId" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="영문 소문자·숫자 3~20자">
+    <label class="f">비밀번호</label><input class="inp" id="lgPw" type="password" autocomplete="current-password" placeholder="6자 이상">
+    <div class="btnrow" style="margin-top:16px"><button class="btn" id="lgIn">로그인</button><button class="btn ghost" id="lgUp">처음이에요, 가입</button></div>
+    <p class="small" style="line-height:1.7;margin-top:14px">이메일 없이 아이디로만 가입해요. 비밀번호를 잊으면 찾을 방법이 없으니 꼭 기억해 두세요.</p>
+  </div>
+</div>
+
 <!-- 공유 목록 보기 (링크 받은 사람용) -->
 <div class="page" id="pSList">
   <div class="bar">
@@ -1494,13 +1511,49 @@ async function applyRemote(store, row){
   await DB.put(store, { ...remote, id: row.id, dirty: false });
   return true;
 }
+/* 아이디 로그인: 아이디를 내부용 이메일 주소로 바꿔서 Supabase 이메일 로그인에 씀 (메일은 보내지 않음) */
+const ID_DOMAIN = 'coffeelog.app';
+const idToEmail = id => `${id}@${ID_DOMAIN}`;
+function openLogin(){
+  $('#lgId').value = ''; $('#lgPw').value = '';
+  openPage('pLogin');
+}
+$('#lgKakao').onclick = () => Sync.login();
+async function idAuth(signup){
+  const id = $('#lgId').value.trim().toLowerCase(), pw = $('#lgPw').value;
+  if (!/^[a-z0-9_]{3,20}$/.test(id)) { toast('아이디는 영문 소문자·숫자·_ 3~20자로 해주세요'); return; }
+  if (pw.length < 6) { toast('비밀번호는 6자 이상으로 해주세요'); return; }
+  if (!sb) { toast('인터넷 연결을 확인해 주세요'); return; }
+  loading(true, signup ? '가입하는 중…' : '로그인하는 중…');
+  let r;
+  try {
+    r = signup ? await sb.auth.signUp({ email: idToEmail(id), password: pw, options: { data: { name: id } } })
+               : await sb.auth.signInWithPassword({ email: idToEmail(id), password: pw });
+  } catch { loading(false); toast('인터넷 연결을 확인해 주세요'); return; }
+  loading(false);
+  if (r.error) {
+    const m = r.error.message || '';
+    toast(/already|registered|exists/i.test(m) ? '이미 있는 아이디예요. 다른 아이디로 해주세요'
+      : /invalid login|credentials/i.test(m) ? '아이디나 비밀번호가 달라요'
+      : /password/i.test(m) ? '비밀번호를 더 길게 해주세요'
+      : /rate|too many/i.test(m) ? '잠시 뒤에 다시 해주세요'
+      : '문제가 생겼어요: ' + m);
+    return;
+  }
+  if (!r.data?.session) { toast('가입됐어요. 로그인을 눌러주세요'); return; }
+  closePage('pLogin');
+  toast(signup ? `${id}님, 가입했어요` : '로그인했어요');
+}
+$('#lgIn').onclick = () => idAuth(false);
+$('#lgUp').onclick = () => idAuth(true);
+$('#lgPw').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); idAuth(false); } });
 function renderAccount(){
   const el = $('#acct'); if (!el) return;
   if (!sb) { el.innerHTML = '<div class="small">로그인 기능을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>'; return; }
   if (!session) {
     el.innerHTML = `<div style="font-size:15px;line-height:1.6">카카오로 로그인하면 폰, PC 어디서든<br>같은 기록과 사진을 볼 수 있어요.</div>
-      <button class="btn kakaologin" id="btnLogin" style="width:100%;margin-top:12px">카카오로 로그인</button>`;
-    $('#btnLogin').onclick = () => Sync.login();
+      <button class="btn" id="btnLogin" style="width:100%;margin-top:12px">로그인 · 가입</button>`;
+    $('#btnLogin').onclick = () => openLogin();
     return;
   }
   const m = session.user.user_metadata || {};
@@ -2055,7 +2108,7 @@ const shSel = new Set();
 const shOpt = { review: true, photo: true, q: '' };
 const myName = () => { const m = session?.user?.user_metadata || {}; return m.name || m.nickname || m.full_name || ''; };
 function openShareMaker(){
-  if (!session) { ask('공유 링크는 로그인해야 만들 수 있어요.\n카카오로 로그인할까요?', '카카오로 로그인').then(ok => ok && Sync.login()); return; }
+  if (!session) { ask('공유 링크는 로그인해야 만들 수 있어요.\n로그인할까요?', '로그인').then(ok => ok && openLogin()); return; }
   shSel.clear(); shOpt.q = '';
   const used = [...new Set(cafes.flatMap(c => c.tags||[]))];
   $('#shBody').innerHTML = `
@@ -2213,13 +2266,21 @@ function showTab(t, fromBack){
 $('#tabbar').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
 const pageStack = [];
 /* 폰 뒤로가기 버튼
-   폰 브라우저 규칙: 화면을 '실제로 누른 직후'에 만든 뒤로가기 기록만 인정함. 누르지 않고 만든 기록은
-   건너뛰고, 그 앞 기록까지 같이 건너뛰어서 앱이 바로 꺼져 버림 → 기록은 누른 직후에만 만든다.
-   - 열려 있는 것(확인창, 사진, 화면, 카드, 검색, 지나온 탭) 하나당 기록 한 칸 + 맨 아래 '바닥' 한 칸
-   - 뒤로가기 한 번 = 맨 위 하나 닫기. 바닥까지 닫으면 종료 안내창, 거기서 한 번 더 누르면 앱이 꺼짐
-   - 앱 안의 X 버튼 등으로 닫으면 남는 칸은 조용히 되감아서 개수를 맞춤 */
-let tok = 0, skipPop = 0, exitAsk = false, exitedAt = 0;
+   방법 1 (요즘 크롬·삼성인터넷): CloseWatcher — 폰 뒤로가기를 앱이 직접 받음. 기록을 안 쌓아서 꼬일 일이 없음
+   방법 2 (옛 브라우저): 브라우저 기록에 칸을 쌓는 방식 (누른 직후에만 쌓을 수 있음)
+   공통 순서: 확인창(취소) → 사진 크게 보기 → 열린 화면 → 카드(건물 목록) → 검색 → 바로 전에 보던 탭 → 종료 확인창 */
+const useCW = typeof CloseWatcher === 'function';
+let cw = null, tok = 0, skipPop = 0, exitAsk = false, exitedAt = 0;
 const vis = el => !el.classList.contains('hidden');
+function armCW(){
+  if (!useCW || cw || exitAsk) return;
+  try { cw = new CloseWatcher(); cw.onclose = () => { cw = null; backStep(); }; } catch { cw = null; }
+}
+function backStep(){
+  if (exitAsk) return;
+  if (closeTop()) setTimeout(armCW, 0); else askExit();
+}
+// 방법 2용: 열려 있는 것 하나당 기록 한 칸 + 바닥 한 칸
 function wantTok(){
   return 1 + (vis($('#dlg')) && !exitAsk ? 1 : 0) + (vis($('#viewer')) ? 1 : 0) + pageStack.length
     + ($('#sheet').classList.contains('open') ? 1 + (bldChild ? 1 : 0) : 0) + (vis($('#results')) ? 1 : 0) + (SHARE_ID ? 0 : tabHist.length);
@@ -2227,6 +2288,7 @@ function wantTok(){
 const canPush = () => !navigator.userActivation || navigator.userActivation.isActive;
 function syncBack(){
   if (exitAsk) return;
+  if (useCW) { armCW(); return; }
   const want = wantTok();
   if (want > tok) { if (!canPush()) return; while (tok < want) history.pushState({t: ++tok}, ''); }
   else if (want < tok && !skipPop) { skipPop++; history.go(want - tok); tok = want; }
@@ -2255,26 +2317,39 @@ function closeTop(){
 }
 function askExit(){
   exitAsk = true;
-  $('#dlgMsg').textContent = '뒤로가기를 한 번 더 누르면\n커피로그가 꺼져요.';
-  $('#dlgBtns').innerHTML = '<button class="btn" data-v="0" style="flex:1">계속 쓰기</button>';
+  if (cw) { try { cw.destroy(); } catch {} cw = null; }
+  if (tok > 0) { skipPop++; history.go(-tok); tok = 0; } // 남은 기록 칸 정리 → 다음 뒤로가기에 바로 꺼지게
+  $('#dlgMsg').textContent = '커피로그를 종료할까요?';
+  $('#dlgBtns').innerHTML = '<button class="btn ghost" data-v="0">취소</button><button class="btn" data-v="1">종료</button>';
   $('#dlg').classList.remove('hidden');
-  $('#dlgBtns').onclick = e => { if (!e.target.closest('button')) return; $('#dlg').classList.add('hidden'); exitAsk = false; syncBack(); };
+  $('#dlgBtns').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.v === '1') {
+      try { window.close(); } catch {}
+      // 폰이 앱을 못 닫게 막으면: 창은 그대로 두고 안내만 (이때 뒤로가기 한 번이면 꺼짐)
+      setTimeout(() => { if (!document.hidden) $('#dlgMsg').textContent = '폰이 앱을 바로 못 닫게 막고 있어요.\n뒤로가기를 한 번 누르면 꺼져요.'; }, 400);
+      return;
+    }
+    $('#dlg').classList.add('hidden'); exitAsk = false; syncBack();
+  };
 }
 window.addEventListener('popstate', e => {
+  if (useCW) return;
   const now = e.state?.t || 0;
   if (skipPop) { skipPop--; tok = now; return; } // 앱이 스스로 되감은 것
   let steps = Math.max(1, tok - now); tok = now;
   if (exitAsk) return;
   while (steps-- > 0) if (!closeTop()) break;
-  if (tok === 0) askExit(); // 바닥까지 내려옴 → 다음 뒤로가기는 앱을 끄므로 안내
+  if (tok === 0) askExit();
 });
-// 누른 직후마다 개수 맞추기 (+ 앱이 알아서 연 것도 잠깐 뒤 맞춤)
+// 누른 직후마다 맞추기 (+ 앱이 알아서 연 것도 잠깐 뒤 맞춤)
 for (const ev of ['click', 'touchend', 'keydown']) document.addEventListener(ev, () => setTimeout(syncBack, 0), true);
 setInterval(syncBack, 400);
-// 종료 안내창이 뜬 상태에서 앱을 나갔다면, 다시 들어올 때 처음 화면부터 새로 시작
+armCW(); // 앱을 켜자마자 뒤로가기를 눌러도 종료 확인창이 뜨게
+// 종료 확인창이 뜬 상태에서 앱을 나갔다면, 다시 들어올 때 처음 화면부터 새로 시작
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { if (exitAsk) exitedAt = Date.now(); return; }
-  if (exitedAt) location.replace(location.pathname);
+  if (exitedAt) { const q = new URLSearchParams(location.search); q.delete('u'); location.replace(location.pathname + (q.toString() ? '?' + q : '')); }
 });
 let lastCupDay = cupDay();
 setInterval(() => { if (cupDay() !== lastCupDay && !SHARE_ID) { lastCupDay = cupDay(); refreshAll(); } }, 10 * 60 * 1000);
@@ -2291,7 +2366,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-8'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-10'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
@@ -2344,7 +2419,7 @@ async function start(){
     let seen = false; try { seen = !!localStorage.getItem('loginAsked'); } catch {}
     if (!seen) {
       try { localStorage.setItem('loginAsked', '1'); } catch {}
-      if (await ask('카카오로 로그인하면 폰, PC 어디서든\n같은 기록과 사진을 볼 수 있어요.\n(나중에 설정 탭에서도 할 수 있어요)', '카카오로 로그인')) Sync.login();
+      if (await ask('로그인하면 폰, PC 어디서든\n같은 기록과 사진을 볼 수 있어요.\n(나중에 설정 탭에서도 할 수 있어요)', '로그인')) openLogin();
     }
   }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
