@@ -40,6 +40,10 @@ input,textarea{outline:none}
 #map.far .pin .nm,#map.far .pin .fwho{display:none}
 .pin.friend .ring{border-color:#5B8DEF}
 .pin.friend .tip{border-top-color:#5B8DEF}
+.pin.friend.wish .ring{border-style:dashed;border-color:#5B8DEF;background:var(--bg)}
+.pin.friend.wish .tip{border-top-color:#5B8DEF}
+.pin.friend.wish .fwho{background:var(--bg);color:#5B8DEF;border:1px dashed #5B8DEF}
+.pin.friend.ffav .ring::after{content:'♥';position:absolute;top:-7px;right:-8px;width:19px;height:19px;border-radius:50%;background:#5B8DEF;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid var(--frame)}
 .pin .fwho{margin-top:2px;font-size:10px;color:#fff;background:#5B8DEF;padding:1px 7px;border-radius:999px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .frme{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--note);border-radius:14px;padding:14px 16px;margin-top:4px}
 .frme.col{flex-direction:column;align-items:stretch}
@@ -55,7 +59,9 @@ input,textarea{outline:none}
 .frrow .go{color:var(--sub);font-size:20px}
 .frrev{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.5}
 .fcafe{border-bottom:1px solid var(--line)}
-.fcafe .item{border:0}
+.fcafe .item{border:0;cursor:pointer}
+.fcafe .fvis{padding:0 4px 4px}
+.fcafe.open{background:color-mix(in srgb,var(--note) 60%,transparent);border-radius:14px}
 .headbtns .chip{background:var(--soft);color:var(--softt);border-color:transparent}
 .album h4{margin:22px 0 10px;font-size:15px;font-weight:700}
 .album h4 small{font-weight:400;color:var(--sub);font-size:12px;margin-left:6px}
@@ -868,7 +874,7 @@ async function openSheet(id){
       <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
       ${st.rating ? `<div class="score">★ ${st.rating.toFixed(1)}</div>` : ''}
     </div>
-    <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.nextTry ? `<div class="nextbar">🍰 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     ${c.wish && !lv ? `<div class="note" style="margin-top:8px;color:var(--sub)">아직 안 가본 곳이에요.${c.memo?'<br>'+esc(c.memo):''}</div>` : lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
     <div class="btnrow">
@@ -1137,12 +1143,14 @@ function openCafeEditor(id, seed){
     <label class="f">카페 별점 <span class="small">(방문 기록 별점이랑 따로 매기는 이 카페 총평)</span></label><div class="starpick" id="cStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= (+c.myRating||0) ? 'on' : ''}">★</button>`).join('')}</div>
     <div class="toggle"><div>☆ 가볼래<div class="small">아직 안 가본 곳이에요. 다녀와서 기록을 남기면 자동으로 꺼져요</div></div><button class="sw ${c.wish?'on':''}" id="cWish" aria-label="가볼래"></button></div>
     <div class="toggle"><div>♥ 또 갈래<div class="small">다시 가고 싶은 곳은 핀이 하트 색으로 바뀌어요</div></div><button class="sw ${c.fav?'on':''}" id="cFav" aria-label="또 갈래"></button></div>
+    <div class="toggle"><div>🔒 친구에게 숨기기<div class="small">켜면 이 카페와 방문 기록 전부 친구 화면·지도에 안 보여요</div></div><button class="sw ${c.hideFriends?'on':''}" id="cHide" aria-label="친구에게 숨기기"></button></div>
     <label class="f">어떤 곳이에요?</label>
     <div class="tagpick" id="cTags">${TAGS.map(t => `<button class="chip ${c.tags.includes(t)?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     <label class="f">메모 (와이파이 비번, 주차 팁 같은 거)</label>
     <textarea class="inp" id="cMemo" placeholder="자유롭게 적어두세요" style="min-height:80px">${esc(c.memo)}</textarea>
     ${id ? `<div class="sec"><button class="btn danger" id="cDel" style="width:100%">이 카페 기록 전체 삭제</button></div>` : ''}`;
   $('#cFav').onclick = e => e.currentTarget.classList.toggle('on');
+  $('#cHide').onclick = e => e.currentTarget.classList.toggle('on');
   $('#cStars').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.n; c.myRating = (+c.myRating||0) === n ? 0 : n; document.querySelectorAll('#cStars button').forEach(x => x.classList.toggle('on', +x.dataset.n <= c.myRating)); };
   $('#cWish').onclick = e => e.currentTarget.classList.toggle('on');
   $('#cTags').onclick = e => { const b = e.target.closest('.chip'); if (b) b.classList.toggle('on'); };
@@ -1156,6 +1164,7 @@ $('#cSave').onclick = once(async () => {
   const addr = $('#cAddr').value.trim();
   if (addr !== (c.roadAddress || c.address)) { c.roadAddress = addr; }
   c.fav = $('#cFav').classList.contains('on');
+  c.hideFriends = $('#cHide').classList.contains('on');
   c.wish = $('#cWish').classList.contains('on');
   c.tags = [...document.querySelectorAll('#cTags .chip.on')].map(b => b.dataset.t);
   c.memo = $('#cMemo').value.trim();
@@ -1198,10 +1207,12 @@ async function openVisitEditor(cafeId, visitId, pre){
     ${c.nextTry ? `<div class="small" style="margin-top:6px">🍰 다음엔 이거: ${esc(c.nextTry)} <button class="textbtn" id="vUseNext" type="button">메뉴에 넣기</button></div>` : ''}
     <label class="f">얼마 썼어요?</label><input class="inp" id="vPrice" inputmode="numeric" value="${v.price?Number(v.price).toLocaleString('ko-KR'):''}" placeholder="13,500">
     <label class="f">후기</label><textarea class="inp" id="vReview" placeholder="맛, 분위기, 자리, 웨이팅… 생각나는 대로">${esc(v.review)}</textarea>
+    <div class="toggle"><div>🔒 이 방문은 친구에게 숨기기<div class="small">켜면 친구 화면에 이 방문 기록만 안 보여요</div></div><button class="sw ${v.hideFriends?'on':''}" id="vHide" aria-label="친구에게 숨기기"></button></div>
     ${visitId ? `<div class="sec"><button class="btn danger" id="vDel" style="width:100%">이 방문 기록 삭제</button></div>` : ''}`;
   setStars(v.rating);
   $('#vStars').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.n; editingVisit.data.rating = editingVisit.data.rating === n ? 0 : n; setStars(editingVisit.data.rating); };
   $('#vPrice').oninput = e => { const n = e.target.value.replace(/[^\d]/g,''); e.target.value = n ? Number(n).toLocaleString('ko-KR') : ''; };
+  $('#vHide').onclick = e => e.currentTarget.classList.toggle('on');
   if (visitId) $('#vDel').onclick = () => deleteVisit(visitId);
   if ($('#vUseNext')) $('#vUseNext').onclick = () => { const m = $('#vMenu'); m.value = m.value.trim() ? m.value.trim() + ', ' + c.nextTry : c.nextTry; };
   await renderVisitPhotos();
@@ -1233,6 +1244,7 @@ $('#vSave').onclick = once(async () => {
   v.menu = $('#vMenu').value.trim();
   v.price = $('#vPrice').value.replace(/[^\d]/g,'');
   v.review = $('#vReview').value.trim();
+  v.hideFriends = $('#vHide').classList.contains('on');
   if (ev.newPhotos.length) loading(true, `사진 ${ev.newPhotos.length}장 저장 중…`);
   try {
     while (ev.newPhotos.length) { const p = ev.newPhotos[0]; v.photoIds.push(await savePhoto(p.file)); URL.revokeObjectURL(p.url); ev.newPhotos.shift(); }
@@ -1279,7 +1291,7 @@ async function openDetail(id, keep){
   const wall = await Promise.all(all.map(async (p,i) => `<div class="pol" data-ph="${p.id}" style="transform:rotate(${hashRot(p.id,i)}deg)">${p.id===cov?'<span class="covbadge">★</span>':''}<div style="background-image:url('${await getPhotoURL(p.id)}')"></div><div class="cap">${esc(p.cap.split(' · ')[0])}</div></div>`));
   const vhtml = await Promise.all(vs.map(async v => {
     const ph = await Promise.all((v.photoIds||[]).map(async (p,i) => `<div class="pol" data-ph="${p}" style="transform:rotate(${hashRot(p,i)}deg)"><div style="background-image:url('${await getPhotoURL(p)}')"></div></div>`));
-    return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
+    return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}${v.hideFriends && !c.hideFriends ? ' <span class="small">🔒 친구에게 숨김</span>' : ''}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
       <div class="note">${(v.menu||v.price)?`<div class="meta">${esc(v.menu)}${v.menu&&v.price?' · ':''}${won(v.price)}</div>`:''}${esc(v.review || '후기 없음')}</div>
       ${ph.length?`<div class="vphotos">${ph.join('')}</div>`:''}
       <div class="vacts"><button data-ev="${v.id}">수정</button></div></div>`;
@@ -2455,15 +2467,34 @@ async function drawFriend(){
       <div class="info"><div class="nm">${c.wish ? '<span style="color:var(--sub)">☆</span> ' : c.fav ? '<span style="color:var(--heartt)">♥</span> ' : ''}${esc(c.name)}${c.kakaoId && mineK.has(c.kakaoId) ? ' <span class="small" style="color:var(--acc)">· 나도 감</span>' : ''}</div>
       <div class="ad">${esc(shortAddr(c))}</div>
       <div class="mini">${st.rating ? `<b>★ ${st.rating.toFixed(1)}</b>` : ''}<span>${c.wish && !st.count ? '가볼래' : `방문 ${st.count}번`}</span>${st.last?.date ? `<span>${fmtDate(st.last.date)}</span>` : ''}</div>
-      ${st.last?.review ? `<div class="frrev">${esc(st.last.review.slice(0, 80))}${st.last.review.length > 80 ? '…' : ''}</div>` : ''}</div></div></div>`).join('');
+      ${st.last?.review ? `<div class="frrev">${esc(st.last.review.slice(0, 80))}${st.last.review.length > 80 ? '…' : ''}</div>` : ''}</div></div>
+      <div class="fvis hidden"></div></div>`).join('');
   $('#fBody').querySelectorAll('[data-fph]').forEach(async el => { const pid = el.dataset.fph; if (!pid) return; const u = await frPhoto(uid, pid); if (u) el.style.backgroundImage = `url('${u}')`; });
 }
 $('#fBody').onclick = async e => {
   const m = e.target.closest('[data-fm]'); if (m) { frMode = m.dataset.fm; drawFriend(); return; }
   if (e.target.closest('[data-funf]')) { await frRemove(frCur, `${frName(frCur)}님과 친구를 끊을까요?\n서로의 기록이 더 이상 안 보여요.`); closePage('pFriend'); return; }
   if (e.target.closest('[data-fmap]')) { closePage('pFriend'); showTab('map'); await setFriendPins(true, frCur); return; }
-  const fc = e.target.closest('[data-fc]'); if (fc) { const rec = FR.data.get(frCur); const c = rec?.cafes.find(x => x.id === fc.dataset.fc); if (c) { closePage('pFriend'); showTab('map'); await setFriendPins(true); openFriendSheet(frCur, c, true); } }
+  const fv = e.target.closest('[data-fvmap]'); if (fv) { const c = FR.data.get(frCur)?.cafes.find(x => x.id === fv.dataset.fvmap); if (c) { closePage('pFriend'); showTab('map'); await setFriendPins(true); openFriendSheet(frCur, c, true); } return; }
+  if (e.target.closest('.fvis')) return;
+  const fc = e.target.closest('[data-fc]'); if (fc) toggleFriendVisits(fc);
 };
+
+// 친구 카페 하나의 방문 기록 펼치기 / 접기
+async function toggleFriendVisits(box){
+  const el = box.querySelector('.fvis');
+  if (!el.classList.contains('hidden')) { el.classList.add('hidden'); box.classList.remove('open'); return; }
+  const uid = frCur, rec = FR.data.get(uid), c = rec?.cafes.find(x => x.id === box.dataset.fc); if (!c) return;
+  const vs = frVisitsOf(rec, c.id);
+  el.innerHTML = (vs.length ? vs.map(v => `<div class="visit">
+      <div class="vh"><span>${v.date ? fmtDate(v.date) : '날짜 없음'}</span><span class="stars">${v.rating ? stars(v.rating) : ''}</span></div>
+      <div class="note">${(v.menu || v.price) ? `<div class="meta">${esc(v.menu || '')}${v.menu && v.price ? ' · ' : ''}${v.price ? won(v.price) : ''}</div>` : ''}${esc(v.review || '후기 없음')}</div>
+      ${(v.photoIds || []).length ? `<div class="vphotos">${v.photoIds.map((p, i) => `<div class="pol" style="transform:rotate(${hashRot(p, i)}deg)"><div data-fvp="${p}"></div></div>`).join('')}</div>` : ''}
+    </div>`).join('') : '<div class="emptyPhoto">방문 기록은 아직 없어요</div>')
+    + `<button class="btn ghost" data-fvmap="${esc(c.id)}" style="width:100%;margin:8px 0 12px">🗺 지도에서 보기</button>`;
+  el.classList.remove('hidden'); box.classList.add('open');
+  el.querySelectorAll('[data-fvp]').forEach(async d => { const u = await frPhoto(uid, d.dataset.fvp); if (u) d.style.backgroundImage = `url('${u}')`; });
+}
 
 /* 지도에 친구 핀 */
 async function setFriendPins(on, focusUid){
@@ -2488,9 +2519,12 @@ async function drawFriendPins(focusUid){
   const b = new kakao.maps.LatLngBounds(); let n = 0;
   for (const [key, g] of groups) {
     if (g.c.kakaoId && mine.has(g.c.kakaoId)) continue; // 내 핀이 이미 있는 곳은 내 핀으로
+    // 다녀왔어(실선) / 가볼래만(점선) / 또 갈래(하트) 구분
+    const mark = w => { const rec = FR.data.get(w.uid); const went = !w.c.wish || (rec && frVisitsOf(rec, w.c.id).length); return w.c.fav ? '♥' : went ? '♪' : '☆'; };
+    const marks = g.who.map(mark), anyWent = marks.some(m => m !== '☆'), anyFav = marks.includes('♥');
     const el = document.createElement('div');
-    el.className = 'pin friend';
-    el.innerHTML = `<div class="ring"><div>${cupIcon(g.c.id)}</div></div><div class="tip"></div><div class="nm">${esc(g.c.name)}</div><div class="fwho">${esc(g.who.map(w => frName(w.uid)).join(', '))}</div>`;
+    el.className = 'pin friend' + (anyWent ? '' : ' wish') + (anyFav ? ' ffav' : '');
+    el.innerHTML = `<div class="ring"><div>${cupIcon(g.c.id)}</div></div><div class="tip"></div><div class="nm">${esc(g.c.name)}</div><div class="fwho">${g.who.map((w, i) => esc(marks[i] + ' ' + frName(w.uid))).join(', ')}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); openFriendSheet(g.who[0].uid, g.c, false, g.who); });
     const o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(g.c.lat, g.c.lng), content: el, yAnchor: 1, clickable: true, zIndex: 1 });
     o.setMap(map); o._el = el; FR.pins.set(key, o);
@@ -2705,7 +2739,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-19'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-20'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
