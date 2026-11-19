@@ -190,6 +190,10 @@ body.sharemode .view{bottom:0}
 .pin.fav .ring{border-color:var(--heartt);box-shadow:0 0 0 4px color-mix(in srgb,var(--heartt) 22%,transparent),0 3px 10px color-mix(in srgb,var(--heartt) 45%,transparent)}
 .pin.fav .ring::after{content:'♥';position:absolute;top:-7px;right:-8px;width:21px;height:21px;border-radius:50%;background:var(--heartt);color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;border:2px solid var(--frame);box-shadow:0 1px 4px rgba(0,0,0,.25);animation:favbeat 2.6s ease-in-out infinite}
 .pin.fav .tip{border-top-color:var(--heartt)}
+.pin .lvb{position:absolute;bottom:-5px;left:-9px;min-width:21px;height:21px;padding:0 4px;border-radius:999px;background:var(--lv);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--frame);box-shadow:0 1px 4px rgba(0,0,0,.25);line-height:1}
+.pin.lv10 .ring{outline:2px solid #D4A017;outline-offset:2px}
+.lvhint{margin-top:6px}
+.tag.lvtag{background:color-mix(in srgb,var(--lv) 16%,transparent);color:var(--lv);font-weight:700;border:1px solid color-mix(in srgb,var(--lv) 45%,transparent)}
 .pin.fav .nm{border-color:var(--heartt);color:var(--heartt);font-weight:700}
 @keyframes favbeat{0%,68%,100%{transform:scale(1)}76%{transform:scale(1.28)}84%{transform:scale(.94)}92%{transform:scale(1.12)}}
 @media (prefers-reduced-motion:reduce){.pin.fav .ring::after{animation:none}}
@@ -729,6 +733,16 @@ function fetchRemotePhoto(id, kind, existing){
 }
 const once = fn => { let busy = false; return async (...a) => { if (busy) return; busy = true; try { return await fn(...a); } finally { busy = false; } }; };
 const visitsOf = cid => visits.filter(v => v.cafeId === cid).sort((a,b) => (b.date||'').localeCompare(a.date||'') || b.createdAt - a.createdAt);
+/* 단골 레벨: 같은 카페 방문 기록 3번 / 5번 / 10번 */
+const LEVELS = [[10, '평생 단골', '👑', '#D4A017'], [5, '찐단골', '🥈', '#8C98AE'], [3, '단골', '🥉', '#B5743C']];
+const cafeLevel = n => LEVELS.find(l => n >= l[0]) || null;
+const nextLevel = n => [...LEVELS].reverse().find(l => n < l[0]) || null;
+function lvTag(c, st){
+  const n = (st || cafeStats(c)).count, lv = cafeLevel(n), nx = nextLevel(n);
+  const tag = lv ? `<span class="tag lvtag" style="--lv:${lv[3]}">${lv[2]} ${lv[1]} · ${n}번</span>` : '';
+  const hint = nx && n > 0 && !c.wish ? `<div class="small lvhint">${nx[0] - n}번 더 가면 ${nx[2]} ${nx[1]}</div>` : '';
+  return { tag, hint };
+}
 function cafeStats(c){
   const vs = visitsOf(c.id); const rs = vs.filter(v => v.rating);
   const visitAvg = rs.length ? rs.reduce((s,v)=>s+v.rating,0)/rs.length : 0, my = +c.myRating || 0;
@@ -828,13 +842,13 @@ async function refreshPins(){
   for (const c of cafes) {
     if (!passMap(c) || FR.only) continue; // 친구만 보기면 내 핀은 숨김
     seen.add(c.id);
-    const sel = c.id === selectedId, sig = [c.name, c.lat, c.lng, c.wish ? 1 : 0, c.fav ? 1 : 0, day].join('|');
+    const sel = c.id === selectedId, vn = c.wish ? 0 : visitsOf(c.id).length, lv = cafeLevel(vn), sig = [c.name, c.lat, c.lng, c.wish ? 1 : 0, c.fav ? 1 : 0, day, lv ? lv[0] : 0, lv ? vn : 0].join('|');
     let o = overlays.get(c.id);
     if (o && o._sig === sig) { if (o._el.classList.contains('sel') !== sel) { o._el.classList.toggle('sel', sel); o.setZIndex(sel ? 5 : 2); } continue; }
     if (o) o.setMap(null);
     const el = document.createElement('div');
-    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '') + (sel ? ' sel' : '');
-    el.innerHTML = `<div class="ring"><div>${cupIcon(c.id)}</div></div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
+    el.className = 'pin' + (c.wish ? ' wish' : c.fav ? ' fav' : '') + (sel ? ' sel' : '') + (lv ? ' lv' + lv[0] : '');
+    el.innerHTML = `<div class="ring"><div>${cupIcon(c.id)}</div>${lv ? `<span class="lvb" style="--lv:${lv[3]}">${lv[0] >= 10 ? '👑' : vn}</span>` : ''}</div><div class="tip"></div><div class="nm">${esc(c.name)}</div>`;
     el.addEventListener('click', e => { e.stopPropagation(); openSheet(c.id); });
     o = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(c.lat, c.lng), content: el, yAnchor: 1, clickable: true, zIndex: sel ? 5 : 2 });
     o.setMap(map); o._el = el; o._sig = sig;
@@ -924,7 +938,8 @@ async function openSheet(id){
       <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
       ${st.rating ? `<div class="score">★ ${st.rating.toFixed(1)}</div>` : ''}
     </div>
-    <div style="margin-top:10px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:10px">${lvTag(c, st).tag}${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    ${lvTag(c, st).hint}
     ${c.nextTry ? `<div class="nextbar">🍰 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     ${c.wish && !lv ? `<div class="note" style="margin-top:8px;color:var(--sub)">아직 안 가본 곳이에요.${c.memo?'<br>'+esc(c.memo):''}</div>` : lv ? `<div class="note" style="margin-top:8px"><div class="meta">${fmtDate(lv.date)}${lv.menu?' · '+esc(lv.menu):''}${lv.price?' · '+won(lv.price):''}</div>${esc(lv.review||'후기는 아직 안 썼어요')}</div>` : `<div class="note" style="margin-top:8px;color:var(--sub)">아직 방문 기록이 없어요. 첫 기록을 남겨보세요.</div>`}
     <div class="btnrow">
@@ -1314,12 +1329,14 @@ $('#vSave').onclick = once(async () => {
     await DB.put('visits', v); Sync.soon();
   } catch (err) { loading(false); toast('저장 공간이 부족하거나 사진을 읽지 못했어요'); return; }
   loading(false);
+  const isNew = !visits.some(x => x.id === v.id);
   const i = visits.findIndex(x => x.id === v.id); if (i >= 0) visits[i] = v; else visits.push(v);
+  const upLv = isNew && LEVELS.find(l => l[0] === visitsOf(v.cafeId).length);
   const wc = cafes.find(x => x.id === v.cafeId); let moved = false;
   if (wc && wc.wish) { wc.wish = false; wc.updatedAt = Date.now(); wc.dirty = true; await DB.put('cafes', wc); moved = true; Sync.soon(); }
   { const cc = cafes.find(x => x.id === v.cafeId); if (cc && cc.nextTry && v.menu && v.menu.toLowerCase().includes(cc.nextTry.toLowerCase())) { cc.nextTry = ''; cc.updatedAt = Date.now(); cc.dirty = true; await DB.put('cafes', cc); Sync.soon(); } }
   if (moved) { try { localStorage.setItem('wishDone', (+localStorage.getItem('wishDone') || 0) + 1); } catch {} }
-  closePage('pVisit'); await refreshAll(); toast(moved ? '♪ 다녀왔어로 옮겼어요' : '기록했어요');
+  closePage('pVisit'); await refreshAll(); toast(upLv ? `${upLv[2]} ${upLv[0]}번째 방문! ${upLv[1]}이 됐어요` : moved ? '♪ 다녀왔어로 옮겼어요' : '기록했어요');
   if (isOpen('pDetail')) openDetail(v.cafeId, true); else if (selectedId === v.cafeId) openSheet(v.cafeId);
 });
 async function deleteVisit(id){
@@ -1383,7 +1400,7 @@ async function openDetail(id, keep){
       ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}<small>${st.my ? '내 별점' : '방문 평균'}</small></div>`:''}</div>
     <div class="myrate"><span class="lb">내 별점</span><div class="starpick" id="dStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= st.my ? 'on' : ''}">★</button>`).join('')}</div>
       <span class="avg">${st.rated ? `방문 평균<br>★ ${st.visitAvg.toFixed(1)} · ${st.rated}번` : ''}</span></div>
-    <div style="margin-top:12px">${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:12px">${lvTag(c, st).tag}${c.wish?'<span class="tag wish">☆ 가볼래</span>':''}${c.fav?'<span class="tag heart">♥ 또 갈래</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
     <div class="nexttry" id="dNext"><span class="lb">🍰 다음엔 이거</span><span class="v">${c.nextTry ? esc(c.nextTry) : '<span style="color:var(--sub)">먹어보고 싶은 메뉴를 적어두세요</span>'}</span><button class="textbtn" id="dNextEdit">${c.nextTry ? '수정' : '적기'}</button></div>
@@ -2980,7 +2997,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.19-29'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.19-30'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
