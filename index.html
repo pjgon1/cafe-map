@@ -28,7 +28,7 @@
 } catch {} })();
 </script>
 <script defer src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=53197b8a3f18075ca99a32c87ef13c91&libraries=services&autoload=false"></script>
-<script defer crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.1/dist/umd/supabase.min.js"></script>
+<script defer crossorigin="anonymous" integrity="sha384-rONULF7BcIpU+mBrW9/e9DhAVbCUwcewd5ivsb4/z3qqi1anKKkZ+KZpFRHHM3pG" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.1/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --bg:#FFFDF9;--ink:#2A2522;--sub:#8A817A;--acc:#6F4E37;--onacc:#fff;--soft:#F3EBE3;--softt:#6F4E37;
@@ -717,7 +717,7 @@ const wxTag = v => { const w = v && v.wx; if (!w || !Number.isFinite(+w.c) || !N
 const todayStr = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 const fmtDate = s => { if(!s) return ''; const [y,m,d] = s.split('-').map(Number); const now = new Date().getFullYear(); return (y!==now? y+'년 ':'') + m+'월 '+d+'일'; };
 const won = n => n ? Number(n).toLocaleString('ko-KR') + '원' : '';
-const stars = r => '★'.repeat(r||0) + '☆'.repeat(5-(r||0));
+const stars = r => { r = Math.max(0, Math.min(5, Math.round(+r || 0))); return '★'.repeat(r) + '☆'.repeat(5 - r); };
 const CUP_ARTS = (() => {
   const S = 'stroke="#5A3E2B" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"', S0 = 'stroke="#5A3E2B" stroke-linejoin="round" stroke-linecap="round"', T = 'fill="none" stroke="#B9A99A" stroke-width="1.6" stroke-linecap="round"', H = '<path d="M23 15h2a3.6 3.6 0 0 1 0 7.2h-2" fill="none" stroke="#5A3E2B" stroke-width="2" stroke-linecap="round"/>';
   return [
@@ -865,8 +865,8 @@ document.addEventListener('click', e => {
   box.classList.toggle('hidden'); t.classList.toggle('open', !box.classList.contains('hidden'));
 });
 // 항목 별점이 하나라도 있으면 그 평균이 내 별점, 없으면 직접 매긴 내 별점
-const subMean = c => { const xs = SUBS.map(([k]) => +c?.sub?.[k]).filter(x => x > 0); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0; };
-const myOf = c => subMean(c) || +c?.myRating || 0;
+const subMean = c => { const xs = SUBS.map(([k]) => +c?.sub?.[k]).filter(x => x > 0 && x <= 5); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0; };
+const myOf = c => { const r = subMean(c) || +c?.myRating || 0; return r > 0 && r <= 5 ? r : 0; };
 function cafeStats(c){
   const vs = visitsOf(c.id); const rs = vs.filter(v => v.rating);
   const visitAvg = rs.length ? rs.reduce((s,v)=>s+v.rating,0)/rs.length : 0, my = myOf(c);
@@ -919,7 +919,6 @@ $('#themes').onclick = e => { if (e.target.closest('#themesMore')) { themesMore 
    지도
    ========================================================= */
 let map, places, overlays = new Map(), tempOverlay = null, meOverlay = null, myPos = null, selectedId = null;
-let mapFilter = '전체'; // (예전 이름, 지금은 mapSel 사용)
 // 지도 위 칩: 상태(다녀왔어/또 갈래/가볼래)는 셋 중 하나만, 태그는 여러 개 → 다 맞는 곳만
 const MAP_STATUS = ['다녀왔어 ♪', '또 갈래 ♥', '가볼래 ☆'];
 const mapSel = { status: '', tags: new Set() };
@@ -1123,8 +1122,8 @@ function closeSheet(){
 /* 카드 끌어내리기: 손가락으로 아래로 끌면 따라 내려오고, 충분히 내리거나 휙 내리면 닫힘. 덜 내리면 제자리로 */
 (function sheetDrag(){
   const sh = $('#sheet');
-  let y0 = 0, x0 = 0, t0 = 0, dy = 0, mode = '', lastY = 0, lastT = 0, vel = 0, justDragged = false;
-  const begin = (x, y) => { x0 = x; y0 = y; dy = 0; mode = 'wait'; t0 = lastT = performance.now(); lastY = y; vel = 0; };
+  let y0 = 0, x0 = 0, dy = 0, mode = '', lastY = 0, lastT = 0, vel = 0, justDragged = false;
+  const begin = (x, y) => { x0 = x; y0 = y; dy = 0; mode = 'wait'; lastT = performance.now(); lastY = y; vel = 0; };
   const move = (x, y, e) => {
     if (!mode) return;
     const ddx = x - x0, ddy = y - y0;
@@ -1188,7 +1187,7 @@ $('#sheet').onclick = e => {
   if (act === 'openMine') openSheet(b.dataset.id);
 };
 const shortAddr = c => (c.roadAddress || c.address || '').split(' ').slice(1,4).join(' ') || '주소 없음';
-const kakaoUrl = c => c.kakaoUrl || `https://map.kakao.com/link/map/${encodeURIComponent(c.name)},${c.lat},${c.lng}`;
+const kakaoUrl = c => (typeof c.kakaoUrl === 'string' && /^https?:\/\/(place\.)?map\.kakao\.com\/[\w\-\/?=&.%]*$/.test(c.kakaoUrl)) ? c.kakaoUrl : `https://map.kakao.com/link/map/${encodeURIComponent(c.name)},${+c.lat || 0},${+c.lng || 0}`;
 const naverUrl = c => `https://map.naver.com/p/search/${encodeURIComponent(c.name + ' ' + (c.roadAddress || c.address || '').split(' ').slice(0,3).join(' '))}`;
 // 네이버지도 버튼: 폰이면 네이버지도 앱(nmap://)부터 열고, 앱이 없어서 안 열리면 1.5초 뒤 웹으로
 document.addEventListener('click', e => {
@@ -1636,7 +1635,7 @@ document.addEventListener('click', e => {
   openViewer(list, pid, u);
 }, true);
 function cafePhotoList(c){
-  const st = cafeStats(c); const list = [];
+  const list = [];
   for (const v of visitsOf(c.id)) for (const p of v.photoIds||[]) list.push({ id: p, cap: fmtDate(v.date) + (v.menu ? ' · ' + v.menu : '') });
   return list;
 }
@@ -2107,7 +2106,7 @@ function topOrder(){
   return { top: order.slice(0, 10), rest: order.slice(10, 31), manual: ranked.length > 0, fresh: fresh.length };
 }
 async function saveTop(ids){
-  const set = new Set(ids), changed = [];
+  const changed = [];
   for (const c of cafes) {
     const r = ids.indexOf(c.id) + 1, want = r > 0 ? r : 0;
     if ((+c.rank || 0) !== want) { if (want) c.rank = want; else delete c.rank; c.updatedAt = Date.now(); c.dirty = true; changed.push(c); }
@@ -2197,11 +2196,17 @@ function recOrderSave(ids){
   if (session && sb) sb.from('user_prefs').upsert({ user_id: session.user.id, rec_order: ids, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) toast('순서를 서버에 못 올렸어요. 이 기기에는 저장됐어요'); });
 }
 let recOrderPulled = '';
+let recOrderAt = 0;
 async function recOrderPull(){
   if (!session || !sb || SHARE_ID || recOrderPulled === session.user.id) return;
   try {
     const { data, error } = await sb.from('user_prefs').select('rec_order').eq('user_id', session.user.id).maybeSingle();
-    if (error) return; recOrderPulled = session.user.id;
+    if (error) return; recOrderApply(data);
+  } catch {}
+}
+function recOrderApply(data){
+  recOrderPulled = session?.user?.id || ''; recOrderAt = Date.now();
+  try {
     if (data && Array.isArray(data.rec_order)) {
       const old = localStorage.getItem('recOrder'); localStorage.setItem('recOrder', JSON.stringify(data.rec_order));
       if (old !== JSON.stringify(data.rec_order) && curTab === 'rec' && $('#pRecOrd') && !$('#pRecOrd').classList.contains('open')) renderRec();
@@ -2209,7 +2214,7 @@ async function recOrderPull(){
   } catch {}
 }
 setTimeout(recOrderPull, 4000);
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { recOrderPulled = ''; recOrderPull(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - recOrderAt > 60000) { recOrderPulled = ''; recOrderPull(); } });
 function drawRecOrd(){
   const list = $('#recOrdList');
   list.innerHTML = recModes().map(([k, n], i) => `<div class="ordrow" data-k="${k}"><span class="on1">${n}</span>${i === 0 ? '<span class="first">처음 열림</span>' : ''}<button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`).join('');
@@ -2888,7 +2893,7 @@ $('#shMake').onclick = async () => {
         review: shOpt.review && lv ? (lv.review || '') : '', menu: shOpt.review && lv ? (lv.menu || '') : '',
         thumb: shOpt.photo && cover ? await thumbData(cover) : '' });
     }
-    const id = Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
+    const id = [...crypto.getRandomValues(new Uint8Array(12))].map(b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
     const { error } = await sb.from('shares').insert({ id, user_id: session.user.id, title, data: { v: 1, owner: myName(), cafes: list } });
     if (error) throw error;
     loading(false);
@@ -2947,7 +2952,7 @@ async function frLoad(force){
   if (!force && Date.now() - FR.loadedAt < 60000) return true;
   const me = session.user.id;
   // 친구 순서는 서버(user_prefs)에 저장된 걸 우선 사용
-  try { const { data: pr } = await sb.from('user_prefs').select('friend_order,friend_names').eq('user_id', me).maybeSingle(); if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); if (pr && pr.friend_names && typeof pr.friend_names === 'object' && !Array.isArray(pr.friend_names)) localStorage.setItem('frNames', JSON.stringify(pr.friend_names)); } catch {}
+  try { const { data: pr, error: prErr } = await sb.from('user_prefs').select('friend_order,friend_names,rec_order').eq('user_id', me).maybeSingle(); if (!prErr) recOrderApply(pr); if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); if (pr && pr.friend_names && typeof pr.friend_names === 'object' && !Array.isArray(pr.friend_names)) localStorage.setItem('frNames', JSON.stringify(pr.friend_names)); } catch {}
   const [p, f] = await Promise.all([
     sb.from('profiles').select('handle,name').eq('user_id', me).maybeSingle(),
     sb.from('friendships').select('requester,addressee,status')
@@ -2971,9 +2976,15 @@ async function frLoad(force){
   return true;
 }
 // 친구 한 명의 카페·방문 기록 (5분 동안 다시 안 받음)
-async function frRecords(uid, force){
+const frInflight = new Map();
+function frRecords(uid, force){
   const c = FR.data.get(uid);
-  if (c && !force && Date.now() - c.at < 300000) return c;
+  if (c && !force && Date.now() - c.at < 300000) return Promise.resolve(c);
+  if (frInflight.has(uid)) return frInflight.get(uid);
+  const job = frRecordsLoad(uid, c).catch(() => c || { cafes: [], visits: [], at: 0 }).finally(() => frInflight.delete(uid));
+  frInflight.set(uid, job); return job;
+}
+async function frRecordsLoad(uid, c){
   const { data, error } = await sb.rpc('friend_records', { fid: uid });
   if (error || !data) return c || { cafes: [], visits: [], at: 0 };
   // 친구가 보낸 데이터는 믿지 않기: 화면 속성에 들어가는 id·사진 id·숫자는 안전한 모양만 통과
@@ -3110,7 +3121,7 @@ async function frRequest(h){
   h = (h || '').trim().toLowerCase();
   if (!h) return;
   if (h === FR.me?.handle) { toast('내 이름이에요'); return; }
-  const { data: p } = await sb.from('profiles').select('user_id,handle,name').eq('handle', h).maybeSingle();
+  const { data: found } = await sb.rpc('find_profile', { h }); const p = Array.isArray(found) ? found[0] : found;
   if (!p) { toast(`'${h}' 이름을 가진 사람이 없어요`); return; }
   FR.prof.set(p.user_id, p);
   if (FR.list.includes(p.user_id)) { toast('이미 친구예요'); return; }
@@ -3395,18 +3406,29 @@ $('#lFriends').onclick = () => openFriends();
 
 /* 링크 받은 사람 화면 (?s=링크번호) */
 const SHARE_ID = new URLSearchParams(location.search).get('s');
-let shareData = null;
 async function startShareView(){
   document.body.classList.add('sharemode');
   await initMap();
   if (!window.supabase) { $('#maperr').classList.remove('hidden'); $('#maperr').textContent = '인터넷 연결을 확인해 주세요.'; return; }
   const pub = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
-  const { data } = await pub.from('shares').select('title,data,created_at').eq('id', SHARE_ID).maybeSingle();
+  let data = null;
+  if (/^[\w-]{6,64}$/.test(SHARE_ID)) { const r = await pub.rpc('get_share', { sid: SHARE_ID }); data = Array.isArray(r.data) ? r.data[0] : r.data; }
   if (!data) { $('#mapTop').insertAdjacentHTML('afterbegin', `<div class="sharetop"><div class="tt"><b>링크를 찾을 수 없어요</b><span>지워졌거나 잘못된 링크예요</span></div></div>`); return; }
-  shareData = data;
-  const list = (data.data?.cafes || []).map((c, i) => ({ ...c, id: 'sh' + i }));
+  // 링크는 누구나 만들 수 있으니 안의 값은 모양을 확인하고 씀
+  const str = (x, n = 300) => typeof x === 'string' ? x.slice(0, n) : '';
+  const fin = x => Number.isFinite(+x) ? +x : NaN;
+  data.title = str(data.title, 80) || '카페 리스트';
+  const owner = str(data.data?.owner, 40);
+  const list = (Array.isArray(data.data?.cafes) ? data.data.cafes : []).slice(0, 500).map((c, i) => ({
+    id: 'sh' + i, name: str(c?.name, 100) || '이름 없음', lat: fin(c?.lat), lng: fin(c?.lng),
+    address: str(c?.address), roadAddress: str(c?.roadAddress), category: str(c?.category, 100), kakaoUrl: str(c?.kakaoUrl, 300),
+    tags: Array.isArray(c?.tags) ? c.tags.filter(t => typeof t === 'string').slice(0, 20).map(t => t.slice(0, 30)) : [],
+    fav: !!c?.fav, wish: !!c?.wish, closed: !!c?.closed, count: Math.max(0, Math.round(fin(c?.count) || 0)),
+    rating: (r => r > 0 && r <= 5 ? r : 0)(fin(c?.rating)), review: str(c?.review, 2000), menu: str(c?.menu, 300),
+    thumb: typeof c?.thumb === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(c.thumb) && c.thumb.length < 400000 ? c.thumb : '',
+  })).filter(c => Number.isFinite(c.lat) && Number.isFinite(c.lng) && Math.abs(c.lat) <= 90 && Math.abs(c.lng) <= 180);
   document.title = data.title + ' · 커피로그';
-  $('#mapTop').insertAdjacentHTML('afterbegin', `<div class="sharetop"><div class="tt"><b>${esc(data.title)}</b><span>카페 ${list.length}곳${data.data?.owner ? ' · ' + esc(data.data.owner) + '님이 공유' : ''}</span></div><button id="sOpenList">목록</button></div>`);
+  $('#mapTop').insertAdjacentHTML('afterbegin', `<div class="sharetop"><div class="tt"><b>${esc(data.title)}</b><span>카페 ${list.length}곳${owner ? ' · ' + esc(owner) + '님이 공유' : ''}</span></div><button id="sOpenList">목록</button></div>`);
   if (!map) return;
   const b = new kakao.maps.LatLngBounds();
   for (const c of list) {
@@ -3568,7 +3590,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-30'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-31'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
