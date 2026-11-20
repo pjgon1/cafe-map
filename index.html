@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-YWIjhFW9gs/r6P5OLG55umwUzuU7eFxFGzhcbepVUSA=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-Jc1C2NHh1NrGyaNpU5RD+uAe3SAtLh3YgwZAil+X8JM=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1171,6 +1171,7 @@ $('#sheet').onclick = e => {
   const ph = e.target.closest('[data-ph]'); if (ph) { const c = cafes.find(x => x.id === selectedId); openViewer(FR.pinsOn ? sameCafePhotos(c) : cafePhotoList(c), ph.dataset.ph); return; }
   if (e.target.closest('[data-bldback]') && lastBld) { showBuilding(lastBld); return; }
   if (e.target.closest('[data-fwish]') && $('#sheet')._fr) { frAddWish($('#sheet')._fr.c); return; }
+  if (e.target.closest('[data-frec]') && $('#sheet')._fr) { frRecordHere($('#sheet')._fr.c); return; }
   const fo = e.target.closest('[data-fopen]'); if (fo) { closeSheet(); openFriend(fo.dataset.fopen); return; }
   const sf = e.target.closest('[data-sfrt]'); if (sf) {
     const wrap = sf.parentElement, el = wrap.querySelector('.fvis'), h = $('#sheetFr')._hits?.find(x => x.u === sf.dataset.sfrt); if (!h) return;
@@ -1191,12 +1192,12 @@ $('#sheet').onclick = e => {
 };
 const shortAddr = c => (c.roadAddress || c.address || '').split(' ').slice(1,4).join(' ') || '주소 없음';
 const kakaoUrl = c => (typeof c.kakaoUrl === 'string' && /^https?:\/\/(place\.)?map\.kakao\.com\/[\w\-\/?=&.%]*$/.test(c.kakaoUrl)) ? c.kakaoUrl : `https://map.kakao.com/link/map/${encodeURIComponent(c.name)},${+c.lat || 0},${+c.lng || 0}`;
-const naverUrl = c => `https://map.naver.com/p/search/${encodeURIComponent(c.name + ' ' + (c.roadAddress || c.address || '').split(' ').slice(0,3).join(' '))}`;
+const naverUrl = c => `https://map.naver.com/p/search/${encodeURIComponent(c.name)}` + (+c.lat && +c.lng ? `?c=${(+c.lng).toFixed(6)},${(+c.lat).toFixed(6)},17,0,0,0,dh` : '');
 // 네이버지도 버튼: 폰이면 네이버지도 앱(nmap://)부터 열고, 앱이 없어서 안 열리면 1.5초 뒤 웹으로
 document.addEventListener('click', e => {
   const a = e.target.closest('a.btn.naver, a.nroute'); if (!a || !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
   e.preventDefault();
-  const web = a.href, q = decodeURIComponent(web.split('/p/search/')[1] || '');
+  const web = a.href, q = decodeURIComponent((web.split('/p/search/')[1] || '').split('?')[0]);
   let left = false; const onHide = () => { left = true; };
   document.addEventListener('visibilitychange', onHide, { once: true }); window.addEventListener('pagehide', onHide, { once: true });
   // 길찾기: 네이버지도 앱 대중교통 길찾기(내 위치 → 카페). 앱이 없으면 웹 네이버지도
@@ -1219,27 +1220,50 @@ function showSearchHome(){
   $('#results').innerHTML = `<div id="nearBox"></div><div class="hint home">다녀온 카페 이름을 검색해서 고르면<br>지도에 내 핀이 꽂혀요.<br><br><span class="small">예: 모모커피 성수, 동성로 카페</span></div>`;
   showNearby();
 }
-/* 검색창 비어 있을 때: 가까운 카페 3곳 (내 위치, 못 받으면 지도 가운데 기준) */
+/* 검색창 비어 있을 때: 가까운 카페 (+ 누를 때마다 위치를 새로 받아서. 못 받으면 지도 가운데 기준) */
 let nearSeq = 0;
+const NEAR_N = 10; // 카카오 한 번 요청에 15곳까지 오니 10곳은 추가 요청 없음
+function freshPos(){
+  return new Promise(r => {
+    if (!navigator.geolocation) return r(null);
+    navigator.geolocation.getCurrentPosition(p => r({ lat: p.coords.latitude, lng: p.coords.longitude }), () => r(null), { enableHighAccuracy: true, timeout: 6000, maximumAge: 5000 });
+  });
+}
+function setMePin(pos){
+  if (!map || !pos) return;
+  const ll = new kakao.maps.LatLng(pos.lat, pos.lng);
+  if (!meOverlay) { const d = document.createElement('div'); d.className = 'mePin'; meOverlay = new kakao.maps.CustomOverlay({ position: ll, content: d, zIndex: 1 }); }
+  meOverlay.setPosition(ll); meOverlay.setMap(map);
+}
 async function showNearby(){
   const seq = ++nearSeq; if (!places || !map) return;
-  const quickPos = () => new Promise(r => { if (!navigator.geolocation) return r(null); navigator.geolocation.getCurrentPosition(p => r({ lat: p.coords.latitude, lng: p.coords.longitude }), () => r(null), { enableHighAccuracy: false, timeout: 4000, maximumAge: 120000 }); });
-  let here = myPos, mine = !!myPos;
-  if (!here) { here = await quickPos(); if (here) { myPos = here; mine = true; } }
-  if (!here) { const c = map.getCenter(); here = { lat: c.getLat(), lng: c.getLng() }; }
   const ok = () => seq === nearSeq && !qEl.value.trim() && $('#nearBox') && !$('#results').classList.contains('hidden');
-  if (!ok()) return;
-  const found = await new Promise(r => places.categorySearch('CE7', (d, st) => r(st === kakao.maps.services.Status.OK ? d : []), { x: here.lng, y: here.lat, radius: 2000, sort: kakao.maps.services.SortBy.DISTANCE }));
-  if (!ok() || !found.length) return;
-  const list = found.slice(0, 3);
-  $('#nearBox').innerHTML = `<div class="nearh">${mine ? '📍 지금 가까운 카페' : '지도 가운데에서 가까운 카페'}</div>` + list.map((p, i) => {
-    const my = cafes.find(c => c.kakaoId === p.id);
-    return `<button class="res" data-ni="${i}" style="width:100%;text-align:left"><div class="ic">☕</div>
-      <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${my ? `<span class="mine">${my.wish ? '가볼 곳' : '기록됨'}</span>` : ''}</div>
-      <div class="ad">${esc(p.road_address_name || p.address_name)}</div></div>
-      <div class="dist">${fmtDist(distKm(here, { lat: +p.y, lng: +p.x }))}</div></button>`;
-  }).join('');
-  $('#nearBox').onclick = e => { const b = e.target.closest('[data-ni]'); if (b) pickPlace(list[+b.dataset.ni]); };
+  let shownAt = null;
+  const draw = async (here, mine, updating) => {
+    const found = await new Promise(r => places.categorySearch('CE7', (d, st) => r(st === kakao.maps.services.Status.OK ? d : []), { x: here.lng, y: here.lat, radius: 2000, sort: kakao.maps.services.SortBy.DISTANCE }));
+    if (!ok()) return;
+    shownAt = here;
+    const list = found.slice(0, NEAR_N);
+    if (!list.length) { $('#nearBox').innerHTML = `<div class="nearh">${mine ? '📍 2km 안에 카페가 없어요' : '지도 가운데 2km 안에 카페가 없어요'}</div>`; return; }
+    $('#nearBox').innerHTML = `<div class="nearh">${mine ? '📍 지금 가까운 카페' : '지도 가운데에서 가까운 카페'}${updating ? ' <span class="small">· 위치 확인 중…</span>' : ''}</div>` + list.map((p, i) => {
+      const my = cafes.find(c => c.kakaoId === p.id);
+      return `<button class="res" data-ni="${i}" style="width:100%;text-align:left"><div class="ic">☕</div>
+        <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${my ? `<span class="mine">${my.wish ? '가볼 곳' : '기록됨'}</span>` : ''}</div>
+        <div class="ad">${esc(p.road_address_name || p.address_name)}</div></div>
+        <div class="dist">${fmtDist(distKm(here, { lat: +p.y, lng: +p.x }))}</div></button>`;
+    }).join('');
+    $('#nearBox').onclick = e => { const b = e.target.closest('[data-ni]'); if (b) pickPlace(list[+b.dataset.ni]); };
+  };
+  // 1) 알고 있는 위치로 바로 보여주고 2) 새 위치를 받아서 다르면 다시 그림
+  const job = freshPos();
+  if (myPos) await draw(myPos, true, true);
+  else if (ok()) $('#nearBox').innerHTML = '<div class="nearh">📍 내 위치 확인 중…</div>';
+  const fresh = await job;
+  if (seq !== nearSeq) return;
+  if (fresh) { myPos = fresh; setMePin(fresh); }
+  const here = fresh || myPos || (() => { const c = map.getCenter(); return { lat: c.getLat(), lng: c.getLng() }; })();
+  if (ok() && (!shownAt || distKm(shownAt, here) > 0.03 || !fresh)) await draw(here, !!(fresh || myPos), false);
+  else if (ok()) { const h = $('#nearBox .nearh .small'); if (h) h.remove(); }
 }
 let searchSeq = 0;
 function doSearch(){
@@ -3375,7 +3399,8 @@ async function openFriendSheet(uid, c, pan, who){
     ${parts.some(x => x.url) ? `<div class="pols" style="height:150px">${parts.filter(x => x.url).slice(0, 3).map((x, i) => `<div class="pol" data-vz="${x.uid}|${x.st.cover}" style="left:${[0, 96, 190][i]}px;top:${[4, 0, 14][i]}px;transform:rotate(${[-3, 4, -1][i]}deg)"><div style="background-image:url('${x.url}')"></div></div>`).join('')}</div>` : ''}
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(shortAddr(c))}${c.category ? ' · ' + esc(c.category.split(' > ').pop()) : ''}</div></div></div>
     ${parts.map(x => `<div class="note" style="margin-top:8px"><div class="meta">👥 ${esc(frName(x.uid))}${x.st.rating ? ' · ★ ' + x.st.rating.toFixed(1) : ''}${x.c.wish && !x.st.count ? ' · 가볼래에 담아둠' : ` · 방문 ${x.st.count}번`}${x.st.last?.menu ? ' · ' + esc(x.st.last.menu) : ''}</div>${esc(x.st.last?.review || (x.c.wish ? '아직 안 가봤대요' : '후기는 없어요'))}</div>`).join('')}
-    <div class="btnrow"><button class="btn" data-fwish="1">☆ 나도 가볼래</button><button class="btn ghost" data-fopen="${p0.uid}">${esc(frName(p0.uid))}님 목록</button></div>
+    <div class="btnrow"><button class="btn" data-frec="1">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-fwish="1">가볼래 ☆</button></div>
+    <div style="text-align:center;margin-top:6px"><button class="textbtn" data-fopen="${p0.uid}">${esc(frName(p0.uid))}님 목록 보기</button></div>
     <div class="linkrow">
       <a class="btn route nroute" href="${naverUrl(c)}" data-nr="${c.lat},${c.lng}" data-nn="${esc(c.name)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 11 22 2l-9 19-2-8z"/></svg>길찾기</a>
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
@@ -3385,6 +3410,14 @@ async function openFriendSheet(uid, c, pan, who){
   requestAnimationFrame(() => { setMapBtnBottom(); centerAbove(c.lat, c.lng); });
 }
 // 친구 카페를 내 가볼래로 담기
+// 친구가 다녀온 곳을 나도 바로 기록 (가볼래를 거치지 않음)
+function frRecordHere(c){
+  const dup = cafes.find(x => (c.kakaoId && x.kakaoId === c.kakaoId) || (x.name === c.name && distKm(x, c) < 0.05));
+  closeSheet();
+  if (dup) { openVisitEditor(dup.id); return; }
+  pendingPlace = { kakaoId: c.kakaoId || '', name: c.name, address: c.address || '', roadAddress: c.roadAddress || '', lat: +c.lat, lng: +c.lng, kakaoUrl: c.kakaoUrl || '', phone: c.phone || '', category: c.category || '' };
+  saveNewFromPlace(false);
+}
 async function frAddWish(c){
   const dup = cafes.find(x => (c.kakaoId && x.kakaoId === c.kakaoId) || (x.name === c.name && distKm(x, c) < 0.05));
   if (dup) { toast('이미 내 기록에 있어요'); closeSheet(); openSheet(dup.id); return; }
@@ -3600,7 +3633,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-33'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-34'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
