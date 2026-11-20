@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-ID2qnzjLj7TWv9mo84+h89zY9JSSvkAkGqTX/3BMC+0=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-nlnIQ/XDL1Owbvtvlmz9tyScHVkO1N/y2Hk+mcK6tQ8=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -286,6 +286,7 @@ body.sharemode .view{bottom:0}
 .conf .cfrow b{font-weight:500;flex:1 1 100%;padding-left:2px}
 .conf .cfbtns{display:flex;gap:8px;margin-top:8px}
 .conf .cfbtns .btn{flex:1;padding:10px 6px;font-size:13px}
+.movebtn{margin-top:10px;display:inline-flex;align-items:center;gap:4px;color:var(--acc)}
 .cfpill{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--acc);margin-bottom:4px}
 .confrow{color:var(--acc)}
 .feedgear{color:var(--sub)}
@@ -348,7 +349,10 @@ body.sharemode .view{bottom:0}
 .toprow .tmain{flex:1;min-width:0}
 .toprow .tn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toprow .tgrip{font-size:22px;color:var(--sub);padding:8px 6px;touch-action:none;cursor:grab;flex:none}
-.toprow.out{opacity:.85}
+.toprow.out{opacity:.85;gap:8px}
+.toprow .tup{width:32px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--acc);flex:none;padding:0}
+.toprow .tup svg{width:20px;height:20px}
+.toprow.out .tgrip{padding:8px 2px}
 .seg.who{padding-top:0}
 .seg.who .chip.on{background:#5B8DEF;border-color:#5B8DEF;color:#fff}
 .seg{display:flex;gap:6px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
@@ -603,6 +607,18 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 </div>
 
 <!-- 친구 핀 설정 -->
+<div class="page" id="pMove">
+  <div class="bar">
+    <button class="iconbtn" data-close="pMove" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="t">새 위치로 기록 옮기기</div><div style="width:40px"></div>
+  </div>
+  <div class="body">
+    <div class="note" id="moveFrom" style="line-height:1.6"></div>
+    <p class="small" style="margin:12px 0 6px;line-height:1.6">이사 간 곳을 찾아 골라 주세요. 방문 기록·사진·별점·메모가 모두 그대로 옮겨져요.</p>
+    <div style="display:flex;gap:8px"><input class="inp" id="moveQ" placeholder="카페 이름" style="flex:1;min-width:0"><button class="btn" id="moveGo" style="flex:none;padding:0 16px">찾기</button></div>
+    <div id="moveRes" style="margin-top:8px"></div>
+  </div>
+</div>
 <div class="page" id="pConf">
   <div class="bar">
     <button class="iconbtn" data-close="pConf" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -1180,6 +1196,7 @@ async function openSheet(id){
     </div>
     ${subPanelHTML(st.rating, c, st.my ? '내 별점' : '평균')}
     <div style="margin-top:10px">${c.closed?'<span class="tag closedt">'+IC.door+' 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${c.hideFriends?'<span class="tag">'+IC.lock+' 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    ${c.closed ? `<button class="chip movebtn" data-move="${esc(c.id)}">${IC.building} 이사 갔어요 · 새 위치로 기록 옮기기</button>` : ''}
     ${c.nextTry ? `<div class="nextbar">${IC.cake} 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     <div class="btnrow">
       <button class="btn" data-act="visit">${c.wish ? '가봤어요! 기록 남기기' : '방문 기록 추가'}</button>
@@ -1516,6 +1533,70 @@ async function saveNewFromPlace(wish){
   openCafeEditor(null, { ...pendingPlace, wish: !!wish });
 }
 $('#btnAdd').onclick = () => { qEl.focus(); };
+document.addEventListener('click', e => { const b = e.target.closest('[data-move]'); if (b) { e.stopPropagation(); openMove(b.dataset.move); } }, true);
+
+/* 카페 이사: 문 닫은 카페의 기록(방문·사진·별점·메모)을 새 위치로 통째로 옮김
+   - 같은 카페 기록을 그대로 두고 위치 정보만 새 곳으로 바꿈 (방문 기록 연결이 안 끊김)
+   - 예전 위치는 '이사 전'으로 남겨 둠
+   - 새 위치를 이미 따로 저장해 뒀으면 하나로 합침 */
+let moveId = null, moveSeq = 0, moveData = [];
+function openMove(id){
+  const c = cafes.find(x => x.id === id); if (!c) return;
+  moveId = id;
+  $('#moveFrom').innerHTML = `<b>${esc(c.name)}</b><br><span class="small">${esc(c.roadAddress || c.address || '')} · 방문 기록 ${visitsOf(id).length}개</span>`;
+  $('#moveQ').value = (c.name || '').split(/\s+/)[0] || '';
+  $('#moveRes').innerHTML = '';
+  openPage('pMove');
+  moveSearch();
+}
+function moveSearch(){
+  const c = cafes.find(x => x.id === moveId), q = $('#moveQ').value.trim();
+  if (!c || !q) { $('#moveRes').innerHTML = ''; return; }
+  if (!places) { $('#moveRes').innerHTML = '<div class="hint">지도가 아직 준비되지 않았어요.</div>'; return; }
+  const seq = ++moveSeq;
+  $('#moveRes').innerHTML = '<div class="hint">찾는 중…</div>';
+  places.keywordSearch(q, (data, st) => {
+    if (seq !== moveSeq) return;
+    moveData = st === kakao.maps.services.Status.OK ? data.filter(p => p.id !== c.kakaoId) : [];
+    $('#moveRes').innerHTML = moveData.length ? moveData.map((p, i) => {
+      const mine = cafes.find(x => x.kakaoId === p.id);
+      return `<button class="res" data-mi="${i}" style="width:100%;text-align:left"><div style="min-width:0;flex:1">
+        <div class="nm">${esc(p.place_name)}${mine ? `<span class="mine">${mine.wish ? '가볼 곳' : '기록됨'}</span>` : ''}</div>
+        <div class="ad">${esc(p.road_address_name || p.address_name)}</div></div>
+        <div class="dist">${fmtDist(distKm(c, { lat: +p.y, lng: +p.x }))}</div></button>`;
+    }).join('') : '<div class="hint">검색 결과가 없어요. 이름을 바꿔서 찾아보세요.</div>';
+  }, { location: new kakao.maps.LatLng(c.lat, c.lng), sort: kakao.maps.services.SortBy.DISTANCE, size: 15 });
+}
+async function doMove(p){
+  const c = cafes.find(x => x.id === moveId); if (!c) return;
+  const dup = cafes.find(x => x.kakaoId === p.id && x.id !== c.id);
+  const dv = dup ? visitsOf(dup.id) : [];
+  const msg = `'${c.name}' 기록을 '${p.place_name}'(으)로 옮길까요?\n방문 기록 ${visitsOf(c.id).length}개, 사진, 별점, 메모가 함께 옮겨지고 예전 주소는 '이사 전'으로 남아요.`
+    + (dup ? `\n\n'${dup.name}'은(는) 이미 ${dup.wish ? '가볼래에' : '기록에'} 있어서 하나로 합쳐요.${dv.length ? ` (방문 기록 ${dv.length}개도 같이)` : ''}` : '');
+  if (!await ask(msg, '옮기기')) return;
+  const now = Date.now(), today = todayStr();
+  const moves = [...(c.moves || []), { name: c.name, address: c.address || '', roadAddress: c.roadAddress || '', lat: c.lat, lng: c.lng, kakaoId: c.kakaoId || '', until: today }].slice(-10);
+  const n = { ...c, moves, kakaoId: p.id, name: p.place_name, address: p.address_name || '', roadAddress: p.road_address_name || '', lat: +p.y, lng: +p.x, kakaoUrl: p.place_url || '', phone: p.phone || '', category: p.category_name || '', updatedAt: now, dirty: true };
+  delete n.closed;
+  if (dup) { // 따로 저장해 둔 새 위치 기록 합치기
+    n.tags = [...new Set([...(c.tags || []), ...(dup.tags || [])])];
+    if (!n.memo && dup.memo) n.memo = dup.memo;
+    if (!n.nextTry && dup.nextTry) n.nextTry = dup.nextTry;
+    if (dup.fav) n.fav = true;
+    if (n.wish && !dup.wish) n.wish = false;
+    for (const v of dv) { const x = await DB.get('visits', v.id); if (x) { x.cafeId = c.id; x.updatedAt = now; x.dirty = true; await DB.put('visits', x); } }
+    await DB.del('cafes', dup.id); await tomb('cafe', dup.id);
+  }
+  await DB.put('cafes', n);
+  Sync.soon(); await loadAll(); await refreshAll();
+  closePage('pMove');
+  toast(`'${p.place_name}'(으)로 옮겼어요`);
+  if (map) { map.setCenter(new kakao.maps.LatLng(n.lat, n.lng)); }
+  if (isOpen('pDetail')) openDetail(c.id, true); else openSheet(c.id);
+}
+$('#moveGo').onclick = moveSearch;
+$('#moveQ').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); moveSearch(); } };
+$('#moveRes').onclick = e => { const b = e.target.closest('[data-mi]'); if (b) doMove(moveData[+b.dataset.mi]); };
 
 /* =========================================================
    카페 정보 편집
@@ -1781,6 +1862,8 @@ async function openDetail(id, keep){
     <div class="myrate"><span class="lb">내 별점</span>${subMean(c) ? `<span class="myauto">${starBar(st.my)}<b>${st.my.toFixed(1)}</b><span class="small">항목 평균</span></span>` : `<div class="starpick" id="dStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= st.my ? 'on' : ''}">★</button>`).join('')}</div>`}
       <span class="avg">${st.rated ? `방문 평균<br>★ ${st.visitAvg.toFixed(1)} · ${st.rated}번` : ''}</span></div>
     <div class="subpick" id="dSub">${SUBS.map(([k, n]) => `<div class="srow" data-k="${k}"><span class="sl">${n}</span><div class="starpick">${[1,2,3,4,5].map(i => `<button data-n="${i}" aria-label="${n} ${i}점" class="${i <= (+c.sub?.[k] || 0) ? 'on' : ''}">★</button>`).join('')}</div></div>`).join('')}<div class="small" style="margin-top:2px">골라서만 매겨도 돼요. 다시 누르면 지워져요.</div></div>
+    ${c.closed ? `<button class="chip movebtn" style="margin-top:12px" data-move="${esc(c.id)}">${IC.building} 이사 갔어요 · 새 위치로 기록 옮기기</button>` : ''}
+    ${(c.moves || []).length ? `<div class="small" style="margin-top:10px;line-height:1.6">${c.moves.slice().reverse().map(m => `${IC.building} 이사 전: ${esc(m.name)} · ${esc(m.roadAddress || m.address || '')}${m.until ? ' (~' + esc(m.until) + ')' : ''}`).join('<br>')}</div>` : ''}
     <div style="margin-top:12px">${c.closed?'<span class="tag closedt">'+IC.door+' 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
@@ -2299,7 +2382,7 @@ async function resolveConflict(store, id, pick){
 }
 // 충돌 화면용 요약
 const CF_FIELDS = {
-  cafes: [['name', '이름'], ['wish', '가볼래'], ['fav', '또 갈래'], ['closed', '문 닫음'], ['myRating', '내 별점'], ['sub', '항목 별점'], ['tags', '태그'], ['memo', '메모'], ['nextTry', '다음엔 이거'], ['hideFriends', '친구에게 숨김'], ['cover', '대표 사진']],
+  cafes: [['name', '이름'], ['roadAddress', '주소'], ['wish', '가볼래'], ['fav', '또 갈래'], ['closed', '문 닫음'], ['myRating', '내 별점'], ['sub', '항목 별점'], ['tags', '태그'], ['memo', '메모'], ['nextTry', '다음엔 이거'], ['hideFriends', '친구에게 숨김'], ['cover', '대표 사진']],
   visits: [['date', '날짜'], ['rating', '별점'], ['menu', '메뉴'], ['price', '가격'], ['review', '후기'], ['photoIds', '사진'], ['hideFriends', '친구에게 숨김']],
 };
 function cfVal(f, v){
@@ -2486,7 +2569,7 @@ async function renderTop(){
   body.innerHTML = `<div class="rowsb" style="align-items:center;margin:4px 0 6px"><div class="small">${manual ? '내가 정한 순위예요. ≡ 를 끌어서 바꿔요' : '별점·방문 수로 자동으로 매긴 순위예요. ≡ 를 끌어서 바꿔요'}</div>${manual ? '<button class="textbtn" id="topReset">자동 순위로</button>' : ''}</div>
     <div id="topList">${top.map(row).join('')}</div>
     <button class="btn" id="topShare" style="width:100%;margin-top:16px">${IC.trophy} 이미지로 저장·공유</button>
-    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>≡ 로 끌어서 순서 바꾸기 · 올리면 10위로</small></h3><div id="topRest">${rest.map((x, i) => `<div class="toprow out" data-id="${esc(x.c.id)}"><div class="trk">${i + 11}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button><button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`).join('')}</div></div>` : ''}`;
+    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>≡ 로 끌어서 순서 바꾸기 · ↑ 누르면 10위로</small></h3><div id="topRest">${rest.map((x, i) => `<div class="toprow out" data-id="${esc(x.c.id)}"><div class="trk">${i + 11}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="tup" data-up="${esc(x.c.id)}" aria-label="10위로 올리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button><button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`).join('')}</div></div>` : ''}`;
   body.querySelectorAll('[data-cover]').forEach(async d => { if (d.dataset.cover) { const u = await getPhotoURL(d.dataset.cover); if (u) d.style.backgroundImage = `url('${u}')`; else d.innerHTML = cupIcon(d.dataset.cid); } });
   topDrag();
 }
@@ -4080,7 +4163,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-48'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-49'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
