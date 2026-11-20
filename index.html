@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-82CqsdoFNlGUDfOc+0ZwsM+jCw4ucAPooOav0dM3kD4=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-x+6217Co1wV/8KQhnCyO4qUDPtmf54nzexRX/uh0eXM=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2005,6 +2005,8 @@ const Sync = {
     for (const st of ['cafes', 'visits', 'photos', 'tomb']) await DB.clear(st);
     try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
     try { MENU_USER = { map: {}, custom: [] }; FEED_CFG = { ...FEED_DEF }; } catch {}
+    try { frPhotoClear(); photoURL.forEach(r => { if (r.full) URL.revokeObjectURL(r.full); if (r.thumb && r.thumb !== r.full) URL.revokeObjectURL(r.thumb); }); } catch {}
+    try { localStorage.removeItem('mapView'); if (map) { map.setLevel(5); map.setCenter(new kakao.maps.LatLng(35.8714, 128.6014)); } if (meOverlay) meOverlay.setMap(null); myPos = null; } catch {}
     photoURL.clear(); session = null; syncState.last = null;
     await loadAll(); closeSheet(); await refreshAll(); renderAccount(); toast(serverOut ? '로그아웃했어요' : '이 기기에서는 로그아웃했어요. 서버 연결이 안 돼서 다른 기기 로그인은 그대로일 수 있어요');
   },
@@ -3012,16 +3014,17 @@ $('#lPick').onclick = openPick;
    공유 링크
    ========================================================= */
 const shSel = new Set();
-const shOpt = { review: true, photo: true, q: '' };
+const shOpt = { review: false, photo: false, q: '' };
 const myName = () => { const m = session?.user?.user_metadata || {}; return m.name || m.nickname || m.full_name || ''; };
 function openShareMaker(){
   if (!session) { ask('공유 링크는 로그인해야 만들 수 있어요.\n로그인할까요?', '로그인').then(ok => ok && openLogin()); return; }
-  shSel.clear(); shOpt.q = '';
+  shSel.clear(); shOpt.q = ''; shOpt.review = false; shOpt.photo = false;
   const used = [...new Set(cafes.flatMap(c => c.tags||[]))];
   $('#shBody').innerHTML = `
     <label class="f" style="margin-top:4px">제목</label><input class="inp" id="shTitle" value="${esc((myName() ? myName() + '의 ' : '') + '카페 리스트')}">
-    <div class="toggle"><div>후기랑 메뉴 같이 보여주기</div><button class="sw on" id="shRev" aria-label="후기 포함"></button></div>
-    <div class="toggle"><div>사진 한 장씩 같이 보여주기</div><button class="sw on" id="shPh" aria-label="사진 포함"></button></div>
+    <div class="toggle"><div>후기랑 메뉴 같이 보여주기</div><button class="sw" id="shRev" aria-label="후기 포함"></button></div>
+    <div class="toggle"><div>사진 한 장씩 같이 보여주기</div><button class="sw" id="shPh" aria-label="사진 포함"></button></div>
+    <p class="small" style="margin:6px 2px 0;line-height:1.5">켜면 지금 내용이 링크에 따로 저장돼요. 나중에 후기나 사진을 고쳐도 이미 만든 링크에는 반영되지 않아요.</p>
     <label class="f">빠르게 고르기</label>
     <div class="tagpick" id="shQuick">${['전체','다녀왔어 ♪','또 갈래 ♥','가볼래 ☆', ...used].map(t => `<button class="chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}<button class="chip" data-q="__none">선택 해제</button></div>
     <label class="f">카페 고르기 <span id="shCount"></span></label>
@@ -3053,6 +3056,8 @@ async function thumbData(id){
 }
 $('#shMake').onclick = async () => {
   if (!shSel.size) { toast('공유할 카페를 골라주세요'); return; }
+  const inc = ['카페 이름·주소·별점·태그', shOpt.review && '마지막 방문 후기·메뉴', shOpt.photo && '대표 사진 한 장'].filter(Boolean).join(', ');
+  if (!await ask(`카페 ${shSel.size}곳으로 링크를 만들까요?\n담기는 것: ${inc}\n링크를 받은 사람은 로그인 없이 볼 수 있어요.`, '만들기')) return;
   const title = $('#shTitle').value.trim() || '카페 리스트';
   $('#shMake').disabled = true; loading(true, '링크 만드는 중…');
   try {
@@ -3186,11 +3191,22 @@ function frStats(rec, c){
 }
 // 친구 사진 (작은 사진만 받아서 이 화면 동안 기억)
 const frPhotoURL = new Map();
+let frPhotoGen = 0; // 로그아웃·친구 끊기 때 올려서, 그 전에 시작한 다운로드가 다시 캐시에 들어오지 않게
 async function frPhoto(uid, pid, kind = 'thumb'){
   if (!pid) return '';
   const k = uid + '/' + pid + '/' + kind; if (frPhotoURL.has(k)) return frPhotoURL.get(k);
-  const job = (async () => { try { const { data } = await sb.storage.from('photos').download(`${uid}/${pid}${kind === 'thumb' ? '_t' : ''}.jpg`); return data ? URL.createObjectURL(data) : ''; } catch { return ''; } })();
+  const gen = frPhotoGen;
+  const job = (async () => { try { const { data } = await sb.storage.from('photos').download(`${uid}/${pid}${kind === 'thumb' ? '_t' : ''}.jpg`); if (!data) return ''; const u = URL.createObjectURL(data); if (gen !== frPhotoGen) { URL.revokeObjectURL(u); return ''; } return u; } catch { return ''; } })();
   frPhotoURL.set(k, job); return job;
+}
+// uid 를 주면 그 친구 사진만, 없으면 전부 지움
+function frPhotoClear(uid){
+  frPhotoGen++;
+  for (const [k, job] of [...frPhotoURL]) {
+    if (uid && !k.startsWith(uid + '/')) continue;
+    frPhotoURL.delete(k);
+    Promise.resolve(job).then(u => { if (u) URL.revokeObjectURL(u); }).catch(() => {});
+  }
 }
 
 /* 친구 창 */
@@ -3354,7 +3370,7 @@ async function frRemove(uid, msg){
   const me = session.user.id;
   const { error } = await sb.from('friendships').delete().or(`and(requester.eq.${me},addressee.eq.${uid}),and(requester.eq.${uid},addressee.eq.${me})`);
   if (error) { toast('지우지 못했어요'); return; }
-  FR.data.delete(uid);
+  FR.data.delete(uid); frPhotoClear(uid);
   await frLoad(true); drawFriends(); if (FR.pinsOn) drawFriendPins();
 }
 $('#frBody').onclick = async e => {
@@ -3808,7 +3824,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-41'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-42'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
