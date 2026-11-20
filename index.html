@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-k3+U/fcnN0C/5OFoo7SvCCwnfQd/NdqyGq+73UBX8G8=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-V5pskt6TEO3/6sLN1hI4Nw7/2yBhli8MR3Y1Em7TwN8=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2071,7 +2071,7 @@ const Sync = {
     if (!serverOut) { try { await sb.auth.signOut({ scope: 'local' }); } catch {} }
     try { setFriendPins(false); FR.loadedAt = 0; FR.data.clear(); FR.list = []; FR.me = null; } catch {}
     for (const st of ['cafes', 'visits', 'photos', 'tomb', 'sver']) await DB.clear(st);
-    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('pullCur:') || k.startsWith('verMig:') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
+    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('pullCur:') || k.startsWith('verMig') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
     try { MENU_USER = { map: {}, custom: [] }; FEED_CFG = { ...FEED_DEF }; } catch {}
     try { frPhotoClear(); photoURL.forEach(r => { if (r.full) URL.revokeObjectURL(r.full); if (r.thumb && r.thumb !== r.full) URL.revokeObjectURL(r.thumb); }); } catch {}
     try { localStorage.removeItem('mapView'); if (map) { map.setLevel(5); map.setCenter(new kakao.maps.LatLng(35.8714, 128.6014)); } if (meOverlay) meOverlay.setMap(null); myPos = null; } catch {}
@@ -2104,7 +2104,7 @@ const Sync = {
 const pgq = x => '"' + String(x).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 async function pullPages(client, store, cur, size, onRow, saveCur){
   for (;;) {
-    let q = client.from(store).select('id,data,deleted,updated_at');
+    let q = client.from(store).select('id,data,deleted,updated_at,ver');
     if (cur) q = q.or(`updated_at.gt.${pgq(cur.t)},and(updated_at.eq.${pgq(cur.t)},id.gt.${pgq(cur.id)})`);
     const { data, error } = await q.order('updated_at', { ascending: true }).order('id', { ascending: true }).limit(size);
     if (error) throw error;
@@ -2124,6 +2124,7 @@ async function dropLocalPhotos(v){ for (const p of v?.photoIds || []) { await DB
 // 서버 기록 하나를 이 기기에 반영. 바뀐 게 있으면 true, 새 충돌이면 'conf'
 async function applyRemote(store, row){
   const k = svKey(store, row.id), ver = +row.ver || 0;
+  if (!ver) throw new Error('no ver'); // 서버 버전 없이 받은 기록은 반영하지 않음
   const s = await DB.get('sver', k), local = await DB.get(store, row.id);
   const tb = await DB.get('tomb', (store === 'cafes' ? 'cafe:' : 'visit:') + row.id);
   if (s && s.conf) { // 이미 충돌 중: 서버 쪽 최신본만 갱신
@@ -2176,7 +2177,7 @@ async function syncCore(client, me){
   }
   // 2) 다른 기기에서 바뀐 것 먼저 받기 ((시각, id) 순서로 이어받기)
   //    새 버전 규칙으로 처음 동기화할 때는 처음부터 다 받아서 기록마다 버전을 맞춤
-  let mig = false; try { mig = !localStorage.getItem('verMig:' + me); } catch {}
+  let mig = false; try { mig = !localStorage.getItem('verMig2:' + me); } catch {}
   let old = ''; try { old = localStorage.getItem('lastPull:' + me) || ''; } catch {}
   for (const store of ['cafes', 'visits']) {
     const ck = `pullCur:${me}:${store}`;
@@ -2187,7 +2188,7 @@ async function syncCore(client, me){
     const end = await pullPages(client, store, cur, 500, async row => mark(await applyRemote(store, row)), save);
     if (end) save(end);
   }
-  try { localStorage.removeItem('lastPull:' + me); localStorage.setItem('verMig:' + me, '1'); } catch {}
+  try { localStorage.removeItem('lastPull:' + me); localStorage.setItem('verMig2:' + me, '1'); localStorage.removeItem('verMig:' + me); } catch {}
   // 3) 바뀐 카페, 방문 기록 올리기 (서버가 버전 확인 후 저장)
   const push = async (store, rows) => {
     for (let i = 0; i < rows.length; i += 200) {
@@ -4052,7 +4053,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-45'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-46'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
