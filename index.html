@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-x+6217Co1wV/8KQhnCyO4qUDPtmf54nzexRX/uh0eXM=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-wOGxow2LJWSHIpFGON7DNHVhfKJFwtck4GQaNis1Wsk=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -846,6 +846,12 @@ const DB = {
   put(store, obj){ return this.tx(store, 'readwrite', s => s.put(obj)); },
   del(store, id){ return this.tx(store, 'readwrite', s => s.delete(id)); },
   clear(store){ return this.tx(store, 'readwrite', s => s.clear()); },
+  // 여러 저장소를 한 번에: 하나라도 실패하면 전부 취소됨
+  txMulti(stores, fn){ return new Promise((res, rej) => {
+    const t = this.db.transaction(stores, 'readwrite'); let failed = null;
+    t.oncomplete = () => failed ? rej(failed) : res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || failed || new Error('abort'));
+    try { fn(n => t.objectStore(n)); } catch (e) { failed = e; try { t.abort(); } catch {} }
+  });},
 };
 async function tomb(kind, id, extra){ try { await DB.put('tomb', { id: kind + ':' + id, kind, rid: id, ...(extra||{}) }); } catch {} }
 
@@ -1945,19 +1951,48 @@ $('#btnExport').onclick = async () => {
   loading(false);
 };
 $('#btnImport').onclick = () => $('#importFile').click();
+// 백업 파일 검사: 문제가 있으면 이유를 돌려주고, 아무것도 저장하지 않음
+function backupCheck(data, localCafeIds){
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return '백업 파일 형식이 아니에요';
+  if (data.app !== 'cafe-map') return '커피로그 백업 파일이 아니에요';
+  if (!Array.isArray(data.cafes) || !Array.isArray(data.visits)) return '백업 파일에 카페나 방문 기록 목록이 없어요';
+  if (data.photos != null && !Array.isArray(data.photos)) return '백업 파일의 사진 목록이 이상해요';
+  const okId = x => typeof x === 'string' && x.length > 0 && x.length <= 100;
+  const isObj = x => x && typeof x === 'object' && !Array.isArray(x);
+  const okImg = x => x == null || (typeof x === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]*$/.test(x));
+  const cafeIds = new Set(localCafeIds);
+  for (const c of data.cafes) { if (!isObj(c) || !okId(c.id)) return '카페 기록 중에 망가진 항목이 있어요'; cafeIds.add(c.id); }
+  for (const v of data.visits) {
+    if (!isObj(v) || !okId(v.id) || !okId(v.cafeId)) return '방문 기록 중에 망가진 항목이 있어요';
+    if (!cafeIds.has(v.cafeId)) return '카페 정보가 없는 방문 기록이 있어요';
+    if (v.photoIds != null && (!Array.isArray(v.photoIds) || !v.photoIds.every(okId))) return '방문 기록의 사진 목록이 이상해요';
+  }
+  for (const p of data.photos || []) if (!isObj(p) || !okId(p.id) || !okImg(p.full) || !okImg(p.thumb)) return '사진 중에 망가진 항목이 있어요';
+  return '';
+}
+// 검사를 통과한 백업을 한 번에 저장 (중간에 실패하면 이번 복원 전체 취소)
+async function restoreWrite(data, photoRecs){
+  const now = Date.now();
+  await DB.txMulti(['photos', 'cafes', 'visits', 'tomb'], os => {
+    for (const r of photoRecs) { os('photos').put(r); os('tomb').delete('photo:' + r.id); }
+    for (const c of data.cafes) { os('cafes').put({ ...c, dirty: true, updatedAt: c.updatedAt || now }); os('tomb').delete('cafe:' + c.id); }
+    for (const v of data.visits) { os('visits').put({ ...v, dirty: true, updatedAt: v.updatedAt || now }); os('tomb').delete('visit:' + v.id); }
+  });
+}
 $('#importFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   let data; try { data = JSON.parse(await f.text()); } catch { toast('백업 파일을 읽지 못했어요'); return; }
-  if (data.app !== 'cafe-map') { toast('커피로그 백업 파일이 아니에요'); return; }
+  const bad = backupCheck(data, cafes.map(c => c.id)); if (bad) { toast(bad); return; }
   if (!await ask(`카페 ${data.cafes.length}곳, 방문 ${data.visits.length}번 기록을 불러올까요?\n같은 기록은 백업 내용으로 덮어써요.`, '불러오기')) return;
   loading(true, '불러오는 중…');
   try {
-    for (const p of data.photos) { const rec = { id: p.id, uploaded: false }; if (p.full) rec.full = await b64ToBlob(p.full); if (p.thumb) rec.thumb = await b64ToBlob(p.thumb); await DB.put('photos', rec); }
-    for (const c of data.cafes) await DB.put('cafes', { ...c, dirty: true, updatedAt: c.updatedAt || Date.now() });
-    for (const v of data.visits) await DB.put('visits', { ...v, dirty: true, updatedAt: v.updatedAt || Date.now() });
+    // 사진은 미리 전부 변환해 두고, 저장은 한 번에
+    const photoRecs = [];
+    for (const p of data.photos || []) { const rec = { id: p.id, uploaded: false }; if (p.full) rec.full = await b64ToBlob(p.full); if (p.thumb) rec.thumb = await b64ToBlob(p.thumb); photoRecs.push(rec); }
+    await restoreWrite(data, photoRecs);
     Sync.soon();
     photoURL.clear(); await loadAll(); await refreshAll(); toast('불러왔어요');
-  } catch { toast('불러오는 중 문제가 생겼어요'); }
+  } catch { toast('불러오지 못했어요. 기존 기록은 그대로예요'); }
   loading(false);
 };
 
@@ -2003,7 +2038,7 @@ const Sync = {
     if (!serverOut) { try { await sb.auth.signOut({ scope: 'local' }); } catch {} }
     try { setFriendPins(false); FR.loadedAt = 0; FR.data.clear(); FR.list = []; FR.me = null; } catch {}
     for (const st of ['cafes', 'visits', 'photos', 'tomb']) await DB.clear(st);
-    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
+    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('pullCur:') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
     try { MENU_USER = { map: {}, custom: [] }; FEED_CFG = { ...FEED_DEF }; } catch {}
     try { frPhotoClear(); photoURL.forEach(r => { if (r.full) URL.revokeObjectURL(r.full); if (r.thumb && r.thumb !== r.full) URL.revokeObjectURL(r.thumb); }); } catch {}
     try { localStorage.removeItem('mapView'); if (map) { map.setLevel(5); map.setCenter(new kakao.maps.LatLng(35.8714, 128.6014)); } if (meOverlay) meOverlay.setMap(null); myPos = null; } catch {}
@@ -2015,7 +2050,7 @@ const Sync = {
     if (!sb || !session) return;
     if (syncState.running) { syncState.again = true; return; }
     syncState.running = true; syncState.error = ''; renderAccount();
-    let changed = false;
+    let changed = false, photoDelFail = false;
     try {
       const me = session.user.id;
       const strip = o => { const { dirty, ...r } = o; return r; };
@@ -2042,7 +2077,11 @@ const Sync = {
       }
       // 3) 지운 것 알리기
       for (const t of await DB.all('tomb')) {
-        if (t.kind === 'photo') { await sb.storage.from('photos').remove([`${me}/${t.rid}.jpg`, `${me}/${t.rid}_t.jpg`]); }
+        if (t.kind === 'photo') {
+          // 실패하면 대기 항목을 남겨 두고 다음 동기화 때 다시 지움
+          let ok = false; try { const { error } = await sb.storage.from('photos').remove([`${me}/${t.rid}.jpg`, `${me}/${t.rid}_t.jpg`]); ok = !error; } catch {}
+          if (!ok) { photoDelFail = true; continue; }
+        }
         else {
           const row = { user_id: me, id: t.rid, data: {}, deleted: true };
           if (t.kind === 'visit') row.cafe_id = t.cafeId || '';
@@ -2052,24 +2091,17 @@ const Sync = {
         await DB.del('tomb', t.id);
       }
       // 4) 다른 기기에서 바뀐 것 받아오기
-      const key = 'lastPull:' + me;
-      let since = '1970-01-01T00:00:00+00:00'; try { since = localStorage.getItem(key) || since; } catch {}
-      let newest = since;
+      //    갱신 시각이 같은 기록이 많아도 빠지지 않게 (시각, id) 순서로 이어서 받음. 카페/방문 기록 따로 기억
+      let old = ''; try { old = localStorage.getItem('lastPull:' + me) || ''; } catch {}
       for (const store of ['cafes', 'visits']) {
-        let from = since;
-        for (;;) {
-          const { data, error } = await sb.from(store).select('id,data,deleted,updated_at').gt('updated_at', from).order('updated_at').limit(500);
-          if (error) throw error;
-          for (const row of data) {
-            if (await applyRemote(store, row)) changed = true;
-            if (row.updated_at > newest) newest = row.updated_at;
-          }
-          if (data.length < 500) break;
-          from = data[data.length - 1].updated_at;
-        }
+        const ck = `pullCur:${me}:${store}`;
+        let cur = null; try { cur = JSON.parse(localStorage.getItem(ck) || 'null'); } catch {}
+        if (!cur || typeof cur.t !== 'string') cur = old ? { t: old, id: '' } : null;
+        await pullPages(sb, store, cur, 500, async row => { if (await applyRemote(store, row)) changed = true; }, c => { try { localStorage.setItem(ck, JSON.stringify(c)); } catch {} });
       }
-      try { localStorage.setItem(key, newest); } catch {}
+      try { localStorage.removeItem('lastPull:' + me); } catch {}
       syncState.last = new Date().toISOString(); try { localStorage.setItem('lastSyncAt', syncState.last); } catch {}
+      if (photoDelFail) syncState.error = '지운 사진 일부를 서버에서 아직 못 지웠어요. 다음에 다시 시도해요';
     } catch (e) {
       syncState.error = navigator.onLine === false ? '인터넷 연결이 없어요' : '서버와 맞추지 못했어요';
       console.warn('sync', e);
@@ -2080,6 +2112,19 @@ const Sync = {
     if (syncState.again) { syncState.again = false; Sync.run(); }
   },
 };
+// 서버 기록을 (updated_at, id) 순서로 페이지씩 받음. 한 페이지를 다 반영한 뒤에만 위치를 저장
+const pgq = x => '"' + String(x).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+async function pullPages(client, store, cur, size, onRow, saveCur){
+  for (;;) {
+    let q = client.from(store).select('id,data,deleted,updated_at');
+    if (cur) q = q.or(`updated_at.gt.${pgq(cur.t)},and(updated_at.eq.${pgq(cur.t)},id.gt.${pgq(cur.id)})`);
+    const { data, error } = await q.order('updated_at', { ascending: true }).order('id', { ascending: true }).limit(size);
+    if (error) throw error;
+    for (const row of data) await onRow(row);
+    if (data.length) { const l = data[data.length - 1]; cur = { t: l.updated_at, id: l.id }; saveCur(cur); }
+    if (data.length < size) return cur;
+  }
+}
 async function applyRemote(store, row){
   const local = await DB.get(store, row.id);
   if (row.deleted) {
@@ -3824,7 +3869,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-42'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-43'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
