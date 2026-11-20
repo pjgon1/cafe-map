@@ -14,7 +14,19 @@ self.addEventListener('fetch',e=>{
   }
   // ?s=, ?v= 같은 주소 꼬리는 빼고 한 칸에만 저장 (캐시가 계속 불어나지 않게)
   const key=e.request.mode==='navigate'?new URL('index.html',self.registration.scope).href:u.origin+u.pathname;
-  // 앱 화면(index)은 폰에 남은 옛 사본을 건너뛰고 늘 서버에서 새로 받음
-  const req=e.request.mode==='navigate'?fetch(u.href,{cache:'no-store'}):fetch(e.request);
-  e.respondWith(req.then(r=>put(key,r)).catch(()=>caches.match(key).then(m=>m||caches.match(e.request))));
+  // 버전 확인용 부분 요청(Range)은 그대로 서버로 (저장 안 함)
+  if(e.request.headers.has('range'))return;
+  // 앱 화면(index)은 늘 서버에서 새로 받되, 3초 넘게 걸리면(느린 데이터·끊김) 폰에 저장된 것을 먼저 보여줌
+  // 서버 응답은 늦게 와도 저장해 둬서 다음에 열 때 새 버전이 뜸
+  if(e.request.mode==='navigate'){
+    const net=fetch(u.href,{cache:'no-store'}).then(r=>put(key,r));
+    e.waitUntil(net.catch(()=>{}));
+    e.respondWith(new Promise(res=>{
+      let done=false;const go=r=>{if(!done&&r){done=true;res(r);}};
+      const t=setTimeout(()=>caches.match(key).then(m=>m&&go(m)),3000);
+      net.then(r=>{clearTimeout(t);go(r);}).catch(()=>caches.match(key).then(m=>{clearTimeout(t);if(m)go(m);else{done=true;res(Response.error());}}));
+    }));
+    return;
+  }
+  e.respondWith(fetch(e.request).then(r=>put(key,r)).catch(()=>caches.match(key).then(m=>m||caches.match(e.request))));
 });
