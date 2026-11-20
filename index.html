@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-/UEDSV8eB38Rg9mOUO+FCygZFnUl+gNPc+KuKjMcrBU=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-1LGbbjevNyKMrcQPIOd2GiID4lXlGrY6zFVRptOZnbU=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -112,6 +112,8 @@ input,textarea{outline:none}
 .mres .s{font-size:12px;color:var(--sub);margin-top:3px}
 .mres .r{font-size:13px;margin-top:5px;line-height:1.5;color:var(--ink);opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .roundbtn.on{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.roundbtn:has(svg.cute).on{background:var(--soft);color:var(--ink);border:2px solid var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent),0 2px 8px rgba(0,0,0,.12)}
+.roundbtn svg.cute{width:27px;height:27px}
 .conqinfo{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:8px 12px;box-shadow:0 2px 8px rgba(0,0,0,.10);font-size:13px;max-width:100%}
 .conqinfo b{font-weight:700;color:var(--acc)}
 .conqinfo span{color:var(--sub)}
@@ -241,7 +243,7 @@ body.sharemode .view{bottom:0}
 .rowsb{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .pagehead.rowsb{align-items:center}
 #btnFriends{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
-#btnFriends.only{background:#5B8DEF;border-color:#5B8DEF;color:#fff;box-shadow:0 0 0 3px rgba(91,141,239,.28),0 2px 8px rgba(0,0,0,.14)}
+#btnFriends.only{background:#E3EEFF;border:2px solid #5B8DEF;color:#fff;box-shadow:0 0 0 3px rgba(91,141,239,.28),0 2px 8px rgba(0,0,0,.14)}
 #btnFriends.only::after{content:'친구만';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);background:#fff;color:#5B8DEF;border:1.5px solid #5B8DEF;border-radius:999px;font-size:10px;font-weight:700;padding:1px 5px;white-space:nowrap;line-height:1.3}
 .tag{display:inline-block;font-size:12px;padding:5px 10px;border-radius:999px;background:var(--soft);color:var(--softt);margin:0 4px 4px 0}
 .tag.heart{background:var(--heart);color:var(--heartt)}
@@ -271,6 +273,18 @@ body.sharemode .view{bottom:0}
 .medit{margin:6px 0 10px}
 .merow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
 .merow select{font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:10px;background:var(--note);color:var(--ink);max-width:55%}
+.ic2{width:1.3em;height:1.3em;vertical-align:-.3em;display:inline-block;flex:none}
+.big .ic2{width:64px;height:64px}
+.ic .ic2,.av .ic2{width:24px;height:24px;vertical-align:middle}
+.feedhead{align-items:center}
+.feedhead h3{margin:0}
+.feedgear{width:36px;height:36px}
+.feedgear .ic2{width:24px;height:24px}
+.feedgear.on{background:var(--soft);border-radius:50%}
+.feedset{background:var(--note);border-radius:14px;padding:10px 12px;margin:8px 0 10px}
+.fsrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 0}
+.fsrow .fsl{font-size:12px;color:var(--sub);min-width:56px}
+.fsrow .chip{font-size:12px;padding:4px 10px}
 .frtag{display:inline-flex;align-items:center;gap:3px;margin-top:3px;font-size:12px;color:#C25C7C;background:#FFF0F4;border-radius:999px;padding:1px 8px 1px 3px}
 .frtag .frface{width:16px;height:16px;flex:none}
 .nearh{padding:14px 18px 4px;font-size:13px;font-weight:700;color:var(--sub)}
@@ -450,6 +464,8 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 #viewer{position:fixed;inset:0;z-index:60;background:rgba(20,16,14,.94);display:flex;align-items:center;justify-content:center;flex-direction:column}
 #viewer .vpol{background:#fff;padding:12px 12px 46px;border-radius:4px;max-width:92vw;position:relative;transform:rotate(-1deg)}
 #viewer img{display:block;max-width:calc(92vw - 24px);max-height:70vh;object-fit:contain}
+#viewer .vload{width:min(70vw,320px);height:min(60vh,320px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#9A8580;font-size:14px;background:#FBF6F1}
+#viewer .vload .ic2{width:48px;height:48px}
 #viewer .cap{position:absolute;left:0;right:0;bottom:12px;text-align:center;color:#555;font-size:15px}
 #viewer .vnav{position:absolute;top:50%;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center}
 #viewer .close{position:absolute;top:calc(14px + var(--safe-t));right:14px;color:#fff;font-size:28px;width:44px;height:44px}
@@ -486,12 +502,12 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
     <div class="conqinfo hidden" id="conqInfo"></div>
   </div>
   <div class="mapbtns" id="mapBtns" style="bottom:20px">
-    <button class="roundbtn" id="btnConq" aria-label="동네 정복 지도"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg></button>
-    <button class="roundbtn" id="btnSnap" aria-label="사진으로 기록"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
-    <button class="roundbtn" id="btnPick" aria-label="오늘 어디 갈까"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1.1" fill="currentColor"/><circle cx="15" cy="15" r="1.1" fill="currentColor"/><circle cx="15" cy="9" r="1.1" fill="currentColor"/><circle cx="9" cy="15" r="1.1" fill="currentColor"/></svg></button>
-    <button class="roundbtn" id="btnFriends" aria-label="친구 카페 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2c2.6-.3 4.6 1.3 5.1 4.3"/></svg></button>
-    <button class="roundbtn" id="btnFit" aria-label="내 카페 전체 보기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
-    <button class="roundbtn" id="btnMe" aria-label="내 위치"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7.5"/></svg></button>
+    <button class="roundbtn" id="btnConq" aria-label="동네 정복 지도"><svg class="cute" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21.2V3.6" stroke="#5B4636" stroke-width="1.8" stroke-linecap="round"/><path d="M6.6 4.2h11.2c.7 0 1 .8.6 1.3l-2.3 2.9 2.3 2.9c.4.5.1 1.3-.6 1.3H6.6z" fill="#FFB4C6" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><path d="M11.6 6.9c-.6-.9-2.1-.5-2 .6.1.9 1.1 1.4 2 2.1.9-.7 1.9-1.2 2-2.1.1-1.1-1.4-1.5-2-.6z" fill="#fff"/><ellipse cx="6" cy="21.3" rx="3" ry=".9" fill="#E8DCD0"/></svg></button>
+    <button class="roundbtn" id="btnSnap" aria-label="사진으로 기록"><svg class="cute" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="12.5" rx="3.5" fill="#FFD9A8" stroke="#5B4636" stroke-width="1.3"/><path d="M8.2 7l1.3-2.3h5L15.8 7" fill="#FFC27A" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="4" fill="#fff" stroke="#5B4636" stroke-width="1.3"/><circle cx="12" cy="13.2" r="2.3" fill="#9AD0F5"/><circle cx="12.9" cy="12.4" r=".7" fill="#fff"/><circle cx="17.8" cy="9.8" r=".9" fill="#FF8FA8"/><circle cx="5.6" cy="16.6" r=".9" fill="#FFB3C1"/></svg></button>
+    <button class="roundbtn" id="btnPick" aria-label="오늘 어디 갈까"><svg class="cute" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-10 12 12)"><rect x="4" y="4" width="16" height="16" rx="4.2" fill="#FFF6E6" stroke="#5B4636" stroke-width="1.3"/><circle cx="8.6" cy="8.6" r="1.4" fill="#FF8FA8"/><circle cx="15.4" cy="15.4" r="1.4" fill="#FF8FA8"/><circle cx="15.4" cy="8.6" r="1.4" fill="#7CC4F0"/><circle cx="8.6" cy="15.4" r="1.4" fill="#7CC4F0"/><circle cx="12" cy="12" r="1.4" fill="#FFC24D"/></g></svg></button>
+    <button class="roundbtn" id="btnFriends" aria-label="친구 카페 보기"><svg class="cute" viewBox="0 0 24 24" aria-hidden="true"><circle cx="15.8" cy="9.6" r="5.2" fill="#FFE59A" stroke="#5B4636" stroke-width="1.2"/><circle cx="12.4" cy="5.6" r="1.6" fill="#FFE59A" stroke="#5B4636" stroke-width="1.1"/><circle cx="19.4" cy="5.8" r="1.6" fill="#FFE59A" stroke="#5B4636" stroke-width="1.1"/><circle cx="14.4" cy="9.5" r=".7" fill="#5B4636"/><circle cx="17.3" cy="9.5" r=".7" fill="#5B4636"/><circle cx="8.6" cy="14" r="5.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.2"/><circle cx="4.6" cy="9.6" r="1.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.1"/><circle cx="12.6" cy="9.6" r="1.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.1"/><circle cx="6.8" cy="13.6" r=".8" fill="#5B4636"/><circle cx="10.4" cy="13.6" r=".8" fill="#5B4636"/><path d="M7.8 15.6q.8.7 1.6 0" fill="none" stroke="#5B4636" stroke-width=".9" stroke-linecap="round"/><circle cx="5.3" cy="15.4" r=".9" fill="#FF8FA8"/><circle cx="11.9" cy="15.4" r=".9" fill="#FF8FA8"/></svg></button>
+    <button class="roundbtn" id="btnFit" aria-label="내 카페 전체 보기"><svg class="cute" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15" fill="none" stroke="#7FC8A9" stroke-width="2.4" stroke-linecap="round"/><path d="M12 9.6c-.9-1.3-3.1-.8-3 .9.1 1.4 1.6 2.2 3 3.3 1.4-1.1 2.9-1.9 3-3.3.1-1.7-2.1-2.2-3-.9z" fill="#FF9EB5" stroke="#5B4636" stroke-width="1.1" stroke-linejoin="round"/></svg></button>
+    <button class="roundbtn" id="btnMe" aria-label="내 위치"><svg class="cute" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="21" rx="4.5" ry="1.1" fill="#E8DCD0"/><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z" fill="#FF9EB5" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="10" r="3.6" fill="#fff"/><circle cx="10.8" cy="9.8" r=".6" fill="#5B4636"/><circle cx="13.2" cy="9.8" r=".6" fill="#5B4636"/><path d="M11.3 11.2q.7.6 1.4 0" fill="none" stroke="#5B4636" stroke-width=".8" stroke-linecap="round"/></svg></button>
     <button class="roundbtn add" id="btnAdd" aria-label="카페 추가"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
   </div>
   <div class="sheet" id="sheet"></div>
@@ -501,7 +517,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 <section class="view hidden" id="v-list">
   <div class="scroll" id="listScroll">
     <div class="pagehead"><h1>내 카페 기록</h1><p id="listCount"></p>
-      <div class="headbtns"><button class="chip" id="lFriends">👥 친구</button><button class="chip" id="lSnap">📷 사진으로 기록</button><button class="chip" id="lPick">🎲 오늘 어디 갈까</button><button class="chip" id="lShare">🔗 공유 링크 만들기</button></div></div>
+      <div class="headbtns"><button class="chip" id="lFriends"><svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="15.8" cy="9.6" r="5.2" fill="#FFE59A" stroke="#5B4636" stroke-width="1.2"/><circle cx="12.4" cy="5.6" r="1.6" fill="#FFE59A" stroke="#5B4636" stroke-width="1.1"/><circle cx="19.4" cy="5.8" r="1.6" fill="#FFE59A" stroke="#5B4636" stroke-width="1.1"/><circle cx="14.4" cy="9.5" r=".7" fill="#5B4636"/><circle cx="17.3" cy="9.5" r=".7" fill="#5B4636"/><circle cx="8.6" cy="14" r="5.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.2"/><circle cx="4.6" cy="9.6" r="1.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.1"/><circle cx="12.6" cy="9.6" r="1.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.1"/><circle cx="6.8" cy="13.6" r=".8" fill="#5B4636"/><circle cx="10.4" cy="13.6" r=".8" fill="#5B4636"/><path d="M7.8 15.6q.8.7 1.6 0" fill="none" stroke="#5B4636" stroke-width=".9" stroke-linecap="round"/><circle cx="5.3" cy="15.4" r=".9" fill="#FF8FA8"/><circle cx="11.9" cy="15.4" r=".9" fill="#FF8FA8"/></svg> 친구</button><button class="chip" id="lSnap"><svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="12.5" rx="3.5" fill="#FFD9A8" stroke="#5B4636" stroke-width="1.3"/><path d="M8.2 7l1.3-2.3h5L15.8 7" fill="#FFC27A" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="4" fill="#fff" stroke="#5B4636" stroke-width="1.3"/><circle cx="12" cy="13.2" r="2.3" fill="#9AD0F5"/><circle cx="12.9" cy="12.4" r=".7" fill="#fff"/><circle cx="17.8" cy="9.8" r=".9" fill="#FF8FA8"/></svg> 사진으로 기록</button><button class="chip" id="lPick"><svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-10 12 12)"><rect x="4" y="4" width="16" height="16" rx="4.2" fill="#FFF6E6" stroke="#5B4636" stroke-width="1.3"/><circle cx="8.6" cy="8.6" r="1.4" fill="#FF8FA8"/><circle cx="15.4" cy="15.4" r="1.4" fill="#FF8FA8"/><circle cx="15.4" cy="8.6" r="1.4" fill="#7CC4F0"/><circle cx="8.6" cy="15.4" r="1.4" fill="#7CC4F0"/><circle cx="12" cy="12" r="1.4" fill="#FFC24D"/></g></svg> 오늘 어디 갈까</button><button class="chip" id="lShare"><svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="8.2" width="10.5" height="7.6" rx="3.8" fill="#C9E8FF" stroke="#5B4636" stroke-width="1.3" transform="rotate(-20 8 12)"/><rect x="10.7" y="8.2" width="10.5" height="7.6" rx="3.8" fill="#FFD3DE" stroke="#5B4636" stroke-width="1.3" transform="rotate(-20 16 12)"/><circle cx="12" cy="12" r="1.1" fill="#fff" stroke="#5B4636" stroke-width=".9"/></svg> 공유 링크 만들기</button></div></div>
     <div class="listtools">
       <div class="listsearch">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -526,7 +542,7 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 
 <section class="view hidden" id="v-fr">
   <div class="scroll" id="frScroll">
-    <div class="pagehead rowsb"><h1>친구</h1><button class="textbtn" id="frSetBtn">⚙ 지도 핀 설정</button></div>
+    <div class="pagehead rowsb"><h1>친구</h1><button class="textbtn" id="frSetBtn"><svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l1.5 1.9 2.4-.5.6 2.4 2.3.9-.6 2.4 1.6 1.8-1.6 1.8.6 2.4-2.3.9-.6 2.4-2.4-.5L12 20.8l-1.5-1.9-2.4.5-.6-2.4-2.3-.9.6-2.4L4.2 12l1.6-1.8-.6-2.4 2.3-.9.6-2.4 2.4.5z" fill="#D7EFE3" stroke="#5B4636" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="#fff" stroke="#5B4636" stroke-width="1.2"/><circle cx="12" cy="12" r="1.1" fill="#FF9EB5"/></svg> 지도 핀 설정</button></div>
     <div style="padding:0 18px 30px" id="frBody"></div>
   </div>
 </section>
@@ -722,6 +738,25 @@ const wxKind = c => { c = +c; return c === 0 ? 'sun' : c <= 2 ? 'part' : c === 3
 const wxIcon = c => `<svg class="wxi" viewBox="0 0 24 24" aria-hidden="true">${WX_SVG[wxKind(c)]}</svg>`;
 const wxName = c => { c = +c; return c === 0 ? '맑음' : c <= 2 ? '구름 조금' : c === 3 ? '흐림' : c <= 48 ? '안개' : c <= 57 ? '이슬비' : c <= 67 ? '비' : c <= 77 ? '눈' : c <= 82 ? '소나기' : c <= 86 ? '눈' : '뇌우'; };
 const wxTag = v => { const w = v && v.wx; if (!w || !Number.isFinite(+w.c) || !Number.isFinite(+w.hi)) return ''; return ` <span class="wx" title="${wxName(w.c)} · 최고 ${Math.round(+w.hi)}° / 최저 ${Math.round(+w.lo)}°">${wxIcon(w.c)} ${Math.round(+w.hi)}°</span>`; };
+/* 아기자기한 아이콘 (기기마다 다른 이모지 대신 직접 그림) */
+const IC = {
+  cup: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 11h1.2a2.7 2.7 0 0 1 0 5.4h-1.4" fill="none" stroke="#5B4636" stroke-width="1.5" stroke-linecap="round"/><path d="M4.5 9.5h13v6a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5z" fill="#FFE3EA" stroke="#5B4636" stroke-width="1.3"/><ellipse cx="11" cy="9.5" rx="6.5" ry="1.4" fill="#B57A52" stroke="#5B4636" stroke-width="1.1"/><path d="M8.5 6.6c-.6-.8.6-1.4 0-2.3M12.5 6.2c-.6-.8.6-1.4 0-2.3" fill="none" stroke="#C9B8AC" stroke-width="1.1" stroke-linecap="round"/><circle cx="8.6" cy="14.2" r=".6" fill="#5B4636"/><circle cx="12.9" cy="14.2" r=".6" fill="#5B4636"/><path d="M10.2 15.5q.6.5 1.1 0" fill="none" stroke="#5B4636" stroke-width=".8" stroke-linecap="round"/><circle cx="7.4" cy="15.4" r=".8" fill="#FFB3C1"/><circle cx="14.1" cy="15.4" r=".8" fill="#FFB3C1"/></svg>',
+  friends: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="15.8" cy="9.6" r="5.2" fill="#FFE59A" stroke="#5B4636" stroke-width="1.2"/><circle cx="12.4" cy="5.6" r="1.6" fill="#FFE59A" stroke="#5B4636" stroke-width="1.1"/><circle cx="19.4" cy="5.8" r="1.6" fill="#FFE59A" stroke="#5B4636" stroke-width="1.1"/><circle cx="14.4" cy="9.5" r=".7" fill="#5B4636"/><circle cx="17.3" cy="9.5" r=".7" fill="#5B4636"/><circle cx="8.6" cy="14" r="5.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.2"/><circle cx="4.6" cy="9.6" r="1.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.1"/><circle cx="12.6" cy="9.6" r="1.8" fill="#FFC9D6" stroke="#5B4636" stroke-width="1.1"/><circle cx="6.8" cy="13.6" r=".8" fill="#5B4636"/><circle cx="10.4" cy="13.6" r=".8" fill="#5B4636"/><path d="M7.8 15.6q.8.7 1.6 0" fill="none" stroke="#5B4636" stroke-width=".9" stroke-linecap="round"/><circle cx="5.3" cy="15.4" r=".9" fill="#FF8FA8"/><circle cx="11.9" cy="15.4" r=".9" fill="#FF8FA8"/></svg>',
+  camera: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="12.5" rx="3.5" fill="#FFD9A8" stroke="#5B4636" stroke-width="1.3"/><path d="M8.2 7l1.3-2.3h5L15.8 7" fill="#FFC27A" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="4" fill="#fff" stroke="#5B4636" stroke-width="1.3"/><circle cx="12" cy="13.2" r="2.3" fill="#9AD0F5"/><circle cx="12.9" cy="12.4" r=".7" fill="#fff"/><circle cx="17.8" cy="9.8" r=".9" fill="#FF8FA8"/></svg>',
+  dice: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-10 12 12)"><rect x="4" y="4" width="16" height="16" rx="4.2" fill="#FFF6E6" stroke="#5B4636" stroke-width="1.3"/><circle cx="8.6" cy="8.6" r="1.4" fill="#FF8FA8"/><circle cx="15.4" cy="15.4" r="1.4" fill="#FF8FA8"/><circle cx="15.4" cy="8.6" r="1.4" fill="#7CC4F0"/><circle cx="8.6" cy="15.4" r="1.4" fill="#7CC4F0"/><circle cx="12" cy="12" r="1.4" fill="#FFC24D"/></g></svg>',
+  link: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.8" y="8.2" width="10.5" height="7.6" rx="3.8" fill="#C9E8FF" stroke="#5B4636" stroke-width="1.3" transform="rotate(-20 8 12)"/><rect x="10.7" y="8.2" width="10.5" height="7.6" rx="3.8" fill="#FFD3DE" stroke="#5B4636" stroke-width="1.3" transform="rotate(-20 16 12)"/><circle cx="12" cy="12" r="1.1" fill="#fff" stroke="#5B4636" stroke-width=".9"/></svg>',
+  gear: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l1.5 1.9 2.4-.5.6 2.4 2.3.9-.6 2.4 1.6 1.8-1.6 1.8.6 2.4-2.3.9-.6 2.4-2.4-.5L12 20.8l-1.5-1.9-2.4.5-.6-2.4-2.3-.9.6-2.4L4.2 12l1.6-1.8-.6-2.4 2.3-.9.6-2.4 2.4.5z" fill="#D7EFE3" stroke="#5B4636" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.1" fill="#fff" stroke="#5B4636" stroke-width="1.2"/><circle cx="12" cy="12" r="1.1" fill="#FF9EB5"/></svg>',
+  pin: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="21" rx="4.5" ry="1.1" fill="#E8DCD0"/><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z" fill="#FF9EB5" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><circle cx="12" cy="10" r="3.6" fill="#fff"/><circle cx="10.8" cy="9.8" r=".6" fill="#5B4636"/><circle cx="13.2" cy="9.8" r=".6" fill="#5B4636"/><path d="M11.3 11.2q.7.6 1.4 0" fill="none" stroke="#5B4636" stroke-width=".8" stroke-linecap="round"/></svg>',
+  trophy: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="#FFD866" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><path d="M7 6H4.5c0 2.6 1.3 4 3 4.2M17 6h2.5c0 2.6-1.3 4-3 4.2" fill="none" stroke="#5B4636" stroke-width="1.2" stroke-linecap="round"/><path d="M10.5 14h3l.6 3.5h-4.2z" fill="#FFC24D" stroke="#5B4636" stroke-width="1.1" stroke-linejoin="round"/><rect x="7.5" y="17.5" width="9" height="3" rx="1.2" fill="#C9A27A" stroke="#5B4636" stroke-width="1.1"/><path d="M12 6.4l.7 1.4 1.5.2-1.1 1 .3 1.5-1.4-.7-1.4.7.3-1.5-1.1-1 1.5-.2z" fill="#fff"/></svg>',
+  building: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" fill="#FFF1D6" stroke="#5B4636" stroke-width="1.3"/><g fill="#9AD0F5"><rect x="7.5" y="7" width="3" height="2.6" rx=".6"/><rect x="13.5" y="7" width="3" height="2.6" rx=".6"/><rect x="7.5" y="11.4" width="3" height="2.6" rx=".6"/><rect x="13.5" y="11.4" width="3" height="2.6" rx=".6"/></g><path d="M10.4 21v-3.6a1.6 1.6 0 0 1 3.2 0V21" fill="#FF9EB5" stroke="#5B4636" stroke-width="1.1"/></svg>',
+  map: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5l5.5-2.2 6 2.2 5.5-2.2v13.2l-5.5 2.2-6-2.2-5.5 2.2z" fill="#DFF3E8" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 4.3v13.2M15 6.5v13.2" stroke="#5B4636" stroke-width="1" opacity=".5"/><path d="M12 14.6c-1.7-1.5-2.5-2.6-2.5-3.7a2.5 2.5 0 0 1 5 0c0 1.1-.8 2.2-2.5 3.7z" fill="#FF9EB5" stroke="#5B4636" stroke-width="1"/></svg>',
+  party: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20.5l4.2-11.2 6.9 6.9z" fill="#FFD866" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 15.2l2.8 2.8M7.3 11.8l4.6 4.6" stroke="#FF8FA8" stroke-width="1.4" stroke-linecap="round"/><circle cx="15.5" cy="5" r="1.2" fill="#7CC4F0"/><circle cx="19.5" cy="10" r="1.2" fill="#FF8FA8"/><path d="M12.5 7.5c.5-2 2-2.5 3-2.2M16.5 12c1.5-1.2 3-1 3.6-.2" fill="none" stroke="#5B4636" stroke-width="1.2" stroke-linecap="round"/><path d="M19 4.5l.4 1 1 .4-1 .4-.4 1-.4-1-1-.4 1-.4z" fill="#FFC24D"/></svg>',
+  flag: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21.2V3.6" stroke="#5B4636" stroke-width="1.8" stroke-linecap="round"/><path d="M6.6 4.2h11.2c.7 0 1 .8.6 1.3l-2.3 2.9 2.3 2.9c.4.5.1 1.3-.6 1.3H6.6z" fill="#FFB4C6" stroke="#5B4636" stroke-width="1.3" stroke-linejoin="round"/><path d="M11.6 6.9c-.6-.9-2.1-.5-2 .6.1.9 1.1 1.4 2 2.1.9-.7 1.9-1.2 2-2.1.1-1.1-1.4-1.5-2-.6z" fill="#fff"/></svg>',
+  door: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3.5" width="12" height="17.5" rx="2" fill="#E8C9A8" stroke="#5B4636" stroke-width="1.3"/><rect x="8.3" y="6" width="7.4" height="5" rx="1" fill="#F7E6D3"/><circle cx="15" cy="13.5" r=".9" fill="#5B4636"/><rect x="7.6" y="14.8" width="8.8" height="3.4" rx="1" fill="#fff" stroke="#5B4636" stroke-width=".9"/><path d="M9.3 16.5h5.4" stroke="#FF8FA8" stroke-width="1.1" stroke-linecap="round"/></svg>',
+  lock: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="#5B4636" stroke-width="1.6" stroke-linecap="round"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="#FFD3DE" stroke="#5B4636" stroke-width="1.3"/><path d="M12 13.4c-.6-.9-2-.5-1.9.6.1.8 1 1.3 1.9 2 .9-.7 1.8-1.2 1.9-2 .1-1.1-1.3-1.5-1.9-.6z" fill="#fff"/></svg>',
+  cake: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5h15v7a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5z" fill="#FFF1D6" stroke="#5B4636" stroke-width="1.3"/><path d="M4.5 12.5c1.2 1.6 2.6 1.6 3.8 0 1.2 1.6 2.6 1.6 3.7 0 1.2 1.6 2.6 1.6 3.8 0 1.2 1.6 2.5 1.6 3.7 0" fill="#FFB4C6" stroke="#5B4636" stroke-width="1.1" stroke-linejoin="round"/><path d="M4.5 17h15" stroke="#FFB4C6" stroke-width="1.4"/><path d="M12 12.4V8.6" stroke="#5B4636" stroke-width="1.2"/><path d="M12 8.3c-.9-.9-.4-2.4 0-3.3.4.9.9 2.4 0 3.3z" fill="#FFC24D" stroke="#5B4636" stroke-width=".8"/><circle cx="8" cy="10.6" r="1.4" fill="#FF6B8A" stroke="#5B4636" stroke-width=".8"/></svg>',
+  star: '<svg class="ic2" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.6.7-4.1 3.9 1 5.6L12 16.3 7 19l1-5.6-4.1-3.9 5.6-.7z" fill="#FFE59A" stroke="#5B4636" stroke-width="1.2" stroke-linejoin="round"/><circle cx="10.4" cy="11.6" r=".6" fill="#5B4636"/><circle cx="13.6" cy="11.6" r=".6" fill="#5B4636"/><path d="M11.4 12.9q.6.5 1.2 0" fill="none" stroke="#5B4636" stroke-width=".8" stroke-linecap="round"/></svg>'
+};
 const todayStr = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 const fmtDate = s => { if(!s) return ''; const [y,m,d] = s.split('-').map(Number); const now = new Date().getFullYear(); return (y!==now? y+'년 ':'') + m+'월 '+d+'일'; };
 const won = n => n ? Number(n).toLocaleString('ko-KR') + '원' : '';
@@ -1072,7 +1107,7 @@ function setMapBtnBottom(){
 function polaroids(ids, urls, items){
   items = items || ids.map((id, i) => ({ mine: id, url: urls[i] }));
   if (!items.length) return '';
-  const one = (x, st) => `<div class="pol${x.u ? ' frpol' : ''}" ${x.mine ? `data-ph="${x.mine}"` : `data-vz="${x.u}|${x.p}"`} style="${st}"><div style="background-image:url('${x.url}')"></div>${x.u ? `<span class="polwho">👥 ${esc(frName(x.u))}</span>` : ''}</div>`;
+  const one = (x, st) => `<div class="pol${x.u ? ' frpol' : ''}" ${x.mine ? `data-ph="${x.mine}"` : `data-vz="${x.u}|${x.p}"`} style="${st}"><div style="background-image:url('${x.url}')"></div>${x.u ? `<span class="polwho">${IC.friends} ${esc(frName(x.u))}</span>` : ''}</div>`;
   if (items.length <= 3) { const pos = [[-6,0,8],[5,96,0],[-2,190,16]]; return `<div class="pols">${items.map((x, i) => one(x, `left:${pos[i][1]}px;top:${pos[i][2]}px;transform:rotate(${pos[i][0]}deg);z-index:${3-i}`)).join('')}</div>`; }
   return `<div class="pols strip">${items.map((x, i) => one(x, `transform:rotate(${[-4,3,-2,4,-3,2][i % 6]}deg);margin-top:${[8,0,14,4,10,2][i % 6]}px`)).join('')}</div>`;
 }
@@ -1094,8 +1129,8 @@ async function openSheet(id){
       ${st.rating || subLine(c.sub) ? `<button class="score tap" data-subtog="1">★ ${st.rating ? st.rating.toFixed(1) : '-'} <span class="caret">›</span></button>` : ''}
     </div>
     ${subPanelHTML(st.rating, c, st.my ? '내 별점' : '평균')}
-    <div style="margin-top:10px">${c.closed?'<span class="tag closedt">🚪 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${c.hideFriends?'<span class="tag">🔒 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
-    ${c.nextTry ? `<div class="nextbar">🍰 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
+    <div style="margin-top:10px">${c.closed?'<span class="tag closedt">'+IC.door+' 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${c.hideFriends?'<span class="tag">'+IC.lock+' 친구에게 숨김</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    ${c.nextTry ? `<div class="nextbar">${IC.cake} 다음엔 이거 · ${esc(c.nextTry)}</div>` : ''}
     <div class="btnrow">
       <button class="btn" data-act="visit">${c.wish ? '가봤어요! 기록 남기기' : '방문 기록 추가'}</button>
       <button class="btn ghost" data-act="detail">자세히 보기</button>
@@ -1251,10 +1286,10 @@ async function showNearby(){
     shownAt = here;
     const list = found.slice(0, NEAR_N);
     const frBy = new Map(); for (const u of FR.list || []) for (const fc of FR.data.get(u)?.cafes || []) if (fc.kakaoId) { if (!frBy.has(fc.kakaoId)) frBy.set(fc.kakaoId, []); if (!frBy.get(fc.kakaoId).includes(u)) frBy.get(fc.kakaoId).push(u); }
-    if (!list.length) { $('#nearBox').innerHTML = `<div class="nearh">${mine ? '📍 2km 안에 카페가 없어요' : '지도 가운데 2km 안에 카페가 없어요'}</div>`; return; }
-    $('#nearBox').innerHTML = `<div class="nearh">${mine ? '📍 지금 가까운 카페' : '지도 가운데에서 가까운 카페'}${updating ? ' <span class="small">· 위치 확인 중…</span>' : ''}</div>` + list.map((p, i) => {
+    if (!list.length) { $('#nearBox').innerHTML = `<div class="nearh">${mine ? IC.pin + ' 2km 안에 카페가 없어요' : '지도 가운데 2km 안에 카페가 없어요'}</div>`; return; }
+    $('#nearBox').innerHTML = `<div class="nearh">${mine ? IC.pin + ' 지금 가까운 카페' : '지도 가운데에서 가까운 카페'}${updating ? ' <span class="small">· 위치 확인 중…</span>' : ''}</div>` + list.map((p, i) => {
       const my = cafes.find(c => c.kakaoId === p.id);
-      return `<button class="res" data-ni="${i}" style="width:100%;text-align:left"><div class="ic">☕</div>
+      return `<button class="res" data-ni="${i}" style="width:100%;text-align:left"><div class="ic">${IC.cup}</div>
         <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${my ? `<span class="mine">${my.wish ? '가볼 곳' : '기록됨'}</span>` : ''}</div>
         <div class="ad">${esc(p.road_address_name || p.address_name)}</div>${frBy.has(p.id) ? `<div class="frtag">${FR_FACE}${frBy.get(p.id).map(u => esc(frName(u))).join(', ')}</div>` : ''}</div>
         <div class="dist">${fmtDist(distKm(here, { lat: +p.y, lng: +p.x }))}</div></button>`;
@@ -1264,7 +1299,7 @@ async function showNearby(){
   // 1) 알고 있는 위치로 바로 보여주고 2) 새 위치를 받아서 다르면 다시 그림
   const job = freshPos();
   if (myPos) await draw(myPos, true, true);
-  else if (ok()) $('#nearBox').innerHTML = '<div class="nearh">📍 내 위치 확인 중…</div>';
+  else if (ok()) $('#nearBox').innerHTML = '<div class="nearh">' + IC.pin + ' 내 위치 확인 중…</div>';
   const fresh = await job;
   if (seq !== nearSeq) return;
   if (fresh) { myPos = fresh; setMePin(fresh); }
@@ -1305,11 +1340,11 @@ function doSearch(){
     data = data.map((p, i) => [p, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
     $('#results').innerHTML = data.map((p, i) => {
       const mine = cafes.find(c => c.kakaoId === p.id), fw = frMap.get(p.id) || [];
-      const frTag = fw.length ? `<span class="frmark">👥 ${esc(frName(fw[0].uid))}${fw.length > 1 ? ` 외 ${fw.length - 1}명` : ''}${fw[0].st.rating ? ` ★${fw[0].st.rating.toFixed(1)}` : fw[0].c.wish ? ' 가볼래' : ''}</span>` : '';
+      const frTag = fw.length ? `<span class="frmark">${IC.friends} ${esc(frName(fw[0].uid))}${fw.length > 1 ? ` 외 ${fw.length - 1}명` : ''}${fw[0].st.rating ? ` ★${fw[0].st.rating.toFixed(1)}` : fw[0].c.wish ? ' 가볼래' : ''}</span>` : '';
       const d = here ? distKm(here, {lat:+p.y, lng:+p.x}) : null;
       const isCafe = /카페|커피|디저트|베이커리|제과/.test(p.category_name);
       return `<button class="res" data-i="${i}" style="width:100%;text-align:left">
-        <div class="ic">${isCafe ? '☕' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'}</div>
+        <div class="ic">${isCafe ? IC.cup : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'}</div>
         <div style="min-width:0;flex:1"><div class="nm">${esc(p.place_name)}${mine?`<span class="mine">${mine.wish?'가볼 곳':'기록됨'}</span>`:''}${frTag}</div>
         <div class="ad">${esc(p.road_address_name || p.address_name)}</div>
         <div class="cat">${esc((p.category_name||'').split(' > ').slice(-2).join(' · '))}</div></div>
@@ -1378,7 +1413,7 @@ function showBuilding(b){
   const el = document.createElement('div'); el.className = 'tempPin'; el.innerHTML = '<div class="dot"></div>';
   tempOverlay = new kakao.maps.CustomOverlay({ position: ll, content: el, yAnchor: .5, zIndex: 6 }); tempOverlay.setMap(map);
   $('#sheet').innerHTML = `<div class="grab"></div>
-    <div class="title">🏢 ${esc(b.name || b.road)}</div>
+    <div class="title">${IC.building} ${esc(b.name || b.road)}</div>
     <div class="subt">${b.name ? esc(b.road) + ' · ' : ''}이 건물에 있는 곳 ${b.list.length}개 · 하나 골라주세요</div>
     <div style="margin-top:8px">${b.list.map((p, i) => { const mine = cafes.find(c => c.kakaoId === p.id); const cat = (p.category_name || '').split(' > ').slice(-1)[0];
       return `<button class="mres" data-bp="${i}"><div class="t"><span>${esc(p.place_name)}</span>${mine ? `<span class="small" style="color:var(--acc)">${mine.wish ? '가볼래 ☆' : '♪ 기록됨'}</span>` : ''}</div><div class="s">${esc(cat || '기타')}${p.phone ? ' · ' + esc(p.phone) : ''}</div></button>`; }).join('')}</div>`;
@@ -1406,7 +1441,7 @@ function pickPlace(p, fromTap, near){
     <div class="title">${esc(c.name)}</div>
     <div class="subt">${esc(c.roadAddress || c.address)}</div>
     ${c.category ? `<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>` : ''}
-    ${fromBld ? `<div class="tagpick" style="margin-top:10px"><button class="chip" data-bldback="1">🏢 이 건물 다른 곳 ${bldList.length - 1}개 보기</button></div>` : ''}
+    ${fromBld ? `<div class="tagpick" style="margin-top:10px"><button class="chip" data-bldback="1">${IC.building} 이 건물 다른 곳 ${bldList.length - 1}개 보기</button></div>` : ''}
     ${alts.length ? `<div class="tagpick" style="margin-top:10px;align-items:center"><span class="small" style="margin-right:2px">여기 아니에요?</span>${alts.map(a => `<button class="chip" data-alt="${tapFound.indexOf(a)}">${esc(a.place_name)}</button>`).join('')}</div>` : ''}
     <div class="btnrow"><button class="btn" data-act="saveNew">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-act="saveWish">가볼래 ☆</button></div>
     <div class="linkrow">
@@ -1447,8 +1482,8 @@ function openCafeEditor(id, seed){
     <div class="subpick" id="cSub">${SUBS.map(([k, n]) => `<div class="srow" data-k="${k}"><span class="sl">${n}</span><div class="starpick">${[1,2,3,4,5].map(i => `<button data-n="${i}" aria-label="${n} ${i}점">★</button>`).join('')}</div></div>`).join('')}<div class="small" style="margin-top:2px">항목 별점을 매기면 그 평균이 카페 별점이 돼요. 골라서만 매겨도 되고, 다시 누르면 지워져요.</div></div>
     <div class="toggle"><div>가볼래 ☆<div class="small">아직 안 가본 곳이에요. 다녀와서 기록을 남기면 자동으로 꺼져요</div></div><button class="sw ${c.wish?'on':''}" id="cWish" aria-label="가볼래"></button></div>
     <div class="toggle"><div>또 갈래 ♥<div class="small">다시 가고 싶은 곳은 핀이 하트 색으로 바뀌어요</div></div><button class="sw ${c.fav?'on':''}" id="cFav" aria-label="또 갈래"></button></div>
-    <div class="toggle"><div>🔒 친구에게 숨기기<div class="small">켜면 이 카페와 방문 기록 전부 친구 화면·지도에 안 보여요</div></div><button class="sw ${c.hideFriends?'on':''}" id="cHide" aria-label="친구에게 숨기기"></button></div>
-    <div class="toggle"><div>🚪 문 닫은 곳<div class="small">폐업·휴업한 곳은 켜두세요. 핀이 회색으로 바뀌고 뽑기에서 빠져요. 기록은 그대로 남아요</div></div><button class="sw ${c.closed?'on':''}" id="cClosed" aria-label="문 닫은 곳"></button></div>
+    <div class="toggle"><div>${IC.lock} 친구에게 숨기기<div class="small">켜면 이 카페와 방문 기록 전부 친구 화면·지도에 안 보여요</div></div><button class="sw ${c.hideFriends?'on':''}" id="cHide" aria-label="친구에게 숨기기"></button></div>
+    <div class="toggle"><div>${IC.door} 문 닫은 곳<div class="small">폐업·휴업한 곳은 켜두세요. 핀이 회색으로 바뀌고 뽑기에서 빠져요. 기록은 그대로 남아요</div></div><button class="sw ${c.closed?'on':''}" id="cClosed" aria-label="문 닫은 곳"></button></div>
     <label class="f">어떤 곳이에요?</label>
     <div class="tagpick" id="cTags">${TAGS.map(t => `<button class="chip ${c.tags.includes(t)?'on':''}" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
     <label class="f">메모 (와이파이 비번, 주차 팁 같은 거)</label>
@@ -1522,10 +1557,10 @@ async function openVisitEditor(cafeId, visitId, pre){
     <label class="f">이번 방문 별점</label><div class="starpick" id="vStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점">★</button>`).join('')}</div>
     <label class="f">언제 갔어요?</label><input class="inp" type="date" id="vDate" value="${esc(v.date)}">
     <label class="f">뭐 먹었어요?</label><input class="inp" id="vMenu" value="${esc(v.menu)}" placeholder="아인슈페너, 바스크치즈케이크" autocomplete="off"><div class="menusug" id="vMenuSug"></div>
-    ${c.nextTry ? `<div class="small" style="margin-top:6px">🍰 다음엔 이거: ${esc(c.nextTry)} <button class="textbtn" id="vUseNext" type="button">메뉴에 넣기</button></div>` : ''}
+    ${c.nextTry ? `<div class="small" style="margin-top:6px">${IC.cake} 다음엔 이거: ${esc(c.nextTry)} <button class="textbtn" id="vUseNext" type="button">메뉴에 넣기</button></div>` : ''}
     <label class="f">얼마 썼어요?</label><input class="inp" id="vPrice" inputmode="numeric" value="${v.price?Number(v.price).toLocaleString('ko-KR'):''}" placeholder="13,500">
     <label class="f">후기</label><textarea class="inp" id="vReview" placeholder="맛, 분위기, 자리, 웨이팅… 생각나는 대로">${esc(v.review)}</textarea>
-    <div class="toggle"><div>🔒 이 방문은 친구에게 숨기기<div class="small">켜면 친구 화면에 이 방문 기록만 안 보여요</div></div><button class="sw ${v.hideFriends?'on':''}" id="vHide" aria-label="친구에게 숨기기"></button></div>
+    <div class="toggle"><div>${IC.lock} 이 방문은 친구에게 숨기기<div class="small">켜면 친구 화면에 이 방문 기록만 안 보여요</div></div><button class="sw ${v.hideFriends?'on':''}" id="vHide" aria-label="친구에게 숨기기"></button></div>
     ${visitId ? `<div class="sec"><button class="btn danger" id="vDel" style="width:100%">이 방문 기록 삭제</button></div>` : ''}`;
   setStars(v.rating);
   $('#vStars').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = +b.dataset.n; editingVisit.data.rating = editingVisit.data.rating === n ? 0 : n; setStars(editingVisit.data.rating); };
@@ -1655,7 +1690,7 @@ function sameCafePhotos(ref){
   if (mc) list.push(...cafePhotoList(mc));
   if (session) for (const u of FR.list) {
     const rec = FR.data.get(u); if (!rec) continue;
-    for (const fc of rec.cafes.filter(same)) for (const v of frVisitsOf(rec, fc.id)) for (const p of v.photoIds || []) list.push({ id: p, u, cap: `👥 ${frName(u)} · ${v.date ? fmtDate(v.date) : ''}${v.menu ? ' · ' + v.menu : ''}` });
+    for (const fc of rec.cafes.filter(same)) for (const v of frVisitsOf(rec, fc.id)) for (const p of v.photoIds || []) list.push({ id: p, u, cap: `${frName(u)} · ${v.date ? fmtDate(v.date) : ''}${v.menu ? ' · ' + v.menu : ''}` });
   }
   return list;
 }
@@ -1665,7 +1700,7 @@ document.addEventListener('click', e => {
   e.stopPropagation(); e.preventDefault();
   const [u, pid] = z.dataset.vz.split('|'), rec = FR.data.get(u), fc = rec?.cafes.find(c => frVisitsOf(rec, c.id).some(v => (v.photoIds || []).includes(pid)));
   const list = fc ? sameCafePhotos(fc) : [];
-  if (!list.some(p => p.id === pid && p.u === u)) list.unshift({ id: pid, u, cap: '👥 ' + frName(u) });
+  if (!list.some(p => p.id === pid && p.u === u)) list.unshift({ id: pid, u, cap: frName(u) });
   openViewer(list, pid, u);
 }, true);
 function cafePhotoList(c){
@@ -1684,7 +1719,7 @@ async function openDetail(id, keep){
   const wall = await Promise.all(all.map(async (p,i) => `<div class="pol" data-ph="${p.id}" style="transform:rotate(${hashRot(p.id,i)}deg)">${p.id===cov?'<span class="covbadge">★</span>':''}<div style="background-image:url('${await getPhotoURL(p.id)}')"></div><div class="cap">${esc(p.cap.split(' · ')[0])}</div></div>`));
   const vhtml = await Promise.all(vs.map(async v => {
     const ph = await Promise.all((v.photoIds||[]).map(async (p,i) => `<div class="pol" data-ph="${p}" style="transform:rotate(${hashRot(p,i)}deg)"><div style="background-image:url('${await getPhotoURL(p)}')"></div></div>`));
-    return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}${wxTag(v)}${v.hideFriends && !c.hideFriends ? ' <span class="small">🔒 친구에게 숨김</span>' : ''}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
+    return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}${wxTag(v)}${v.hideFriends && !c.hideFriends ? ' <span class="small">' + IC.lock + ' 친구에게 숨김</span>' : ''}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
       <div class="note">${(v.menu||v.price)?`<div class="meta">${esc(v.menu)}${v.menu&&v.price?' · ':''}${won(v.price)}</div>`:''}${esc(v.review || '후기 없음')}</div>
       ${ph.length?`<div class="vphotos">${ph.join('')}</div>`:''}
       <div class="vacts"><button data-ev="${v.id}">수정</button></div></div>`;
@@ -1696,10 +1731,10 @@ async function openDetail(id, keep){
     <div class="myrate"><span class="lb">내 별점</span>${subMean(c) ? `<span class="myauto">${starBar(st.my)}<b>${st.my.toFixed(1)}</b><span class="small">항목 평균</span></span>` : `<div class="starpick" id="dStars">${[1,2,3,4,5].map(n => `<button data-n="${n}" aria-label="${n}점" class="${n <= st.my ? 'on' : ''}">★</button>`).join('')}</div>`}
       <span class="avg">${st.rated ? `방문 평균<br>★ ${st.visitAvg.toFixed(1)} · ${st.rated}번` : ''}</span></div>
     <div class="subpick" id="dSub">${SUBS.map(([k, n]) => `<div class="srow" data-k="${k}"><span class="sl">${n}</span><div class="starpick">${[1,2,3,4,5].map(i => `<button data-n="${i}" aria-label="${n} ${i}점" class="${i <= (+c.sub?.[k] || 0) ? 'on' : ''}">★</button>`).join('')}</div></div>`).join('')}<div class="small" style="margin-top:2px">골라서만 매겨도 돼요. 다시 누르면 지워져요.</div></div>
-    <div style="margin-top:12px">${c.closed?'<span class="tag closedt">🚪 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:12px">${c.closed?'<span class="tag closedt">'+IC.door+' 문 닫음</span>':''}${c.wish?'<span class="tag wish">가볼래 ☆</span>':''}${c.fav?'<span class="tag heart">또 갈래 ♥</span>':''}${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     <div class="stats" style="margin-top:12px"><div class="stat"><b>${st.count}</b><span>방문 기록</span></div><div class="stat"><b>${all.length}</b><span>사진</span></div><div class="stat"><b>${spent?Math.round(spent/1000)+'k':'-'}</b><span>쓴 돈</span></div></div>
     ${c.memo?`<div class="note" style="margin-top:12px"><div class="meta">메모</div>${esc(c.memo)}</div>`:''}
-    <div class="nexttry" id="dNext"><span class="lb">🍰 다음엔 이거</span><span class="v">${c.nextTry ? esc(c.nextTry) : '<span style="color:var(--sub)">먹어보고 싶은 메뉴를 적어두세요</span>'}</span><button class="textbtn" id="dNextEdit">${c.nextTry ? '수정' : '적기'}</button></div>
+    <div class="nexttry" id="dNext"><span class="lb">${IC.cake} 다음엔 이거</span><span class="v">${c.nextTry ? esc(c.nextTry) : '<span style="color:var(--sub)">먹어보고 싶은 메뉴를 적어두세요</span>'}</span><button class="textbtn" id="dNextEdit">${c.nextTry ? '수정' : '적기'}</button></div>
     <div class="linkrow" style="margin-top:12px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
       <a class="btn naver" href="${naverUrl(c)}" target="_blank" rel="noopener">네이버지도</a>
@@ -1709,7 +1744,7 @@ async function openDetail(id, keep){
     <div class="sec"><h3>방문 기록 <button class="textbtn" id="dAddVisit">+ 기록 추가</button></h3>${vhtml.length?vhtml.join(''):'<div class="emptyPhoto">아직 방문 기록이 없어요</div>'}</div>`;
   $('#dAddVisit').onclick = () => openVisitEditor(id);
   $('#dNextEdit').onclick = () => {
-    $('#dNext').innerHTML = `<span class="lb">🍰</span><input class="inp" id="dNextIn" value="${esc(c.nextTry || '')}" placeholder="바스크치즈케이크, 시즌 라떼…" style="flex:1;min-width:0"><button class="textbtn" id="dNextSave">저장</button>`;
+    $('#dNext').innerHTML = `<span class="lb">${IC.cake}</span><input class="inp" id="dNextIn" value="${esc(c.nextTry || '')}" placeholder="바스크치즈케이크, 시즌 라떼…" style="flex:1;min-width:0"><button class="textbtn" id="dNextSave">저장</button>`;
     const inp = $('#dNextIn'); inp.focus();
     const save = async () => {
       const cc = cafes.find(x => x.id === id); if (!cc) return;
@@ -1759,15 +1794,35 @@ async function openViewer(list, startId, startU){
   armBack();
   await drawViewer();
 }
+// 사진 크게 보기: 불러오는 동안 자리 표시, 큰 사진이 안 열리면 작은 사진, 그것도 안 되면 안내 (아이폰에서 빈 사진·글씨만 뜨던 문제)
+let vSeq = 0;
+async function viewerURL(p, small){
+  try {
+    if (p.u) return (small ? '' : await frPhoto(p.u, p.id, 'full')) || await frPhoto(p.u, p.id) || '';
+    return (small ? '' : await getPhotoURL(p.id, 'full')) || await getPhotoURL(p.id) || '';
+  } catch { return ''; }
+}
 async function drawViewer(){
-  const p = vList[vIdx]; const url = p.u ? (await frPhoto(p.u, p.id, 'full') || await frPhoto(p.u, p.id)) : await getPhotoURL(p.id, 'full');
+  const p = vList[vIdx]; if (!p) { $('#viewer').classList.add('hidden'); return; }
+  const seq = ++vSeq;
+  const shell = $('#viewer').querySelector('.vpol .vimg');
+  if (shell) shell.innerHTML = `<div class="vload">${IC.camera}<span>불러오는 중…</span></div>`;
+  const url = await viewerURL(p);
+  if (seq !== vSeq) return;
   const cid = !p.u && visits.find(v => (v.photoIds||[]).includes(p.id))?.cafeId, vc = cid && cafes.find(x => x.id === cid);
   const isCover = vc && coverOf(vc) === p.id;
   $('#viewer').innerHTML = `<button class="close" aria-label="닫기">×</button>
-    <div class="vpol"><img src="${url}" alt=""><div class="cap">${esc(p.cap||'')}</div></div>
+    <div class="vpol"><div class="vimg">${url ? `<img src="${url}" alt="">` : `<div class="vload">${IC.camera}<span>사진을 불러오지 못했어요</span></div>`}</div><div class="cap">${esc(p.cap||'')}</div></div>
     ${vList.length>1?`<button class="vnav" style="left:10px" data-d="-1">‹</button><button class="vnav" style="right:10px" data-d="1">›</button><div class="cnt">${vIdx+1} / ${vList.length}</div>`:''}
     ${vc && !SHARE_ID ? `<button class="vcover ${isCover?'on':''}" data-cover="${vc.id}">${isCover ? '★ 대표사진' : '☆ 대표사진으로 하기'}</button>` : ''}`;
 }
+$('#viewer').addEventListener('error', async e => {
+  const img = e.target; if (!(img instanceof HTMLImageElement) || img.dataset.retry) return;
+  img.dataset.retry = '1'; const p = vList[vIdx]; const seq = vSeq;
+  const u = p ? await viewerURL(p, true) : '';
+  if (seq !== vSeq) return;
+  if (u && u !== img.src) img.src = u; else img.closest('.vimg').innerHTML = `<div class="vload">${IC.camera}<span>사진을 불러오지 못했어요</span></div>`;
+}, true);
 $('#viewer').onclick = e => {
   const d = e.target.closest('[data-d]');
   if (d) { vIdx = (vIdx + +d.dataset.d + vList.length) % vList.length; drawViewer(); return; }
@@ -1839,7 +1894,7 @@ async function renderList(){
   }[sortBy];
   rows.sort(by);
   $('#listCount').textContent = cafes.length ? `카페 ${cafes.length}곳 · 방문 기록 ${visits.length}개` : '';
-  if (!cafes.length) { $('#list').innerHTML = `<div class="empty"><div class="big">☕</div>아직 기록한 카페가 없어요.<br>지도 탭에서 다녀온 카페를 검색해 보세요.</div>`; return; }
+  if (!cafes.length) { $('#list').innerHTML = `<div class="empty"><div class="big">${IC.cup}</div>아직 기록한 카페가 없어요.<br>지도 탭에서 다녀온 카페를 검색해 보세요.</div>`; return; }
   if (!rows.length) { $('#list').innerHTML = `<div class="empty">조건에 맞는 카페가 없어요.</div>`; return; }
   const html = await Promise.all(rows.map(async ({c, st, d}) => {
     const cover = coverOf(c, st); const url = cover ? await getPhotoURL(cover) : '';
@@ -2051,7 +2106,7 @@ function renderAccount(){
   const status = syncState.running ? '<span class="syncdot"></span>맞추는 중…'
     : syncState.error ? `<span class="syncdot err"></span>${esc(syncState.error)}`
     : when ? `<span class="syncdot"></span>${when}에 동기화됨` : '<span class="syncdot off"></span>아직 동기화 전';
-  el.innerHTML = `<div class="who"><div class="av" style="${pic ? `background-image:url('${esc(pic)}')` : ''}">${pic ? '' : '☕'}</div>
+  el.innerHTML = `<div class="who"><div class="av" style="${pic ? `background-image:url('${esc(pic)}')` : ''}">${pic ? '' : IC.cup}</div>
       <div style="min-width:0"><div style="font-size:16px">${esc(name)}</div><div class="st">${status}</div></div></div>
     <div class="btnrow"><button class="btn ghost" id="btnSync">지금 동기화</button><button class="btn ghost" id="btnLogout">로그아웃</button></div>`;
   $('#btnSync').onclick = () => Sync.run();
@@ -2159,13 +2214,13 @@ async function saveTop(ids){
 async function renderTop(){
   const body = $('#recBody'), { top, rest, manual, fresh } = topOrder();
   if (manual && fresh) saveTop(topFull); // 새로 끼워넣은 자리도 고정
-  if (!top.length) { body.innerHTML = `<div class="empty"><div class="big">🏆</div>별점을 매기거나 방문 기록을 남기면<br>여기 나만의 순위가 생겨요.</div>`; return; }
+  if (!top.length) { body.innerHTML = `<div class="empty"><div class="big">${IC.trophy}</div>별점을 매기거나 방문 기록을 남기면<br>여기 나만의 순위가 생겨요.</div>`; return; }
   const row = (x, i) => `<div class="toprow" data-id="${esc(x.c.id)}"><div class="trk r${i + 1}">${i + 1}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div>
     <div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${esc(areaOf(x.c))}${x.st.rating ? ` · ★ ${x.st.rating.toFixed(1)}` : ''} · 방문 ${x.st.count}번</div></div>
     <button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`;
   body.innerHTML = `<div class="rowsb" style="align-items:center;margin:4px 0 6px"><div class="small">${manual ? '내가 정한 순위예요. ≡ 를 끌어서 바꿔요' : '별점·방문 수로 자동으로 매긴 순위예요. ≡ 를 끌어서 바꿔요'}</div>${manual ? '<button class="textbtn" id="topReset">자동 순위로</button>' : ''}</div>
     <div id="topList">${top.map(row).join('')}</div>
-    <button class="btn" id="topShare" style="width:100%;margin-top:16px">🏆 이미지로 저장·공유</button>
+    <button class="btn" id="topShare" style="width:100%;margin-top:16px">${IC.trophy} 이미지로 저장·공유</button>
     ${rest.length ? `<div class="sec"><h3>순위 밖 <small>≡ 로 끌어서 순서 바꾸기 · 올리면 10위로</small></h3><div id="topRest">${rest.map((x, i) => `<div class="toprow out" data-id="${esc(x.c.id)}"><div class="trk">${i + 11}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button><button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`).join('')}</div></div>` : ''}`;
   body.querySelectorAll('[data-cover]').forEach(async d => { if (d.dataset.cover) { const u = await getPhotoURL(d.dataset.cover); if (u) d.style.backgroundImage = `url('${u}')`; else d.innerHTML = cupIcon(d.dataset.cid); } });
   topDrag();
@@ -2298,7 +2353,7 @@ async function renderAlbum(){
   const vs = [...visits].filter(v => (v.photoIds||[]).length).sort((a,b) => (b.date||'').localeCompare(a.date||'') || b.createdAt - a.createdAt);
   const items = [];
   for (const v of vs) { const c = cafeById(v.cafeId); for (const p of v.photoIds) items.push({ id: p, cap: (c?.name || '') + (v.date ? ' · ' + fmtDate(v.date) : ''), date: v.date || '', cafe: c?.name || '' }); }
-  if (!items.length) { body.innerHTML = `<div class="empty"><div class="big">📷</div>방문 기록에 사진을 넣으면<br>여기 폴라로이드로 모여요.</div>`; return; }
+  if (!items.length) { body.innerHTML = `<div class="empty"><div class="big">${IC.camera}</div>방문 기록에 사진을 넣으면<br>여기 폴라로이드로 모여요.</div>`; return; }
   const groups = new Map();
   for (const it of items) { const k = it.date ? it.date.slice(0,7) : '날짜 모름'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it); }
   let html = '<div class="album">';
@@ -2615,7 +2670,7 @@ const STAMPS = [
   ['m15', '메뉴 수집가', '서로 다른 메뉴 15가지', 'menus', 15], ['mo5', '카페 중독', '한 달에 5번 방문', 'month', 5],
   ['f1', '인생 카페', '별점 5점 주기', 'five', 1], ['fv3', '또 갈래', '또 갈래 ♥ 3곳', 'fav', 3], ['w5', '위시리스트', '가볼래 ☆ 5곳 저장', 'wish', 5],
   ['we5', '주말엔 카페', '토·일요일에 5번 방문', 'weekend', 5], ['st3', '사흘 연속 출근', '3일 연속 카페 가기', 'streak', 3], ['fx', '오늘은 플렉스', '한 번에 3만 원 이상', 'flex', 1],
-  ['fm5', '최애 메뉴', '같은 메뉴 5번 먹기', 'favMenu', 5], ['bb5', '사진 폭탄', '한 번에 사진 5장', 'bomb', 5], ['ds1', '운명대로', '🎲로 뽑힌 곳에 가기', 'destiny', 1], ['wd1', '드디어 가봤다', '가볼래 ☆였던 곳 방문', 'wishDone', 1]
+  ['fm5', '최애 메뉴', '같은 메뉴 5번 먹기', 'favMenu', 5], ['bb5', '사진 폭탄', '한 번에 사진 5장', 'bomb', 5], ['ds1', '운명대로', '주사위로 뽑힌 곳에 가기', 'destiny', 1], ['wd1', '드디어 가봤다', '가볼래 ☆였던 곳 방문', 'wishDone', 1]
 ];
 function stampEarned(){
   let saved = []; try { saved = JSON.parse(localStorage.getItem('stamps') || '[]'); } catch {}
@@ -2629,7 +2684,7 @@ function checkStamps(){
   const fresh = now.filter(k => !saved.includes(k));
   const all = [...new Set([...saved, ...now])];
   try { localStorage.setItem('stamps', JSON.stringify(all)); } catch {}
-  if (!first && fresh.length) setTimeout(() => toast(`🎉 새 뱃지! ${fresh.map(k => STAMPS.find(s => s[0] === k)[1]).join(', ')}`), 2100);
+  if (!first && fresh.length) setTimeout(() => toast(`새 뱃지! ${fresh.map(k => STAMPS.find(s => s[0] === k)[1]).join(', ')}`), 2100);
 }
 // 친구 것 보기 (읽기 전용)
 async function renderFriendRec(u){
@@ -2640,18 +2695,18 @@ async function renderFriendRec(u){
   if (recMode !== mode || recFriend() !== u) return;
   if (mode === 'stamp') {
     const d = stampData(rec.cafes, rec.visits, false);
-    body.innerHTML = `<p class="small" style="margin:2px 0 0">👥 ${name}님의 뱃지</p>` + stampGrid(d, new Set(STAMPS.filter(s => d[s[3]] >= s[4]).map(s => s[0])));
+    body.innerHTML = `<p class="small" style="margin:2px 0 0">${IC.friends} ${name}님의 뱃지</p>` + stampGrid(d, new Set(STAMPS.filter(s => d[s[3]] >= s[4]).map(s => s[0])));
     body.onclick = null; return;
   }
   const byId = new Map(rec.cafes.map(c => [c.id, c]));
   if (mode === 'album') {
     const items = [];
     [...rec.visits].filter(v => v.photoIds.length).sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.createdAt - a.createdAt)
-      .forEach(v => { const c = byId.get(v.cafeId); v.photoIds.forEach(p => items.push({ id: p, u, cap: `👥 ${frName(u)} · ${c?.name || ''}${v.date ? ' · ' + fmtDate(v.date) : ''}`, date: v.date || '', cafe: c?.name || '' })); });
-    if (!items.length) { body.innerHTML = `<div class="empty"><div class="big">📷</div>${name}님은 아직 올린 사진이 없어요.</div>`; body.onclick = null; return; }
+      .forEach(v => { const c = byId.get(v.cafeId); v.photoIds.forEach(p => items.push({ id: p, u, cap: `${frName(u)} · ${c?.name || ''}${v.date ? ' · ' + fmtDate(v.date) : ''}`, date: v.date || '', cafe: c?.name || '' })); });
+    if (!items.length) { body.innerHTML = `<div class="empty"><div class="big">${IC.camera}</div>${name}님은 아직 올린 사진이 없어요.</div>`; body.onclick = null; return; }
     const groups = new Map();
     for (const it of items) { const k = it.date ? it.date.slice(0, 7) : '날짜 모름'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(it); }
-    let html = `<p class="small" style="margin:2px 0 0">👥 ${name}님의 앨범</p><div class="album">`;
+    let html = `<p class="small" style="margin:2px 0 0">${IC.friends} ${name}님의 앨범</p><div class="album">`;
     for (const [k, arr] of groups) html += `<h4>${k === '날짜 모름' ? k : `${+k.slice(0, 4)}년 ${+k.slice(5, 7)}월`}<small>${arr.length}장</small></h4><div class="albumgrid">${arr.map((it, i) => `<div class="pol" data-fph="${it.id}" style="transform:rotate(${hashRot(it.id, i)}deg)"><div data-flz="${it.id}"></div><div class="cap">${esc(it.cafe)}</div></div>`).join('')}</div>`;
     body.innerHTML = html + '</div>';
     albumIO?.disconnect();
@@ -2668,10 +2723,10 @@ async function renderFriendRec(u){
   let order = ranked.length ? [...ranked] : [...pool].sort(cmp);
   if (ranked.length) pool.filter(x => !(+x.c.rank > 0)).sort(cmp).forEach(f => { let last = -1; order.forEach((x, i) => { if (cmp(x, f) <= 0) last = i; }); order.splice(last + 1, 0, f); });
   order = order.slice(0, 31);
-  if (!order.length) { body.innerHTML = `<div class="empty"><div class="big">🏆</div>${name}님은 아직 순위에 들 카페가 없어요.</div>`; body.onclick = null; return; }
+  if (!order.length) { body.innerHTML = `<div class="empty"><div class="big">${IC.trophy}</div>${name}님은 아직 순위에 들 카페가 없어요.</div>`; body.onclick = null; return; }
   const row = (x, i) => `<div class="toprow ${i >= 10 ? 'out' : ''}"><div class="trk ${i < 10 ? 'r' + (i + 1) : ''}">${i + 1}</div><div class="tth" data-cid="${esc(x.c.id)}" data-fcov="${esc(x.st.cover || '')}">${x.st.cover ? '' : cupIcon(x.c.id)}</div>
     <div class="tmain tap" data-ftop="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${esc(areaOf(x.c))}${x.st.rating ? ` · ★ ${x.st.rating.toFixed(1)}` : ''} · 방문 ${x.st.count}번</div></div></div>`;
-  body.innerHTML = `<p class="small" style="margin:6px 0">👥 ${name}님의 TOP 10${ranked.length ? ' (직접 정한 순위)' : ''}</p>${order.slice(0, 10).map(row).join('')}${order.length > 10 ? `<div class="sec"><h3>순위 밖</h3>${order.slice(10).map((x, i) => row(x, i + 10)).join('')}</div>` : ''}`;
+  body.innerHTML = `<p class="small" style="margin:6px 0">${IC.friends} ${name}님의 TOP 10${ranked.length ? ' (직접 정한 순위)' : ''}</p>${order.slice(0, 10).map(row).join('')}${order.length > 10 ? `<div class="sec"><h3>순위 밖</h3>${order.slice(10).map((x, i) => row(x, i + 10)).join('')}</div>` : ''}`;
   body.querySelectorAll('[data-fcov]').forEach(async d => { if (d.dataset.fcov) { const url = await frPhoto(u, d.dataset.fcov); if (url) d.style.backgroundImage = `url('${url}')`; else d.innerHTML = cupIcon(d.dataset.cid); } });
   body.onclick = e => { const t = e.target.closest('[data-ftop]'); if (!t) return; const c = byId.get(t.dataset.ftop); if (c) { showTab('map'); setFriendPins(true).then(() => openFriendSheet(u, c, true)); } };
 }
@@ -2724,7 +2779,7 @@ async function drawConquest(){
     d.key = key;
   }
   const top = [...cnt].sort((a, b) => b[1] - a[1])[0];
-  info.innerHTML = `<b>🚩 정복한 동네 ${cnt.size} / ${data.length}</b>${top ? `<span>최다 ${esc(top[0].n.split(' ').pop())} ${top[1]}곳</span>` : ''}${outside ? `<span>대구·경산 밖 ${outside}곳</span>` : ''}<small>경계: 통계청 SGIS · vuski/admdongkor (CC BY 4.0)</small>`;
+  info.innerHTML = `<b>${IC.flag} 정복한 동네 ${cnt.size} / ${data.length}</b>${top ? `<span>최다 ${esc(top[0].n.split(' ').pop())} ${top[1]}곳</span>` : ''}${outside ? `<span>대구·경산 밖 ${outside}곳</span>` : ''}<small>경계: 통계청 SGIS · vuski/admdongkor (CC BY 4.0)</small>`;
   info.classList.remove('hidden');
 }
 $('#btnConq').onclick = async () => {
@@ -2841,9 +2896,9 @@ function openPick(){
     <div class="tagpick">${chips([['전체','전체'],['다녀왔어 ♪','다녀왔어 ♪'],['또 갈래','또 갈래 ♥'],['가볼래','가볼래 ☆']], pickOpt.scope, 'sc')}</div>
     <label class="f">얼마나 가까이?</label>
     <div class="tagpick">${chips([[0,'상관없음'],[0.5,'500m'],[1,'1km'],[3,'3km'],[10,'10km']], pickOpt.dist, 'ds')}</div>
-    ${session ? `<div class="toggle" style="margin-top:14px"><div>👥 친구 카페도 넣기<div class="small">친구가 다녀왔거나 가볼래에 담은 곳 중에서도 골라요</div></div><button class="sw ${pickOpt.friends ? 'on' : ''}" id="pickFr" aria-label="친구 카페도 넣기"></button></div>` : ''}
+    ${session ? `<div class="toggle" style="margin-top:14px"><div>${IC.friends} 친구 카페도 넣기<div class="small">친구가 다녀왔거나 가볼래에 담은 곳 중에서도 골라요</div></div><button class="sw ${pickOpt.friends ? 'on' : ''}" id="pickFr" aria-label="친구 카페도 넣기"></button></div>` : ''}
     ${used.length ? `<label class="f">이런 곳이면 좋겠어 (여러 개 고르면 다 맞는 곳만)</label><div class="tagpick" id="pickTags">${used.map(t => `<button class="chip ${pickOpt.tags.includes(t)?'on':''}" data-tg="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}
-    <button class="btn" id="pickGo" style="width:100%;margin-top:22px;padding:15px">🎲 골라줘</button>
+    <button class="btn" id="pickGo" style="width:100%;margin-top:22px;padding:15px">${IC.dice} 골라줘</button>
     <div id="pickRes"></div>`;
   $('#pickBody').onclick = async e => {
     const sc = e.target.closest('[data-sc]'), ds = e.target.closest('[data-ds]'), tg = e.target.closest('[data-tg]');
@@ -2915,7 +2970,7 @@ async function doPickInner(){
     await rollDice(cand.length > 1 ? cand.map(x => x.name) : [c.name]);
     const d = myPos ? distKm(myPos, c) : null, lv = c._st.last;
     $('#pickRes').innerHTML = `<div class="pickres pop">
-      <div class="small" style="margin-bottom:8px">${total}곳 중에 골랐어요 · 👥 ${esc(frName(c._fr))}님 카페</div>
+      <div class="small" style="margin-bottom:8px">${total}곳 중에 골랐어요 · ${IC.friends} ${esc(frName(c._fr))}님 카페</div>
       ${url ? `<div class="pols" style="height:150px;width:130px;margin:0 auto"><div class="pol" style="left:0;top:4px;transform:rotate(-3deg)"><div style="background-image:url('${url}')"></div></div></div>` : cupIcon(c.id)}
       <div class="title" style="margin-top:6px">${esc(c.name)}</div>
       <div class="subt">${esc(shortAddr(c))}${d != null ? ' · ' + fmtDist(d) : ''}${c._st.rating ? ' · ★ ' + c._st.rating.toFixed(1) : ''}</div>
@@ -3012,7 +3067,7 @@ $('#shMake').onclick = async () => {
     if (error) throw error;
     loading(false);
     const link = `${location.origin}${location.pathname}?s=${id}`;
-    $('#shBody').innerHTML = `<div class="empty" style="padding:30px 10px 10px"><div class="big">🔗</div>링크를 만들었어요.<br><span class="small">받은 사람은 로그인 없이 지도로 볼 수 있어요.</span></div>
+    $('#shBody').innerHTML = `<div class="empty" style="padding:30px 10px 10px"><div class="big">${IC.link}</div>링크를 만들었어요.<br><span class="small">받은 사람은 로그인 없이 지도로 볼 수 있어요.</span></div>
       <div class="linkbox">${esc(link)}</div>
       <div class="btnrow"><button class="btn" id="shCopy">링크 복사</button>${navigator.share ? '<button class="btn ghost" id="shSend">보내기</button>' : ''}</div>
       <a class="btn ghost" href="${esc(link)}" target="_blank" rel="noopener" style="margin-top:8px">미리보기</a>
@@ -3031,7 +3086,7 @@ async function renderShares(){
   const { data, error } = await sb.from('shares').select('id,title,created_at').eq('user_id', session.user.id).order('created_at', { ascending: false });
   if (error) { el.innerHTML = '<p class="small">불러오지 못했어요.</p>'; return; }
   el.innerHTML = (data.length ? data.map(s => { const d = new Date(s.created_at); return `<div class="shrow"><div class="info"><b>${esc(s.title)}</b><span>${d.getMonth()+1}월 ${d.getDate()}일 만듦</span></div><button data-cp="${s.id}">복사</button><button data-del="${s.id}">삭제</button></div>`; }).join('') : '<p class="small">아직 만든 링크가 없어요.</p>')
-    + `<button class="btn ghost" id="setShareNew" style="width:100%;margin-top:12px">🔗 새 공유 링크 만들기</button>`;
+    + `<button class="btn ghost" id="setShareNew" style="width:100%;margin-top:12px">${IC.link} 새 공유 링크 만들기</button>`;
   el.onclick = async e => {
     const cp = e.target.closest('[data-cp]'), del = e.target.closest('[data-del]');
     if (cp) { try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}?s=${cp.dataset.cp}`); toast('링크를 복사했어요'); } catch { toast('복사하지 못했어요'); } }
@@ -3073,7 +3128,7 @@ async function frLoadInner(force){
   if (!force && Date.now() - FR.loadedAt < 60000) return true;
   const me = session.user.id;
   // 친구 순서는 서버(user_prefs)에 저장된 걸 우선 사용
-  try { const { data: pr, error: prErr } = await sb.from('user_prefs').select('friend_order,friend_names,rec_order,menu_groups').eq('user_id', me).maybeSingle(); if (!prErr) { recOrderApply(pr); if (pr?.menu_groups) menuUserApply(pr.menu_groups); } if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); if (pr && pr.friend_names && typeof pr.friend_names === 'object' && !Array.isArray(pr.friend_names)) localStorage.setItem('frNames', JSON.stringify(pr.friend_names)); } catch {}
+  try { const { data: pr, error: prErr } = await sb.from('user_prefs').select('friend_order,friend_names,rec_order,menu_groups,feed_cfg').eq('user_id', me).maybeSingle(); if (!prErr) { recOrderApply(pr); if (pr?.menu_groups) menuUserApply(pr.menu_groups); if (pr?.feed_cfg) { feedCfgApply(pr.feed_cfg); try { localStorage.setItem('feedCfg', JSON.stringify(FEED_CFG)); } catch {} } } if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); if (pr && pr.friend_names && typeof pr.friend_names === 'object' && !Array.isArray(pr.friend_names)) localStorage.setItem('frNames', JSON.stringify(pr.friend_names)); } catch {}
   const [p, f] = await Promise.all([
     sb.from('profiles').select('handle').eq('user_id', me).maybeSingle(),
     sb.from('friendships').select('requester,addressee,status')
@@ -3195,9 +3250,9 @@ async function feedCheck(force){
   feedCheckAt = Date.now();
   try {
     if (!await frLoad() || !FR.list.length) return;
-    const seen = feedSeen(), since = Date.now() - 60 * 864e5;
+    const seen = feedSeen(), since = Date.now() - FEED_CFG.days * 864e5;
     const recs = await Promise.all(FR.list.map(u => frRecords(u, true)));
-    const hasNew = recs.some(r => r.visits.some(v => (v.createdAt || 0) > seen && (v.createdAt || 0) > since) || r.cafes.some(c => c.wish && (c.createdAt || 0) > seen && (c.createdAt || 0) > since));
+    const hasNew = recs.some((r, i) => { const u = FR.list[i]; return r.visits.some(v => (v.createdAt || 0) > seen && (v.createdAt || 0) > since && feedOk(u, true, (v.photoIds || []).length > 0)) || r.cafes.some(c => c.wish && (c.createdAt || 0) > seen && (c.createdAt || 0) > since && feedOk(u, false, false)); });
     if (curTab !== 'fr') feedDot(hasNew || FR.incoming.length);
   } catch {}
 }
@@ -3206,27 +3261,52 @@ setInterval(() => { if (document.visibilityState === 'visible') feedCheck(); }, 
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') feedCheck(); });
 const relDay = s => { if (!s) return ''; const [y, m, d] = s.split('-').map(Number); const t = new Date(); t.setHours(0, 0, 0, 0); const n = Math.round((t - new Date(y, m - 1, d)) / 864e5); return n <= 0 ? '오늘' : n === 1 ? '어제' : n < 7 ? n + '일 전' : fmtDate(s); };
 const dayOf = ms => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+// 친구 소식에 띄울 것 (서버 user_prefs.feed_cfg 에 저장, 이 기기에도 복사)
+const FEED_DEF = { visit: true, wish: true, photo: false, days: 60, off: [] };
+let FEED_CFG = { ...FEED_DEF };
+function feedCfgApply(v){
+  if (!v || typeof v !== 'object') return;
+  FEED_CFG = { visit: v.visit !== false, wish: v.wish !== false, photo: !!v.photo, days: [14, 30, 60, 90].includes(+v.days) ? +v.days : 60, off: Array.isArray(v.off) ? v.off.filter(x => typeof x === 'string').slice(0, 200) : [] };
+  if (!FEED_CFG.visit && !FEED_CFG.wish) FEED_CFG.visit = true;
+}
+try { feedCfgApply(JSON.parse(localStorage.getItem('feedCfg') || 'null')); } catch {}
+function feedCfgSave(){
+  try { localStorage.setItem('feedCfg', JSON.stringify(FEED_CFG)); } catch {}
+  if (session && sb) sb.from('user_prefs').upsert({ user_id: session.user.id, feed_cfg: FEED_CFG, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) toast('서버에 못 올렸어요. 이 기기에는 저장됐어요'); });
+}
+const feedOk = (u, isVisit, hasPhoto) => !FEED_CFG.off.includes(u) && (isVisit ? FEED_CFG.visit : FEED_CFG.wish) && (!FEED_CFG.photo || hasPhoto);
+let feedSetOpen = false;
+function feedSetHTML(){
+  const c = (on, attr, label) => `<button class="chip ${on ? 'on' : ''}" ${attr}>${label}</button>`;
+  return `<div class="feedset">
+    <div class="fsrow"><span class="fsl">보여줄 것</span>${c(FEED_CFG.visit, 'data-fs="visit"', '다녀왔어요')}${c(FEED_CFG.wish, 'data-fs="wish"', '가볼래')}${c(FEED_CFG.photo, 'data-fs="photo"', '사진 있는 것만')}</div>
+    <div class="fsrow"><span class="fsl">기간</span>${[[14, '2주'], [30, '한 달'], [60, '두 달'], [90, '석 달']].map(([d, n]) => c(FEED_CFG.days === d, `data-fsd="${d}"`, n)).join('')}</div>
+    ${FR.list.length > 1 ? `<div class="fsrow"><span class="fsl">친구</span>${FR.list.map(u => c(!FEED_CFG.off.includes(u), `data-fsu="${u}"`, esc(frName(u)))).join('')}</div>` : ''}
+  </div>`;
+}
 async function drawFeed(){
   const recs = await Promise.all(FR.list.map(async u => [u, await frRecords(u)]));
   const box = $('#frFeed'); if (!box) return;
-  const since = dayOf(Date.now() - 60 * 864e5), items = [];
+  const since = dayOf(Date.now() - FEED_CFG.days * 864e5), items = [];
   for (const [u, rec] of recs) {
     const byId = new Map(rec.cafes.map(c => [c.id, c]));
-    for (const v of rec.visits) { const c = byId.get(v.cafeId); if (c && v.date && v.date >= since) items.push({ u, c, v, day: v.date, t: v.createdAt || 0 }); }
-    for (const c of rec.cafes) if (c.wish && c.createdAt && !rec.visits.some(v => v.cafeId === c.id)) { const day = dayOf(c.createdAt); if (day >= since) items.push({ u, c, day, t: c.createdAt }); }
+    for (const v of rec.visits) { const c = byId.get(v.cafeId); if (c && v.date && v.date >= since && feedOk(u, true, (v.photoIds || []).length > 0)) items.push({ u, c, v, day: v.date, t: v.createdAt || 0 }); }
+    for (const c of rec.cafes) if (c.wish && c.createdAt && !rec.visits.some(v => v.cafeId === c.id) && feedOk(u, false, false)) { const day = dayOf(c.createdAt); if (day >= since) items.push({ u, c, day, t: c.createdAt }); }
   }
   items.sort((a, b) => b.day.localeCompare(a.day) || b.t - a.t);
   const seen = feedSeen(), newest = Math.max(0, ...items.map(x => x.t));
   if (newest > seen) { feedPrevSeen = seen; try { localStorage.setItem('feedSeen', String(newest)); } catch {} }
   feedDot(false);
-  if (!items.length) { box.innerHTML = '<h3>친구 소식</h3><div class="emptyPhoto">최근 두 달 동안 친구들 새 기록이 없어요.</div>'; return; }
+  const period = { 14: '최근 2주', 30: '최근 한 달', 60: '최근 두 달', 90: '최근 석 달' }[FEED_CFG.days];
+  const head = `<div class="rowsb feedhead"><h3>친구 소식 <small>${period}</small></h3><button class="iconbtn feedgear ${feedSetOpen ? 'on' : ''}" id="feedGear" aria-label="친구 소식 설정">${IC.gear}</button></div>${feedSetOpen ? feedSetHTML() : ''}`;
+  if (!items.length) { box.innerHTML = head + `<div class="emptyPhoto">${period} 동안 고른 조건에 맞는 친구 소식이 없어요.</div>`; return; }
   const show = items.slice(0, feedN);
-  box.innerHTML = `<h3>친구 소식 <small>최근 두 달</small></h3>` + show.map(x => {
+  box.innerHTML = head + show.map(x => {
     const ph = x.v && (x.v.photoIds || [])[0];
     const what = x.v ? `다녀왔어요${x.v.rating ? ' · ★ ' + x.v.rating : ''}` : '가볼래에 담았어요';
     const sub = x.v ? [x.v.menu, x.v.review].filter(Boolean).join(' · ') : '';
     return `<button class="feed tap" data-feed="${x.u}|${esc(x.c.id)}"><div class="av">${esc((frName(x.u)[0] || '?').toUpperCase())}</div>
-      <div class="fb"><div><b>${esc(frName(x.u))}</b> <span class="small">· ${relDay(x.day)}</span>${x.t > feedPrevSeen ? '<span class="newb">N</span>' : ''}</div><div class="fc">${x.v ? '☕' : '☆'} ${esc(x.c.name)} <span class="small" style="font-weight:400">${what}</span></div>${sub ? `<div class="fr">${esc(sub)}</div>` : ''}</div>
+      <div class="fb"><div><b>${esc(frName(x.u))}</b> <span class="small">· ${relDay(x.day)}</span>${x.t > feedPrevSeen ? '<span class="newb">N</span>' : ''}</div><div class="fc">${x.v ? IC.cup : IC.star} ${esc(x.c.name)} <span class="small" style="font-weight:400">${what}</span></div>${sub ? `<div class="fr">${esc(sub)}</div>` : ''}</div>
       ${ph ? `<div class="fth" data-vz="${x.u}|${ph}"><div data-fvp="${ph}"></div></div>` : ''}</button>`;
   }).join('') + (items.length > feedN ? `<button class="textbtn" id="feedMore" style="margin-top:10px">더 보기 (${items.length - feedN})</button>` : '');
   box.querySelectorAll('.feed').forEach(el => { const u = el.dataset.feed.split('|')[0]; frFillPhotos(el, u); });
@@ -3286,6 +3366,10 @@ $('#frBody').onclick = async e => {
   if (e.target.closest('.frrow.renaming')) return;
   const op = e.target.closest('[data-open]'); if (op) { openFriend(op.dataset.open); return; }
   if (e.target.closest('#feedMore')) { feedN += 15; drawFeed(); return; }
+  if (e.target.closest('#feedGear')) { feedSetOpen = !feedSetOpen; drawFeed(); return; }
+  const fs = e.target.closest('[data-fs]'); if (fs) { const k = fs.dataset.fs; FEED_CFG[k] = !FEED_CFG[k]; if (!FEED_CFG.visit && !FEED_CFG.wish) { FEED_CFG[k === 'visit' ? 'wish' : 'visit'] = true; } feedCfgSave(); drawFeed(); return; }
+  const fd2 = e.target.closest('[data-fsd]'); if (fd2) { FEED_CFG.days = +fd2.dataset.fsd; feedCfgSave(); drawFeed(); return; }
+  const fu = e.target.closest('[data-fsu]'); if (fu) { const u = fu.dataset.fsu; FEED_CFG.off = FEED_CFG.off.includes(u) ? FEED_CFG.off.filter(x => x !== u) : [...FEED_CFG.off, u]; feedCfgSave(); drawFeed(); return; }
   const fd = e.target.closest('[data-feed]'); if (fd) { const [u, cid] = fd.dataset.feed.split('|'); const c = FR.data.get(u)?.cafes.find(x => x.id === cid); if (c) { showTab('map'); await setFriendPins(true); openFriendSheet(u, c, true); } }
 };
 function frRenameEdit(u){
@@ -3308,7 +3392,7 @@ async function openFriend(uid, mode){
 }
 async function drawFriend(){
   const uid = frCur, rec = FR.data.get(uid) || { cafes: [], visits: [] };
-  const seg = `<div class="seg" style="padding-top:2px">${[['list', `카페 ${rec.cafes.length}곳`], ['stamp', '뱃지']].map(([k, n]) => `<button class="chip ${frMode === k ? 'on' : ''}" data-fm="${k}">${n}</button>`).join('')}<button class="chip" data-fmap="1">🗺 지도에서 보기</button><button class="chip" data-funf="1" style="margin-left:auto">친구 끊기</button></div>`;
+  const seg = `<div class="seg" style="padding-top:2px">${[['list', `카페 ${rec.cafes.length}곳`], ['stamp', '뱃지']].map(([k, n]) => `<button class="chip ${frMode === k ? 'on' : ''}" data-fm="${k}">${n}</button>`).join('')}<button class="chip" data-fmap="1">${IC.map} 지도에서 보기</button><button class="chip" data-funf="1" style="margin-left:auto">친구 끊기</button></div>`;
   if (frMode === 'stamp') {
     const d = stampData(rec.cafes, rec.visits, false);
     $('#fBody').innerHTML = seg + stampGrid(d, new Set(STAMPS.filter(s => d[s[3]] >= s[4]).map(s => s[0])));
@@ -3341,7 +3425,7 @@ async function toggleFriendVisits(box){
   if (!el.classList.contains('hidden')) { el.classList.add('hidden'); box.classList.remove('open'); return; }
   const uid = frCur, rec = FR.data.get(uid), c = rec?.cafes.find(x => x.id === box.dataset.fc); if (!c) return;
   el.innerHTML = frVisitsHTML(rec, c)
-    + `<button class="btn ghost" data-fvmap="${esc(c.id)}" style="width:100%;margin:8px 0 12px">🗺 지도에서 보기</button>`;
+    + `<button class="btn ghost" data-fvmap="${esc(c.id)}" style="width:100%;margin:8px 0 12px">${IC.map} 지도에서 보기</button>`;
   el.classList.remove('hidden'); box.classList.add('open');
   frFillPhotos(el, uid);
 }
@@ -3380,7 +3464,7 @@ async function sheetFriendRecords(c){
   if (selectedId !== c.id || !$('#sheetFr')) return;
   if (!hits.length) return;
   sheetFriendPhotos(c, hits);
-  box.innerHTML = `<div class="small" style="margin:16px 0 6px">👥 친구도 여기 기록했어요</div>` + hits.map(h => `<div class="sfr" data-sfr="${h.u}">
+  box.innerHTML = `<div class="small" style="margin:16px 0 6px">${IC.friends} 친구도 여기 기록했어요</div>` + hits.map(h => `<div class="sfr" data-sfr="${h.u}">
       <button class="note tap" data-sfrt="${h.u}" style="width:100%;text-align:left;margin-top:6px"><div class="meta">${esc(frName(h.u))}${h.st.rating ? ' · ★ ' + h.st.rating.toFixed(1) : ''}${h.fc.fav ? ' · 또 갈래 ♥' : ''}${h.fc.wish && !h.st.count ? ' · 가볼래에 담아둠' : ` · 방문 ${h.st.count}번`} <span style="float:right">펼치기 ›</span></div>${esc(h.st.last?.review || (h.fc.wish && !h.st.count ? '아직 안 가봤대요' : '후기는 없어요'))}</button>
       <div class="fvis hidden"></div></div>`).join('');
   box._hits = hits;
@@ -3485,7 +3569,7 @@ async function openFriendSheet(uid, c, pan, who){
   $('#sheet').innerHTML = `<div class="grab"></div>
     ${parts.some(x => x.url) ? `<div class="pols" style="height:150px">${parts.filter(x => x.url).slice(0, 3).map((x, i) => `<div class="pol" data-vz="${x.uid}|${x.st.cover}" style="left:${[0, 96, 190][i]}px;top:${[4, 0, 14][i]}px;transform:rotate(${[-3, 4, -1][i]}deg)"><div style="background-image:url('${x.url}')"></div></div>`).join('')}</div>` : ''}
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(shortAddr(c))}${c.category ? ' · ' + esc(c.category.split(' > ').pop()) : ''}</div></div></div>
-    ${parts.map(x => `<div class="note" style="margin-top:8px"><div class="meta">👥 ${esc(frName(x.uid))}${x.st.rating ? ' · ★ ' + x.st.rating.toFixed(1) : ''}${x.c.wish && !x.st.count ? ' · 가볼래에 담아둠' : ` · 방문 ${x.st.count}번`}${x.st.last?.menu ? ' · ' + esc(x.st.last.menu) : ''}</div>${esc(x.st.last?.review || (x.c.wish ? '아직 안 가봤대요' : '후기는 없어요'))}</div>`).join('')}
+    ${parts.map(x => `<div class="note" style="margin-top:8px"><div class="meta">${IC.friends} ${esc(frName(x.uid))}${x.st.rating ? ' · ★ ' + x.st.rating.toFixed(1) : ''}${x.c.wish && !x.st.count ? ' · 가볼래에 담아둠' : ` · 방문 ${x.st.count}번`}${x.st.last?.menu ? ' · ' + esc(x.st.last.menu) : ''}</div>${esc(x.st.last?.review || (x.c.wish ? '아직 안 가봤대요' : '후기는 없어요'))}</div>`).join('')}
     <div class="btnrow"><button class="btn" data-frec="1">다녀왔어요 · 기록하기</button><button class="btn wishbtn" data-fwish="1">가볼래 ☆</button></div>
     <div style="text-align:center;margin-top:6px"><button class="textbtn" data-fopen="${p0.uid}">${esc(frName(p0.uid))}님 목록 보기</button></div>
     <div class="linkrow">
@@ -3590,7 +3674,7 @@ function shareSheet(c, pan){
   $('#sheet').innerHTML = `<div class="grab"></div>
     ${c.thumb ? `<div class="pols" style="height:150px"><div class="pol" style="left:0;top:4px;transform:rotate(-3deg)"><div style="background-image:url('${c.thumb}')"></div></div></div>` : ''}
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(shortAddr(c))}${c.category ? ' · ' + esc(c.category.split(' > ').pop()) : ''}</div></div>${c.rating ? `<div class="score">★ ${c.rating.toFixed(1)}</div>` : ''}</div>
-    <div style="margin-top:10px">${c.closed?'<span class="tag closedt">🚪 문 닫음</span>':''}${c.wish ? '<span class="tag wish">가볼래 ☆</span>' : ''}${c.fav ? '<span class="tag heart">또 갈래 ♥</span>' : ''}${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+    <div style="margin-top:10px">${c.closed?'<span class="tag closedt">'+IC.door+' 문 닫음</span>':''}${c.wish ? '<span class="tag wish">가볼래 ☆</span>' : ''}${c.fav ? '<span class="tag heart">또 갈래 ♥</span>' : ''}${(c.tags||[]).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${c.review || c.menu ? `<div class="note" style="margin-top:8px">${c.menu ? `<div class="meta">${esc(c.menu)}</div>` : ''}${esc(c.review || '')}</div>` : ''}
     <div class="linkrow" style="margin-top:14px">
       <a class="btn kakao" href="${kakaoUrl(c)}" target="_blank" rel="noopener">카카오맵</a>
@@ -3720,7 +3804,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-39'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-40'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
