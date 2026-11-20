@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-1LGbbjevNyKMrcQPIOd2GiID4lXlGrY6zFVRptOZnbU=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-82CqsdoFNlGUDfOc+0ZwsM+jCw4ucAPooOav0dM3kD4=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1997,12 +1997,16 @@ const Sync = {
     const pending = (await DB.all('cafes')).some(c => c.dirty !== false) || (await DB.all('visits')).some(v => v.dirty !== false) || (await DB.all('tomb')).length || (await DB.all('photos')).some(p => !p.uploaded && p.full);
     loading(false);
     if (pending && !await ask('아직 서버에 못 올린 기록이 있어요.\n지금 로그아웃하면 그 기록은 사라져요. 그래도 할까요?', '그래도 로그아웃', true)) return;
-    try { await sb.auth.signOut(); } catch {}
+    // 서버 세션 끊기: 실패하면 적어도 이 기기 세션은 지우고, 결과를 사실대로 알려줌
+    let serverOut = false;
+    try { const { error } = await sb.auth.signOut(); serverOut = !error; } catch {}
+    if (!serverOut) { try { await sb.auth.signOut({ scope: 'local' }); } catch {} }
     try { setFriendPins(false); FR.loadedAt = 0; FR.data.clear(); FR.list = []; FR.me = null; } catch {}
     for (const st of ['cafes', 'visits', 'photos', 'tomb']) await DB.clear(st);
-    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:')).forEach(k => localStorage.removeItem(k)); localStorage.removeItem('lastSyncAt'); } catch {}
+    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
+    try { MENU_USER = { map: {}, custom: [] }; FEED_CFG = { ...FEED_DEF }; } catch {}
     photoURL.clear(); session = null; syncState.last = null;
-    await loadAll(); closeSheet(); await refreshAll(); renderAccount(); toast('로그아웃했어요');
+    await loadAll(); closeSheet(); await refreshAll(); renderAccount(); toast(serverOut ? '로그아웃했어요' : '이 기기에서는 로그아웃했어요. 서버 연결이 안 돼서 다른 기기 로그인은 그대로일 수 있어요');
   },
   soon(){ if (!session) return; clearTimeout(syncState.timer); syncState.timer = setTimeout(() => Sync.run(), 1200); },
   async run(isFirst){
@@ -3090,7 +3094,7 @@ async function renderShares(){
   el.onclick = async e => {
     const cp = e.target.closest('[data-cp]'), del = e.target.closest('[data-del]');
     if (cp) { try { await navigator.clipboard.writeText(`${location.origin}${location.pathname}?s=${cp.dataset.cp}`); toast('링크를 복사했어요'); } catch { toast('복사하지 못했어요'); } }
-    if (del && await ask('이 공유 링크를 지울까요?\n받은 사람도 더 이상 볼 수 없어요.', '삭제', true)) { await sb.from('shares').delete().eq('id', del.dataset.del); renderShares(); toast('링크를 지웠어요'); }
+    if (del && await ask('이 공유 링크를 지울까요?\n받은 사람도 더 이상 볼 수 없어요.', '삭제', true)) { const { data: gone, error } = await sb.from('shares').delete().eq('id', del.dataset.del).select('id'); renderShares(); toast(error || !gone?.length ? '링크를 지우지 못했어요. 인터넷 연결을 확인하고 다시 해주세요' : '링크를 지웠어요. 이제 아무도 못 봐요'); }
     if (e.target.closest('#setShareNew')) openShareMaker();
   };
 }
@@ -3804,7 +3808,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-40'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-41'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
