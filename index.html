@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-7O612LyDpKC6P6F7iXTsPcsKX/H9z1q8TN1A+eKP2TE=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-k3+U/fcnN0C/5OFoo7SvCCwnfQd/NdqyGq+73UBX8G8=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -279,6 +279,15 @@ body.sharemode .view{bottom:0}
 .feedhead{align-items:center}
 .feedhead h3{margin:0}
 .feedgear{width:36px;height:36px}
+.conf{border:1.5px solid var(--acc);border-radius:14px;padding:10px 12px;margin:0 0 12px;background:var(--soft)}
+.conf .cft{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.conf .cfrow{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:13px;line-height:1.5;padding:3px 0;border-top:1px dashed var(--line)}
+.conf .cfrow span{color:var(--sub);min-width:62px}
+.conf .cfrow b{font-weight:500;flex:1 1 100%;padding-left:2px}
+.conf .cfbtns{display:flex;gap:8px;margin-top:8px}
+.conf .cfbtns .btn{flex:1;padding:10px 6px;font-size:13px}
+.cfpill{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--acc);margin-bottom:4px}
+.confrow{color:var(--acc)}
 .feedgear{color:var(--sub)}
 .feedgear .ic2{width:20px;height:20px}
 .gearic{color:var(--sub)}
@@ -559,8 +568,8 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
       <div class="sec"><h3>색 테마</h3><div class="themes" id="themes"></div></div>
       <div class="sec"><h3>내 공유 링크</h3><div id="shareList"></div></div>
       <div class="sec"><h3>AI한테 카페 추천받기</h3>
-        <div class="aibtns"><button class="btn" id="btnAiGpt">ChatGPT로 추천받기</button><button class="btn ghost" id="btnAiClaude">Claude로 추천받기</button></div>
-        <p class="small" style="line-height:1.6;margin:0 0 6px">휴대폰에선 공유 창이 떠요. ChatGPT나 Claude 앱을 고르면 내 기록 파일이 첨부된 채로 열려요.</p>
+        <div class="aibtns"><button class="btn" id="btnAiShare">AI한테 보내기</button></div>
+        <p class="small" style="line-height:1.6;margin:0 0 6px">휴대폰에선 공유 창이 떠요. 쓰는 AI 앱을 고르면 내 기록 파일이 첨부된 채로 열려요. PC에선 기록이 복사되니 AI 채팅창에 붙여넣으면 돼요.</p>
         <button class="setrow" id="btnAiCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg><div>내 기록 복사하기<small>Claude나 GPT 채팅창에 붙여넣으면 취향에 맞는 새 카페를 추천받을 수 있어요</small></div></button>
         <button class="setrow" id="btnAiFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><div>파일로 저장 (.md)<small>같은 내용을 파일로 받아서 첨부할 때</small></div></button>
         <button class="setrow" id="btnAiCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg><div>표 파일로 저장 (.csv)<small>방문 기록 전체, 엑셀이나 구글 시트로도 열려요</small></div></button>
@@ -594,6 +603,13 @@ textarea.inp{min-height:110px;resize:vertical;line-height:1.6}
 </div>
 
 <!-- 친구 핀 설정 -->
+<div class="page" id="pConf">
+  <div class="bar">
+    <button class="iconbtn" data-close="pConf" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="t">겹친 수정</div><div style="width:40px"></div>
+  </div>
+  <div class="body"><p class="small" style="margin:0 0 6px;line-height:1.6">같은 기록을 이 기기와 다른 기기에서 따로 고쳤어요. 둘 다 보관해 뒀으니 남길 쪽을 골라 주세요.</p><div id="confBody"></div></div>
+</div>
 <div class="page" id="pRecOrd">
   <div class="bar">
     <button class="iconbtn" data-close="pRecOrd" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -826,7 +842,9 @@ function ask(msg, okText='확인', danger=false){
 const DB = {
   db: null,
   open(){ return new Promise((res, rej) => {
-    const r = indexedDB.open('cafe-map', 2);
+    const r = indexedDB.open('cafe-map', 3);
+    let blocked = false;
+    r.onblocked = () => { blocked = true; try { loading(true, '커피로그가 다른 창에서도 열려 있어요. 그 창을 닫으면 이어서 열려요'); } catch {} };
     r.onupgradeneeded = (e) => { const d = r.result;
       if (e.oldVersion < 1) {
         d.createObjectStore('cafes', {keyPath:'id'});
@@ -834,8 +852,9 @@ const DB = {
         d.createObjectStore('photos', {keyPath:'id'});
       }
       if (e.oldVersion < 2) d.createObjectStore('tomb', {keyPath:'id'}); // 지운 기록 (서버에 알려줄 목록)
+      if (e.oldVersion < 3) d.createObjectStore('sver', {keyPath:'k'}); // 기록마다 서버 버전, 충돌 정보
     };
-    r.onsuccess = () => { this.db = r.result; res(); };
+    r.onsuccess = () => { this.db = r.result; this.db.onversionchange = () => { try { this.db.close(); } catch {} location.reload(); }; if (blocked) { try { loading(false); } catch {} } res(); };
     r.onerror = () => rej(r.error);
   });},
   tx(store, mode, fn){ return new Promise((res, rej) => {
@@ -860,8 +879,12 @@ async function tomb(kind, id, extra){ try { await DB.put('tomb', { id: kind + ':
 let cafes = [], visits = [];
 const photoURL = new Map(); // photoId -> {full, thumb}
 
+let CONFLICTS = []; // 다른 기기와 겹친 수정 [{k, v, conf, mineDel}]
 async function loadAll(){
-  cafes = await DB.all('cafes'); visits = await DB.all('visits');
+  cafes = await DB.all('cafes');
+  const ids = new Set(cafes.map(c => c.id));
+  visits = (await DB.all('visits')).filter(v => ids.has(v.cafeId));
+  try { CONFLICTS = (await DB.all('sver')).filter(x => x.conf); } catch { CONFLICTS = []; }
 }
 async function getPhotoURL(id, kind='thumb'){
   if (!id) return '';
@@ -1132,7 +1155,7 @@ async function openSheet(id){
   $('#sheet').innerHTML = `<div class="grab"></div>
     ${polaroids(ids, urls)}
     <div class="rowsb" style="margin-top:${ids.length?6:0}px">
-      <div style="min-width:0"><div class="title">${esc(c.name)}</div>
+      <div style="min-width:0">${CONFLICTS.some(x => x.k === 'cafes:' + c.id || (x.k.startsWith('visits:') && visitsOf(c.id).some(v => 'visits:' + v.id === x.k))) ? '<div class="cfpill">' + IC.flag + ' 다른 기기에서 수정됐어요 · 자세히 보기에서 골라 주세요</div>' : ''}<div class="title">${esc(c.name)}</div>
       <div class="subt">${esc(shortAddr(c))}${d!=null?' · '+fmtDist(d):''} · 방문 기록 ${st.count}개</div></div>
       ${st.rating || subLine(c.sub) ? `<button class="score tap" data-subtog="1">★ ${st.rating ? st.rating.toFixed(1) : '-'} <span class="caret">›</span></button>` : ''}
     </div>
@@ -1542,7 +1565,7 @@ async function deleteCafe(id){
   const c = cafes.find(x => x.id === id); if (!c) return;
   if (!await ask(`'${c.name}' 기록을 전부 지울까요?\n방문 기록과 사진도 함께 지워지고 되돌릴 수 없어요.`, '삭제', true)) return;
   for (const v of visitsOf(id)) {
-    for (const p of v.photoIds||[]) { await DB.del('photos', p); photoURL.delete(p); await tomb('photo', p); }
+    for (const p of v.photoIds||[]) { await DB.del('photos', p); photoURL.delete(p); await tomb('photo', p, { vid: v.id }); }
     await DB.del('visits', v.id); await tomb('visit', v.id, { cafeId: id });
   }
   await DB.del('cafes', id); await tomb('cafe', id); Sync.soon();
@@ -1662,7 +1685,7 @@ $('#vSave').onclick = once(async () => {
   if (ev.newPhotos.length) loading(true, `사진 ${ev.newPhotos.length}장 저장 중…`);
   try {
     while (ev.newPhotos.length) { const p = ev.newPhotos[0]; v.photoIds.push(await savePhoto(p.file)); URL.revokeObjectURL(p.url); ev.newPhotos.shift(); }
-    for (const id of ev.removed) { await DB.del('photos', id); photoURL.delete(id); await tomb('photo', id); }
+    for (const id of ev.removed) { await DB.del('photos', id); photoURL.delete(id); await tomb('photo', id, { vid: v.id }); }
     ev.removed = [];
     v.updatedAt = Date.now(); v.dirty = true;
     await DB.put('visits', v); Sync.soon();
@@ -1680,7 +1703,7 @@ $('#vSave').onclick = once(async () => {
 async function deleteVisit(id){
   if (!await ask('이 방문 기록을 지울까요?\n사진도 함께 지워져요.', '삭제', true)) return;
   const v = visits.find(x => x.id === id); if (!v) return;
-  for (const p of v.photoIds||[]) { await DB.del('photos', p); photoURL.delete(p); await tomb('photo', p); }
+  for (const p of v.photoIds||[]) { await DB.del('photos', p); photoURL.delete(p); await tomb('photo', p, { vid: id }); }
   await DB.del('visits', id); await tomb('visit', id, { cafeId: v.cafeId }); Sync.soon();
   visits = visits.filter(x => x.id !== id);
   closePage('pVisit'); await refreshAll(); toast('삭제했어요');
@@ -1727,12 +1750,12 @@ async function openDetail(id, keep){
   const wall = await Promise.all(all.map(async (p,i) => `<div class="pol" data-ph="${p.id}" style="transform:rotate(${hashRot(p.id,i)}deg)">${p.id===cov?'<span class="covbadge">★</span>':''}<div style="background-image:url('${await getPhotoURL(p.id)}')"></div><div class="cap">${esc(p.cap.split(' · ')[0])}</div></div>`));
   const vhtml = await Promise.all(vs.map(async v => {
     const ph = await Promise.all((v.photoIds||[]).map(async (p,i) => `<div class="pol" data-ph="${p}" style="transform:rotate(${hashRot(p,i)}deg)"><div style="background-image:url('${await getPhotoURL(p)}')"></div></div>`));
-    return `<div class="visit"><div class="vh"><span>${fmtDate(v.date)}${wxTag(v)}${v.hideFriends && !c.hideFriends ? ' <span class="small">' + IC.lock + ' 친구에게 숨김</span>' : ''}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
+    return `<div class="visit">${conflictHTML('visits', v.id)}<div class="vh"><span>${fmtDate(v.date)}${wxTag(v)}${v.hideFriends && !c.hideFriends ? ' <span class="small">' + IC.lock + ' 친구에게 숨김</span>' : ''}</span><span class="stars">${v.rating?stars(v.rating):''}</span></div>
       <div class="note">${(v.menu||v.price)?`<div class="meta">${esc(v.menu)}${v.menu&&v.price?' · ':''}${won(v.price)}</div>`:''}${esc(v.review || '후기 없음')}</div>
       ${ph.length?`<div class="vphotos">${ph.join('')}</div>`:''}
       <div class="vacts"><button data-ev="${v.id}">수정</button></div></div>`;
   }));
-  $('#dBody').innerHTML = `
+  $('#dBody').innerHTML = `${conflictHTML('cafes', c.id)}
     <div class="rowsb"><div style="min-width:0"><div class="title">${esc(c.name)}</div><div class="subt">${esc(c.roadAddress || c.address || '')}</div>
       ${c.category?`<div class="subt">${esc(c.category.split(' > ').slice(-2).join(' · '))}${c.phone?' · '+esc(c.phone):''}</div>`:''}</div>
       ${st.rating?`<div class="score">★ ${st.rating.toFixed(1)}<small>${st.my ? '내 별점' : '방문 평균'}</small></div>`:''}</div>
@@ -1784,6 +1807,7 @@ async function openDetail(id, keep){
     await refreshAll(); openDetail(id, true);
   };
   $('#dBody').onclick = e => {
+    if (e.target.closest('[data-cf]')) { onConflictClick(e); return; }
     const ph = e.target.closest('[data-ph]'); if (ph) { const l = sameCafePhotos(c); openViewer(l.length >= all.length ? l : all, ph.dataset.ph); return; }
     const ev = e.target.closest('[data-ev]'); if (ev) openVisitEditor(id, ev.dataset.ev);
   };
@@ -1981,10 +2005,11 @@ function backupCheck(data, localCafeIds){
 // 검사를 통과한 백업을 한 번에 저장 (중간에 실패하면 이번 복원 전체 취소)
 async function restoreWrite(data, photoRecs){
   const now = Date.now();
-  await DB.txMulti(['photos', 'cafes', 'visits', 'tomb'], os => {
+  // 복원은 사용자가 고른 덮어쓰기라서, 서버 버전 확인 없이 올리도록 표시(force)
+  await DB.txMulti(['photos', 'cafes', 'visits', 'tomb', 'sver'], os => {
     for (const r of photoRecs) { os('photos').put(r); os('tomb').delete('photo:' + r.id); }
-    for (const c of data.cafes) { os('cafes').put({ ...c, dirty: true, updatedAt: c.updatedAt || now }); os('tomb').delete('cafe:' + c.id); }
-    for (const v of data.visits) { os('visits').put({ ...v, dirty: true, updatedAt: v.updatedAt || now }); os('tomb').delete('visit:' + v.id); }
+    for (const c of data.cafes) { os('cafes').put({ ...c, dirty: true, updatedAt: c.updatedAt || now }); os('tomb').delete('cafe:' + c.id); os('sver').put({ k: 'cafes:' + c.id, force: true }); }
+    for (const v of data.visits) { os('visits').put({ ...v, dirty: true, updatedAt: v.updatedAt || now }); os('tomb').delete('visit:' + v.id); os('sver').put({ k: 'visits:' + v.id, force: true }); }
   });
 }
 $('#importFile').onchange = async e => {
@@ -2037,7 +2062,7 @@ const Sync = {
     if (!await ask('로그아웃할까요?\n이 기기에 있는 기록은 지워지고, 다시 로그인하면 서버에서 불러와요.', '로그아웃', true)) return;
     loading(true, '마지막으로 올리는 중…');
     await Sync.run();
-    const pending = (await DB.all('cafes')).some(c => c.dirty !== false) || (await DB.all('visits')).some(v => v.dirty !== false) || (await DB.all('tomb')).length || (await DB.all('photos')).some(p => !p.uploaded && p.full);
+    const pending = (await DB.all('cafes')).some(c => c.dirty !== false) || (await DB.all('visits')).some(v => v.dirty !== false) || (await DB.all('tomb')).length || (await DB.all('photos')).some(p => !p.uploaded && p.full) || (await DB.all('sver')).some(x => x.conf);
     loading(false);
     if (pending && !await ask('아직 서버에 못 올린 기록이 있어요.\n지금 로그아웃하면 그 기록은 사라져요. 그래도 할까요?', '그래도 로그아웃', true)) return;
     // 서버 세션 끊기: 실패하면 적어도 이 기기 세션은 지우고, 결과를 사실대로 알려줌
@@ -2045,8 +2070,8 @@ const Sync = {
     try { const { error } = await sb.auth.signOut(); serverOut = !error; } catch {}
     if (!serverOut) { try { await sb.auth.signOut({ scope: 'local' }); } catch {} }
     try { setFriendPins(false); FR.loadedAt = 0; FR.data.clear(); FR.list = []; FR.me = null; } catch {}
-    for (const st of ['cafes', 'visits', 'photos', 'tomb']) await DB.clear(st);
-    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('pullCur:') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
+    for (const st of ['cafes', 'visits', 'photos', 'tomb', 'sver']) await DB.clear(st);
+    try { Object.keys(localStorage).filter(k => k.startsWith('lastPull:') || k.startsWith('pullCur:') || k.startsWith('verMig:') || k.startsWith('sb-')).forEach(k => localStorage.removeItem(k)); ['lastSyncAt', 'frNames', 'frOrder', 'recOrder', 'menuGroups', 'feedCfg', 'feedSeen', 'frPinCfg'].forEach(k => localStorage.removeItem(k)); } catch {}
     try { MENU_USER = { map: {}, custom: [] }; FEED_CFG = { ...FEED_DEF }; } catch {}
     try { frPhotoClear(); photoURL.forEach(r => { if (r.full) URL.revokeObjectURL(r.full); if (r.thumb && r.thumb !== r.full) URL.revokeObjectURL(r.thumb); }); } catch {}
     try { localStorage.removeItem('mapView'); if (map) { map.setLevel(5); map.setCenter(new kakao.maps.LatLng(35.8714, 128.6014)); } if (meOverlay) meOverlay.setMap(null); myPos = null; } catch {}
@@ -2058,60 +2083,13 @@ const Sync = {
     if (!sb || !session) return;
     if (syncState.running) { syncState.again = true; return; }
     syncState.running = true; syncState.error = ''; renderAccount();
-    let changed = false, photoDelFail = false;
+    let changed = false;
     try {
-      const me = session.user.id;
-      const strip = o => { const { dirty, ...r } = o; return r; };
-      // 1) 아직 안 올린 사진 올리기
-      for (const p of await DB.all('photos')) {
-        if (p.uploaded || !p.full) continue;
-        let r = await sb.storage.from('photos').upload(`${me}/${p.id}.jpg`, p.full, { upsert: true, contentType: 'image/jpeg' });
-        if (r.error) throw r.error;
-        if (p.thumb) { r = await sb.storage.from('photos').upload(`${me}/${p.id}_t.jpg`, p.thumb, { upsert: true, contentType: 'image/jpeg' }); if (r.error) throw r.error; }
-        const cur = await DB.get('photos', p.id); if (cur) { cur.uploaded = true; await DB.put('photos', cur); }
-      }
-      // 2) 바뀐 카페, 방문 기록 올리기
-      for (const [store, toRow] of [
-        ['cafes',  c => ({ user_id: me, id: c.id, data: strip(c), deleted: false })],
-        ['visits', v => ({ user_id: me, id: v.id, cafe_id: v.cafeId, data: strip(v), deleted: false })],
-      ]) {
-        const dirty = (await DB.all(store)).filter(x => x.dirty !== false);
-        for (let i = 0; i < dirty.length; i += 200) {
-          const chunk = dirty.slice(i, i + 200);
-          const { error } = await sb.from(store).upsert(chunk.map(toRow));
-          if (error) throw error;
-          for (const x of chunk) { const cur = await DB.get(store, x.id); if (cur && (cur.updatedAt || 0) === (x.updatedAt || 0)) { cur.dirty = false; await DB.put(store, cur); } }
-        }
-      }
-      // 3) 지운 것 알리기
-      for (const t of await DB.all('tomb')) {
-        if (t.kind === 'photo') {
-          // 실패하면 대기 항목을 남겨 두고 다음 동기화 때 다시 지움
-          let ok = false; try { const { error } = await sb.storage.from('photos').remove([`${me}/${t.rid}.jpg`, `${me}/${t.rid}_t.jpg`]); ok = !error; } catch {}
-          if (!ok) { photoDelFail = true; continue; }
-        }
-        else {
-          const row = { user_id: me, id: t.rid, data: {}, deleted: true };
-          if (t.kind === 'visit') row.cafe_id = t.cafeId || '';
-          const { error } = await sb.from(t.kind === 'cafe' ? 'cafes' : 'visits').upsert(row);
-          if (error) throw error;
-        }
-        await DB.del('tomb', t.id);
-      }
-      // 4) 다른 기기에서 바뀐 것 받아오기
-      //    갱신 시각이 같은 기록이 많아도 빠지지 않게 (시각, id) 순서로 이어서 받음. 카페/방문 기록 따로 기억
-      let old = ''; try { old = localStorage.getItem('lastPull:' + me) || ''; } catch {}
-      for (const store of ['cafes', 'visits']) {
-        const ck = `pullCur:${me}:${store}`;
-        let cur = null; try { cur = JSON.parse(localStorage.getItem(ck) || 'null'); } catch {}
-        if (!cur || typeof cur.t !== 'string') cur = old ? { t: old, id: '' } : null;
-        const save = c => { try { localStorage.setItem(ck, JSON.stringify(c)); } catch {} };
-        const end = await pullPages(sb, store, cur, 500, async row => { if (await applyRemote(store, row)) changed = true; }, save);
-        if (end) save(end); // 새 기록이 없어도 옮겨온 위치는 저장
-      }
-      try { localStorage.removeItem('lastPull:' + me); } catch {}
+      const R = await syncCore(sb, session.user.id);
+      changed = R.changed;
       syncState.last = new Date().toISOString(); try { localStorage.setItem('lastSyncAt', syncState.last); } catch {}
-      if (photoDelFail) syncState.error = '지운 사진 일부를 서버에서 아직 못 지웠어요. 다음에 다시 시도해요';
+      if (R.err) syncState.error = R.err;
+      if (R.newConf) toast('다른 기기에서 같은 기록을 수정했어요. 설정 > 계정에서 골라 주세요');
     } catch (e) {
       syncState.error = navigator.onLine === false ? '인터넷 연결이 없어요' : '서버와 맞추지 못했어요';
       console.warn('sync', e);
@@ -2135,19 +2113,215 @@ async function pullPages(client, store, cur, size, onRow, saveCur){
     if (data.length < size) return cur;
   }
 }
+/* 동기화 규칙 (버전)
+   - 서버 기록마다 ver(버전)가 있고, 저장할 때마다 1씩 오름
+   - 이 기기는 기록마다 '마지막으로 받은 버전'(sver.v)을 기억하고, 저장할 때 그 버전을 같이 보냄
+   - 서버(sync_push)는 버전이 같을 때만 저장. 다르면 서버 것과 내 것을 둘 다 남기고 사용자가 고름 */
+const svKey = (store, id) => store + ':' + id;
+const confOf = row => ({ ver: +row.ver || 0, data: row.data || {}, deleted: !!row.deleted, at: row.updated_at || '' });
+const sameEdit = (local, row) => !row.deleted && local && (row.data?.updatedAt || 0) === (local.updatedAt || 0) && (local.updatedAt || 0) > 0;
+async function dropLocalPhotos(v){ for (const p of v?.photoIds || []) { await DB.del('photos', p); photoURL.delete(p); } }
+// 서버 기록 하나를 이 기기에 반영. 바뀐 게 있으면 true, 새 충돌이면 'conf'
 async function applyRemote(store, row){
-  const local = await DB.get(store, row.id);
+  const k = svKey(store, row.id), ver = +row.ver || 0;
+  const s = await DB.get('sver', k), local = await DB.get(store, row.id);
+  const tb = await DB.get('tomb', (store === 'cafes' ? 'cafe:' : 'visit:') + row.id);
+  if (s && s.conf) { // 이미 충돌 중: 서버 쪽 최신본만 갱신
+    if (ver > s.conf.ver) { s.conf = confOf(row); await DB.put('sver', s); return true; }
+    return false;
+  }
+  if (tb) { // 이 기기에서 지웠는데 아직 서버에 안 알림
+    if (s && s.v === ver) return false;
+    if (row.deleted) { await DB.del('tomb', tb.id); await DB.put('sver', { k, v: ver }); return false; }
+    await DB.put(store, { ...row.data, id: row.id, dirty: false });
+    await DB.del('tomb', tb.id);
+    await DB.put('sver', { k, v: s?.v, conf: confOf(row), mineDel: true });
+    return 'conf';
+  }
+  if (local && local.dirty !== false) { // 이 기기에 안 올린 수정이 있음
+    if (s && (s.force || s.v === ver)) return false;
+    if (sameEdit(local, row)) { await DB.put('sver', { k, v: ver }); local.dirty = false; await DB.put(store, local); return false; }
+    await DB.put('sver', { k, v: s?.v, conf: confOf(row) });
+    return 'conf';
+  }
+  if (s && s.v === ver && (local || row.deleted)) return false;
+  await DB.put('sver', { k, v: ver });
   if (row.deleted) {
     if (!local) return false;
     await DB.del(store, row.id);
-    if (store === 'visits') for (const p of local.photoIds || []) { await DB.del('photos', p); photoURL.delete(p); }
+    if (store === 'visits') await dropLocalPhotos(local);
     return true;
   }
-  const remote = row.data || {};
-  if (local && local.dirty !== false && (local.updatedAt || 0) > (remote.updatedAt || 0)) return false; // 이 기기 것이 더 최신
-  if (local && local.dirty === false && (local.updatedAt || 0) === (remote.updatedAt || 0)) return false; // 내가 방금 올린 것과 같음 → 다시 그릴 필요 없음
-  await DB.put(store, { ...remote, id: row.id, dirty: false });
+  await DB.put(store, { ...row.data, id: row.id, dirty: false });
   return true;
+}
+// 사진 삭제는 그 방문 기록 변경이 서버에 확정된 뒤에만
+async function photoWait(vid){
+  if (!vid) return false;
+  if (await DB.get('tomb', 'visit:' + vid)) return true;
+  const s = await DB.get('sver', 'visits:' + vid); if (s && s.conf) return true;
+  const v = await DB.get('visits', vid); return !!(v && v.dirty !== false);
+}
+async function syncCore(client, me){
+  const R = { changed: false, newConf: 0, err: '' };
+  const mark = r => { if (r === 'conf') { R.newConf++; R.changed = true; } else if (r) R.changed = true; };
+  const strip = o => { const { dirty, ...r } = o; return r; };
+  // 1) 아직 안 올린 사진 올리기
+  for (const p of await DB.all('photos')) {
+    if (p.uploaded || !p.full) continue;
+    let r = await client.storage.from('photos').upload(`${me}/${p.id}.jpg`, p.full, { upsert: true, contentType: 'image/jpeg' });
+    if (r.error) throw r.error;
+    if (p.thumb) { r = await client.storage.from('photos').upload(`${me}/${p.id}_t.jpg`, p.thumb, { upsert: true, contentType: 'image/jpeg' }); if (r.error) throw r.error; }
+    const cur = await DB.get('photos', p.id); if (cur) { cur.uploaded = true; await DB.put('photos', cur); }
+  }
+  // 2) 다른 기기에서 바뀐 것 먼저 받기 ((시각, id) 순서로 이어받기)
+  //    새 버전 규칙으로 처음 동기화할 때는 처음부터 다 받아서 기록마다 버전을 맞춤
+  let mig = false; try { mig = !localStorage.getItem('verMig:' + me); } catch {}
+  let old = ''; try { old = localStorage.getItem('lastPull:' + me) || ''; } catch {}
+  for (const store of ['cafes', 'visits']) {
+    const ck = `pullCur:${me}:${store}`;
+    let cur = null; try { cur = JSON.parse(localStorage.getItem(ck) || 'null'); } catch {}
+    if (!cur || typeof cur.t !== 'string') cur = old ? { t: old, id: '' } : null;
+    if (mig) cur = null;
+    const save = c => { try { localStorage.setItem(ck, JSON.stringify(c)); } catch {} };
+    const end = await pullPages(client, store, cur, 500, async row => mark(await applyRemote(store, row)), save);
+    if (end) save(end);
+  }
+  try { localStorage.removeItem('lastPull:' + me); localStorage.setItem('verMig:' + me, '1'); } catch {}
+  // 3) 바뀐 카페, 방문 기록 올리기 (서버가 버전 확인 후 저장)
+  const push = async (store, rows) => {
+    for (let i = 0; i < rows.length; i += 200) {
+      const chunk = rows.slice(i, i + 200);
+      const { data, error } = await client.rpc('sync_push', { tbl: store, rows: chunk.map(x => x.row) });
+      if (error) throw error;
+      const byId = new Map((data || []).map(r => [r.id, r]));
+      for (const x of chunk) {
+        const r = byId.get(x.row.id); if (!r) { R.err = '일부 기록을 올리지 못했어요. 다음에 다시 시도해요'; continue; }
+        if (r.err) { R.err = '일부 기록을 올리지 못했어요. 다음에 다시 시도해요'; continue; }
+        if (r.ok) await x.ok(+r.ver);
+        else mark(await applyRemote(store, { id: x.row.id, ver: r.ver, data: r.data, deleted: r.deleted, updated_at: r.updated_at }));
+      }
+    }
+  };
+  for (const store of ['cafes', 'visits']) {
+    const rows = [];
+    for (const x of await DB.all(store)) {
+      if (x.dirty === false) continue;
+      const k = svKey(store, x.id), s = await DB.get('sver', k);
+      if (s && s.conf) continue; // 사용자가 고를 때까지 보류
+      const row = { id: x.id, data: strip(x), deleted: false, base: s?.v || 0, force: !!s?.force };
+      if (store === 'visits') row.cafe_id = x.cafeId;
+      rows.push({ row, ok: async ver => {
+        await DB.put('sver', { k, v: ver });
+        const cur = await DB.get(store, x.id); if (cur && (cur.updatedAt || 0) === (x.updatedAt || 0)) { cur.dirty = false; await DB.put(store, cur); }
+      } });
+    }
+    await push(store, rows);
+  }
+  // 4) 지운 것 알리기 (지우는 것도 버전 확인)
+  for (const [kind, store] of [['cafe', 'cafes'], ['visit', 'visits']]) {
+    const rows = [];
+    for (const t of (await DB.all('tomb')).filter(t => t.kind === kind)) {
+      const k = svKey(store, t.rid), s = await DB.get('sver', k);
+      if (s && s.conf) continue;
+      if (!s || (!s.v && !s.force)) { await DB.del('tomb', t.id); continue; } // 서버에 올라간 적 없는 기록
+      const row = { id: t.rid, data: {}, deleted: true, base: s.v || 0, force: !!s.force };
+      if (store === 'visits') row.cafe_id = t.cafeId || '';
+      rows.push({ row, ok: async ver => { await DB.put('sver', { k, v: ver }); await DB.del('tomb', t.id); } });
+    }
+    await push(store, rows);
+  }
+  for (const t of (await DB.all('tomb')).filter(t => t.kind === 'photo')) {
+    if (await photoWait(t.vid)) continue;
+    // 실패하면 대기 항목을 남겨 두고 다음 동기화 때 다시 지움
+    let ok = false; try { const { error } = await client.storage.from('photos').remove([`${me}/${t.rid}.jpg`, `${me}/${t.rid}_t.jpg`]); ok = !error; } catch {}
+    if (!ok) { R.err = R.err || '지운 사진 일부를 서버에서 아직 못 지웠어요. 다음에 다시 시도해요'; continue; }
+    await DB.del('tomb', t.id);
+  }
+  return R;
+}
+// 충돌 고르기: 'server' = 다른 기기 것 유지, 'mine' = 이 기기 것 적용
+async function resolveConflict(store, id, pick){
+  const k = svKey(store, id), s = await DB.get('sver', k); if (!s || !s.conf) return false;
+  const cf = s.conf, local = await DB.get(store, id), kind = store === 'cafes' ? 'cafe' : 'visit';
+  const serverPh = new Set(cf.deleted ? [] : (cf.data.photoIds || [])), minePh = new Set(local?.photoIds || []);
+  if (pick === 'server') {
+    if (cf.deleted) { if (local) { await DB.del(store, id); if (store === 'visits') await dropLocalPhotos(local); } }
+    else {
+      await DB.put(store, { ...cf.data, id, dirty: false });
+      if (store === 'visits') {
+        for (const p of serverPh) { const t = await DB.get('tomb', 'photo:' + p); if (t) await DB.del('tomb', t.id); } // 서버 것에 남아 있는 사진은 지우지 않음
+        if (!s.mineDel) for (const p of minePh) if (!serverPh.has(p)) { await DB.del('photos', p); photoURL.delete(p); await tomb('photo', p, { vid: id }); }
+      }
+    }
+    await DB.put('sver', { k, v: cf.ver });
+  } else if (s.mineDel) {
+    await DB.del(store, id);
+    if (store === 'visits') { await dropLocalPhotos(local); for (const p of serverPh) await tomb('photo', p, { vid: id }); }
+    await tomb(kind, id, store === 'visits' ? { cafeId: local?.cafeId || cf.data.cafeId || '' } : undefined);
+    await DB.put('sver', { k, v: cf.ver });
+  } else {
+    if (!local) return false;
+    if (store === 'visits' && !(await DB.get('cafes', local.cafeId))) { toast('카페가 다른 기기에서 지워져서 이 방문 기록만 되살릴 수 없어요'); return false; }
+    local.dirty = true; local.updatedAt = Date.now(); await DB.put(store, local);
+    if (store === 'visits') {
+      if (cf.deleted) for (const p of minePh) { const r = await DB.get('photos', p); if (r && r.full) { r.uploaded = false; await DB.put('photos', r); } } // 다른 기기가 지운 사진 다시 올림
+      for (const p of serverPh) if (!minePh.has(p)) await tomb('photo', p, { vid: id });
+    }
+    await DB.put('sver', { k, v: cf.ver });
+  }
+  return true;
+}
+// 충돌 화면용 요약
+const CF_FIELDS = {
+  cafes: [['name', '이름'], ['wish', '가볼래'], ['fav', '또 갈래'], ['closed', '문 닫음'], ['myRating', '내 별점'], ['sub', '항목 별점'], ['tags', '태그'], ['memo', '메모'], ['nextTry', '다음엔 이거'], ['hideFriends', '친구에게 숨김'], ['cover', '대표 사진']],
+  visits: [['date', '날짜'], ['rating', '별점'], ['menu', '메뉴'], ['price', '가격'], ['review', '후기'], ['photoIds', '사진'], ['hideFriends', '친구에게 숨김']],
+};
+function cfVal(f, v){
+  if (v == null || v === '' || v === false || (Array.isArray(v) && !v.length)) return '없음';
+  if (v === true) return '켬';
+  if (f === 'photoIds') return v.length + '장';
+  if (f === 'price') return won(v);
+  if (f === 'tags') return v.join(', ');
+  if (f === 'sub') return Object.keys(v).length ? Object.entries(v).map(([a, b]) => a + ' ' + b).join(', ') : '없음';
+  const t = String(v).replace(/\s+/g, ' '); return t.length > 40 ? t.slice(0, 40) + '…' : t;
+}
+function conflictHTML(store, id){
+  const s = CONFLICTS.find(x => x.k === svKey(store, id)); if (!s) return '';
+  const cf = s.conf, mine = (store === 'cafes' ? cafes : visits).find(x => x.id === id);
+  let rows = '';
+  if (s.mineDel) rows = `<div class="cfrow"><span>이 기기</span><b>지웠어요</b></div><div class="cfrow"><span>다른 기기</span><b>수정했어요</b></div>`;
+  else if (cf.deleted) rows = `<div class="cfrow"><span>이 기기</span><b>수정했어요</b></div><div class="cfrow"><span>다른 기기</span><b>지웠어요</b></div>`;
+  else {
+    const diff = CF_FIELDS[store].filter(([f]) => JSON.stringify(mine?.[f] ?? null) !== JSON.stringify(cf.data?.[f] ?? null));
+    rows = diff.length ? diff.map(([f, n]) => `<div class="cfrow"><span>${n}</span><b>이 기기: ${esc(cfVal(f, mine?.[f]))}</b><b>다른 기기: ${esc(cfVal(f, cf.data?.[f]))}</b></div>`).join('')
+      : '<div class="cfrow"><span>내용</span><b>보이는 내용은 같아요</b></div>';
+  }
+  const mineLbl = s.mineDel ? '지우기' : cf.deleted ? '되살리기' : '이 기기 것 적용';
+  return `<div class="conf"><div class="cft">${IC.flag} 다른 기기에서 수정됐어요</div>${rows}
+    <div class="cfbtns"><button class="btn ghost" data-cf="${store}|${esc(id)}|server">다른 기기 것 유지</button><button class="btn" data-cf="${store}|${esc(id)}|mine">${mineLbl}</button></div></div>`;
+}
+async function onConflictClick(e){
+  const b = e.target.closest('[data-cf]'); if (!b) return false;
+  e.stopPropagation();
+  const [store, id, pick] = b.dataset.cf.split('|');
+  const ok = await resolveConflict(store, id, pick);
+  if (ok) { toast(pick === 'server' ? '다른 기기 것으로 맞췄어요' : '이 기기 것으로 맞췄어요'); Sync.soon(); }
+  await loadAll(); await refreshAll(); renderAccount();
+  if (isOpen('pConf')) drawConflicts();
+  if (isOpen('pDetail') && detailId) { if (cafes.some(c => c.id === detailId)) openDetail(detailId, true); else closePage('pDetail'); }
+  return true;
+}
+function drawConflicts(){
+  const el = $('#confBody'); if (!el) return;
+  if (!CONFLICTS.length) { el.innerHTML = '<div class="empty">겹친 수정이 없어요</div>'; return; }
+  el.innerHTML = CONFLICTS.map(s => {
+    const [store, id] = [s.k.slice(0, s.k.indexOf(':')), s.k.slice(s.k.indexOf(':') + 1)];
+    const rec = (store === 'cafes' ? cafes : visits).find(x => x.id === id) || s.conf.data || {};
+    const cafe = store === 'cafes' ? rec : (cafes.find(c => c.id === rec.cafeId) || {});
+    const title = store === 'cafes' ? `카페 · ${esc(rec.name || cafe.name || '이름 없음')}` : `방문 기록 · ${esc(cafe.name || '지워진 카페')}${rec.date ? ' · ' + esc(fmtDate(rec.date)) : ''}`;
+    return `<div class="sec"><h3>${title}</h3>${conflictHTML(store, id)}</div>`;
+  }).join('');
 }
 const openLogin = () => Sync.login();
 function renderAccount(){
@@ -2169,7 +2343,9 @@ function renderAccount(){
     : when ? `<span class="syncdot"></span>${when}에 동기화됨` : '<span class="syncdot off"></span>아직 동기화 전';
   el.innerHTML = `<div class="who"><div class="av" style="${pic ? `background-image:url('${esc(pic)}')` : ''}">${pic ? '' : IC.cup}</div>
       <div style="min-width:0"><div style="font-size:16px">${esc(name)}</div><div class="st">${status}</div></div></div>
+    ${CONFLICTS.length ? `<button class="setrow confrow" id="btnConf">${IC.flag}<div>다른 기기와 겹친 수정 ${CONFLICTS.length}건<small>어느 쪽을 남길지 골라 주세요. 고르기 전까지 그 기록만 동기화를 멈춰요</small></div></button>` : ''}
     <div class="btnrow"><button class="btn ghost" id="btnSync">지금 동기화</button><button class="btn ghost" id="btnLogout">로그아웃</button></div>`;
+  if ($('#btnConf')) $('#btnConf').onclick = () => { drawConflicts(); openPage('pConf'); };
   $('#btnSync').onclick = () => Sync.run();
   $('#btnLogout').onclick = () => Sync.logout();
 }
@@ -2926,21 +3102,17 @@ $('#btnAiCopy').onclick = async () => {
   catch { dlText(`커피로그-AI용-${todayStr()}.md`, t, 'text/markdown'); toast('복사가 안 돼서 파일로 저장했어요'); }
 };
 const AI_ASK = '아래는 내 카페 기록이야. 내 취향에 맞는 아직 안 가본 카페를 추천해줘. 이미 간 곳이랑 가볼래 목록은 빼고, 곳마다 추천 이유도 알려줘.';
-async function openAi(site){
+async function openAi(){
   const t = aiText();
   const f = new File([t], `카페기록-${todayStr()}.txt`, { type: 'text/plain' });
   const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
   if (mobile && navigator.canShare && navigator.canShare({ files: [f] })) {
     try { await navigator.share({ files: [f], text: AI_ASK }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
   }
-  let copied = false; try { await navigator.clipboard.writeText(t); copied = true; } catch {}
-  const url = site === 'gpt' ? 'https://chatgpt.com/' : 'https://claude.ai/new';
-  if (t.length <= 3500) window.open(url + (site === 'gpt' ? '?q=' : '?q=') + encodeURIComponent(t), '_blank');
-  else window.open(url, '_blank');
-  toast(t.length <= 3500 ? 'AI 창을 열었어요' : copied ? '기록을 복사했어요. 열린 AI 창에 붙여넣어 주세요' : '"파일로 저장"으로 받아서 첨부해 주세요');
+  try { await navigator.clipboard.writeText(AI_ASK + '\n\n' + t); toast('기록을 복사했어요. 쓰는 AI 채팅창에 붙여넣어 주세요'); }
+  catch { dlText(`커피로그-AI용-${todayStr()}.md`, AI_ASK + '\n\n' + t, 'text/markdown'); toast('복사가 안 돼서 파일로 저장했어요. AI 채팅창에 첨부해 주세요'); }
 }
-$('#btnAiGpt').onclick = () => openAi('gpt');
-$('#btnAiClaude').onclick = () => openAi('claude');
+$('#btnAiShare').onclick = () => openAi();
 $('#btnAiFile').onclick = () => { dlText(`커피로그-AI용-${todayStr()}.md`, aiText(), 'text/markdown'); toast('파일을 저장했어요'); };
 $('#btnAiCsv').onclick = () => { dlText(`커피로그-기록표-${todayStr()}.csv`, aiCsv(), 'text/csv'); toast('표 파일을 저장했어요'); };
 
@@ -3817,6 +3989,7 @@ function closePage(id){
   const i = pageStack.indexOf(id); if (i >= 0) pageStack.splice(i, 1);
 }
 const isOpen = id => $('#'+id).classList.contains('open');
+$('#confBody').addEventListener('click', e => { onConflictClick(e); });
 document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closePage(b.dataset.close));
 // 맨 위에 열린 것 하나 닫기. 닫을 게 없으면 false
 function closeTop(){
@@ -3879,7 +4052,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-44'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-45'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
