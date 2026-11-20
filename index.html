@@ -693,7 +693,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 /* 그날 날씨 (Open-Meteo, 키 없이 무료). v.wx = { c: 날씨코드, hi: 최고, lo: 최저, d: 날짜 } */
-const wxIcon = c => { c = +c; return c === 0 ? '☀️' : c <= 2 ? '🌤' : c === 3 ? '☁️' : c <= 48 ? '🌫' : c <= 57 ? '🌦' : c <= 67 ? '🌧' : c <= 77 ? '❄️' : c <= 82 ? '🌧' : c <= 86 ? '❄️' : '⛈'; };
+const wxIcon = c => { c = +c; return c === 0 ? '☀️' : c <= 2 ? '🌤️' : c === 3 ? '☁️' : c <= 48 ? '🌫️' : c <= 57 ? '🌦️' : c <= 67 ? '🌧️' : c <= 77 ? '❄️' : c <= 82 ? '🌧️' : c <= 86 ? '❄️' : '⛈️'; };
 const wxName = c => { c = +c; return c === 0 ? '맑음' : c <= 2 ? '구름 조금' : c === 3 ? '흐림' : c <= 48 ? '안개' : c <= 57 ? '이슬비' : c <= 67 ? '비' : c <= 77 ? '눈' : c <= 82 ? '소나기' : c <= 86 ? '눈' : '뇌우'; };
 const wxTag = v => { const w = v && v.wx; if (!w || !Number.isFinite(+w.c) || !Number.isFinite(+w.hi)) return ''; return ` <span class="wx" title="${wxName(w.c)} · 최고 ${Math.round(+w.hi)}° / 최저 ${Math.round(+w.lo)}°">${wxIcon(w.c)} ${Math.round(+w.hi)}°</span>`; };
 const todayStr = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
@@ -3550,7 +3550,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-27'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-28'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
