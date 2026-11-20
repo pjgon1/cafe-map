@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-V5pskt6TEO3/6sLN1hI4Nw7/2yBhli8MR3Y1Em7TwN8=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-VjVvOmIDrS3bd2zB4la/MuzxhpQUdJ4PtXd02eLkcS4=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -841,24 +841,43 @@ function ask(msg, okText='확인', danger=false){
    ========================================================= */
 const DB = {
   db: null,
-  open(){ return new Promise((res, rej) => {
-    const r = indexedDB.open('cafe-map', 3);
-    let blocked = false;
-    r.onblocked = () => { blocked = true; try { loading(true, '커피로그가 다른 창에서도 열려 있어요. 그 창을 닫으면 이어서 열려요'); } catch {} };
-    r.onupgradeneeded = (e) => { const d = r.result;
-      if (e.oldVersion < 1) {
-        d.createObjectStore('cafes', {keyPath:'id'});
-        const v = d.createObjectStore('visits', {keyPath:'id'}); v.createIndex('cafeId','cafeId');
-        d.createObjectStore('photos', {keyPath:'id'});
-      }
-      if (e.oldVersion < 2) d.createObjectStore('tomb', {keyPath:'id'}); // 지운 기록 (서버에 알려줄 목록)
-      if (e.oldVersion < 3) d.createObjectStore('sver', {keyPath:'k'}); // 기록마다 서버 버전, 충돌 정보
+  sdb: null,
+  // 기록 저장소는 버전을 지정하지 않고 지금 있는 그대로 엶 (다른 탭에 옛 버전이 열려 있어도 안 막힘)
+  // 처음 쓰는 기기처럼 저장소가 없을 때만 한 단계 올려서 만듦
+  // 동기화용 버전 정보(sver)는 따로 작은 DB('cafe-map-sv')에 둠
+  async open(){
+    const MAIN = ['cafes', 'visits', 'photos', 'tomb'];
+    const make = d => {
+      if (!d.objectStoreNames.contains('cafes')) d.createObjectStore('cafes', {keyPath:'id'});
+      if (!d.objectStoreNames.contains('visits')) { const v = d.createObjectStore('visits', {keyPath:'id'}); v.createIndex('cafeId','cafeId'); }
+      if (!d.objectStoreNames.contains('photos')) d.createObjectStore('photos', {keyPath:'id'});
+      if (!d.objectStoreNames.contains('tomb')) d.createObjectStore('tomb', {keyPath:'id'}); // 지운 기록 (서버에 알려줄 목록)
     };
-    r.onsuccess = () => { this.db = r.result; this.db.onversionchange = () => { try { this.db.close(); } catch {} location.reload(); }; if (blocked) { try { loading(false); } catch {} } res(); };
-    r.onerror = () => rej(r.error);
-  });},
+    let note = null;
+    const showNote = () => { if (note) return; note = document.createElement('div');
+      note.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg,#fff);color:var(--ink,#333);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;line-height:1.7;font-size:15px';
+      note.innerHTML = '<div style="font-size:18px;font-weight:700;margin-bottom:10px">저장소를 여는 중이에요</div><div>다른 탭이나 앱에 열린 커피로그가 막고 있을 수 있어요.<br>휴대폰을 껐다 켜거나 브라우저를 완전히 닫고 다시 열어 주세요.</div><div style="margin-top:12px;font-size:13px;opacity:.7">기록은 지워지지 않았어요.</div><button class="btn" style="margin-top:16px">다시 시도</button>';
+      note.querySelector('button').addEventListener('click', () => location.reload());
+      document.body.appendChild(note); };
+    const openDb = (name, ver, up) => new Promise((ok, no) => {
+      const r = ver ? indexedDB.open(name, ver) : indexedDB.open(name);
+      const slow = setTimeout(showNote, 6000);
+      r.onupgradeneeded = () => up(r.result);
+      r.onblocked = showNote;
+      r.onsuccess = () => { clearTimeout(slow); ok(r.result); };
+      r.onerror = () => { clearTimeout(slow); no(r.error); };
+    });
+    let d = await openDb('cafe-map', 0, make);
+    if (MAIN.some(n => !d.objectStoreNames.contains(n))) { const v = d.version + 1; d.close(); d = await openDb('cafe-map', v, make); }
+    d.onversionchange = () => { try { d.close(); } catch {} location.reload(); };
+    this.db = d;
+    const sd = await openDb('cafe-map-sv', 1, x => { if (!x.objectStoreNames.contains('sver')) x.createObjectStore('sver', {keyPath:'k'}); });
+    sd.onversionchange = () => { try { sd.close(); } catch {} };
+    this.sdb = sd;
+    if (note) note.remove();
+  },
   tx(store, mode, fn){ return new Promise((res, rej) => {
-    const t = this.db.transaction(store, mode); const s = t.objectStore(store); const out = fn(s);
+    const t = (store === 'sver' ? this.sdb : this.db).transaction(store, mode); const s = t.objectStore(store); const out = fn(s);
     t.oncomplete = () => res(out && 'result' in out ? out.result : out); t.onerror = () => rej(t.error);
   });},
   all(store){ return this.tx(store, 'readonly', s => s.getAll()); },
@@ -2006,11 +2025,16 @@ function backupCheck(data, localCafeIds){
 async function restoreWrite(data, photoRecs){
   const now = Date.now();
   // 복원은 사용자가 고른 덮어쓰기라서, 서버 버전 확인 없이 올리도록 표시(force)
-  await DB.txMulti(['photos', 'cafes', 'visits', 'tomb', 'sver'], os => {
+  await DB.txMulti(['photos', 'cafes', 'visits', 'tomb'], os => {
     for (const r of photoRecs) { os('photos').put(r); os('tomb').delete('photo:' + r.id); }
-    for (const c of data.cafes) { os('cafes').put({ ...c, dirty: true, updatedAt: c.updatedAt || now }); os('tomb').delete('cafe:' + c.id); os('sver').put({ k: 'cafes:' + c.id, force: true }); }
-    for (const v of data.visits) { os('visits').put({ ...v, dirty: true, updatedAt: v.updatedAt || now }); os('tomb').delete('visit:' + v.id); os('sver').put({ k: 'visits:' + v.id, force: true }); }
+    for (const c of data.cafes) { os('cafes').put({ ...c, dirty: true, updatedAt: c.updatedAt || now }); os('tomb').delete('cafe:' + c.id); }
+    for (const v of data.visits) { os('visits').put({ ...v, dirty: true, updatedAt: v.updatedAt || now }); os('tomb').delete('visit:' + v.id); }
   });
+  // 덮어쓰기 표시 (실패해도 기록은 남고, 그 경우 겹친 수정으로 보여서 직접 고를 수 있음)
+  try { await new Promise((ok, no) => { const t = DB.sdb.transaction('sver', 'readwrite'); const st = t.objectStore('sver');
+    for (const c of data.cafes) st.put({ k: 'cafes:' + c.id, force: true });
+    for (const v of data.visits) st.put({ k: 'visits:' + v.id, force: true });
+    t.oncomplete = ok; t.onerror = () => no(t.error); }); } catch {}
 }
 $('#importFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -2177,7 +2201,7 @@ async function syncCore(client, me){
   }
   // 2) 다른 기기에서 바뀐 것 먼저 받기 ((시각, id) 순서로 이어받기)
   //    새 버전 규칙으로 처음 동기화할 때는 처음부터 다 받아서 기록마다 버전을 맞춤
-  let mig = false; try { mig = !localStorage.getItem('verMig2:' + me); } catch {}
+  let mig = false; try { mig = !localStorage.getItem('verMig3:' + me); } catch {}
   let old = ''; try { old = localStorage.getItem('lastPull:' + me) || ''; } catch {}
   for (const store of ['cafes', 'visits']) {
     const ck = `pullCur:${me}:${store}`;
@@ -2188,7 +2212,7 @@ async function syncCore(client, me){
     const end = await pullPages(client, store, cur, 500, async row => mark(await applyRemote(store, row)), save);
     if (end) save(end);
   }
-  try { localStorage.removeItem('lastPull:' + me); localStorage.setItem('verMig2:' + me, '1'); localStorage.removeItem('verMig:' + me); } catch {}
+  try { localStorage.removeItem('lastPull:' + me); localStorage.setItem('verMig3:' + me, '1'); localStorage.removeItem('verMig:' + me); localStorage.removeItem('verMig2:' + me); } catch {}
   // 3) 바뀐 카페, 방문 기록 올리기 (서버가 버전 확인 후 저장)
   const push = async (store, rows) => {
     for (let i = 0; i < rows.length; i += 200) {
@@ -4053,7 +4077,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-46'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-47'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
