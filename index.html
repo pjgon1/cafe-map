@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-n6aIxmp4JoCOsiPlm6T7R0nUDqBZMfhvBPQtI892G8I=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-l8iceQOqbkcNuBNSIRjqdqWqfrMpjMw32Ky1YGN0Px0=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -268,6 +268,9 @@ body.sharemode .view{bottom:0}
 
 /* 검색 결과 */
 #results{position:absolute;inset:0;z-index:7;background:var(--bg);padding-top:calc(74px + var(--safe-t));overflow-y:auto}
+.medit{margin:6px 0 10px}
+.merow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.merow select{font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:10px;background:var(--note);color:var(--ink);max-width:55%}
 .frtag{display:inline-flex;align-items:center;gap:3px;margin-top:3px;font-size:12px;color:#C25C7C;background:#FFF0F4;border-radius:999px;padding:1px 8px 1px 3px}
 .frtag .frface{width:16px;height:16px;flex:none}
 .nearh{padding:14px 18px 4px;font-size:13px;font-weight:700;color:var(--sub)}
@@ -2364,17 +2367,67 @@ function menuEntries(){
   }
   return out;
 }
+/* 메뉴 종류 자동 묶기: 이름에 들어간 낱말로 판단 (위에서부터 먼저 맞는 종류) */
+const MENU_GROUPS = [
+  ['루이보스', /루이보스/], ['밀크티', /밀크\s*티|버블\s*티|흑당/], ['아메리카노', /아메리카노|롱\s*블랙|^아아$|^뜨아$/],
+  ['콜드브루', /콜드\s*브루|더치/], ['핸드드립', /핸드\s*드립|드립\s*커피|^드립|필터\s*커피|브루잉|싱글\s*오리진|푸어\s*오버/],
+  ['에스프레소', /에스프레소|콘파냐|리스트레토|피에노/], ['아인슈페너', /아인슈페너|슈페너|크림\s*라떼|비엔나/],
+  ['라떼', /라떼|라테|카푸치노|플랫\s*화이트|마끼아또|마키아토|모카|코르타도/],
+  ['초코', /핫\s*초코|초코\s*(음료|우유)?$|쇼콜라\s*쇼|코코아/],
+  ['에이드', /에이드/], ['스무디·쉐이크', /스무디|쉐이크|셰이크|프라페|프라푸치노/], ['주스', /주스|쥬스|착즙/],
+  ['차', /티$|티\s|차$|캐모마일|카모마일|페퍼민트|얼그레이|녹차|홍차|허브|자스민|쟈스민|보이차|우롱|히비스커스|레몬\s*밤/],
+  ['탄산·음료', /콜라|사이다|탄산|토닉|스파클링/], ['술', /맥주|와인|하이볼|칵테일|위스키|막걸리|비어/],
+  ['팬케이크', /팬케이크|팬케익|수플레/], ['크레이프', /크레이프|크레페/],
+  ['케이크', /케이크|케잌|케익|티라미수|치즈\s*케/], ['샌드위치', /샌드위치|샌드$|토스트|베이글|파니니|핫도그|버거/],
+  ['와플·크로플', /와플|크로플/], ['요거트', /요거트|요구르트|그릭/], ['푸딩', /푸딩|크렘\s*브륄레|브륄레/],
+  ['마카롱', /마카롱|뚱카롱/], ['아이스크림·빙수', /아이스크림|젤라또|젤라토|빙수|아포가토|소프트\s*콘/],
+  ['빵·구움과자', /크루아상|크로와상|크로아상|소금빵|스콘|휘낭시에|피낭시에|마들렌|쿠키|브라우니|타르트|파이|빵|바게트|바게뜨|도넛|도너츠|머핀|까눌레|카눌레|휘핑|에그\s*타르트|파운드/],
+  ['식사·브런치', /파스타|리조또|샐러드|브런치|오믈렛|덮밥|커리|카레|수프|스프|떡볶이/],
+];
+// 내가 직접 옮긴 메뉴, 내가 만든 종류 (서버 user_prefs.menu_groups 에 저장)
+let MENU_USER = { map: {}, custom: [] };
+try { const o = JSON.parse(localStorage.getItem('menuGroups') || 'null'); if (o && typeof o === 'object') MENU_USER = { map: o.map && typeof o.map === 'object' ? o.map : {}, custom: Array.isArray(o.custom) ? o.custom.filter(x => typeof x === 'string').slice(0, 50) : [] }; } catch {}
+const menuGroupNames = () => [...new Set([...MENU_GROUPS.map(g => g[0]), ...MENU_USER.custom, '기타'])];
+const menuAuto = m => (MENU_GROUPS.find(([, re]) => re.test(m.replace(/\s+/g, ' '))) || [null])[0];
+const menuGroup = m => { const u = MENU_USER.map[m]; return (typeof u === 'string' && menuGroupNames().includes(u)) ? u : (menuAuto(m) || '기타'); };
+function menuUserSave(){
+  try { localStorage.setItem('menuGroups', JSON.stringify(MENU_USER)); } catch {}
+  if (session && sb) sb.from('user_prefs').upsert({ user_id: session.user.id, menu_groups: MENU_USER, updated_at: new Date().toISOString() }).then(({ error }) => { if (error) toast('서버에 못 올렸어요. 이 기기에는 저장됐어요'); });
+}
+function menuUserApply(v){
+  if (!v || typeof v !== 'object') return;
+  MENU_USER = { map: v.map && typeof v.map === 'object' && !Array.isArray(v.map) ? v.map : {}, custom: Array.isArray(v.custom) ? v.custom.filter(x => typeof x === 'string').slice(0, 50) : [] };
+  try { localStorage.setItem('menuGroups', JSON.stringify(MENU_USER)); } catch {}
+}
+let menuGrp = '', menuEdit = false;
 function renderMenu(){
-  const body = $('#recBody');
+  const body = $('#recBody'); menuGrp = ''; menuEdit = false;
   body.innerHTML = `<div class="listsearch" style="margin-top:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="mq" type="search" placeholder="아인슈페너, 크로플, 소금빵…"></div><div id="mres"></div>`;
   const draw = () => {
     const q = $('#mq').value.trim().toLowerCase();
     const all = menuEntries();
     if (!all.length) { $('#mres').innerHTML = `<div class="empty">방문 기록에 "뭐 먹었어요?"를 적으면<br>메뉴별로 비교할 수 있어요.</div>`; return; }
+    if (menuGrp) {
+      const hits = all.filter(e => menuGroup(e.m) === menuGrp).sort((a,b) => (b.v.rating||0) - (a.v.rating||0) || (b.v.date||'').localeCompare(a.v.date||''));
+      const kinds = [...new Map(hits.map(h => [h.m, 0])).keys()];
+      const opts = cur => menuGroupNames().map(g => `<option value="${esc(g)}" ${g === cur ? 'selected' : ''}>${esc(g)}</option>`).join('') + '<option value="__new">＋ 새 종류 만들기…</option>';
+      $('#mres').innerHTML = `<div class="rowsb" style="margin:14px 0 4px;align-items:center"><b>${esc(menuGrp)}</b><span><button class="textbtn" data-medit="1">${menuEdit ? '다 했어요' : '✎ 종류 옮기기'}</button> · <button class="textbtn" data-mback="1">← 종류 목록</button></span></div>
+        ${menuEdit ? `<div class="medit">${kinds.map(m => `<div class="merow"><span>${esc(m)}</span><select data-mmove="${esc(m)}">${opts(menuGroup(m))}</select></div>`).join('')}
+          ${MENU_USER.custom.includes(menuGrp) && !kinds.length ? `<button class="textbtn" data-mdelg="${esc(menuGrp)}">이 종류 지우기</button>` : ''}</div>`
+        : `<div class="tagpick" style="margin-bottom:6px">${kinds.map(m => `<button class="chip" data-m="${esc(m)}" style="font-size:12px;padding:4px 10px">${esc(m)}</button>`).join('')}</div>`}
+        <p class="small" style="margin:6px 0 4px">${new Set(hits.map(h => h.c.id)).size}곳 · ${hits.length}번 먹음 · 별점 높은 순</p>` + hits.map(h => `<button class="mres" data-id="${h.c.id}">
+        <div class="t"><span>${esc(h.c.name)}</span><span style="color:#F2A93B">${h.v.rating ? stars(h.v.rating) : ''}</span></div>
+        <div class="s">${esc(h.m)}${h.v.price ? ' · ' + won(h.v.price) : ''}${h.v.date ? ' · ' + fmtDate(h.v.date) : ''}</div>
+        ${h.v.review ? `<div class="r">${esc(h.v.review)}</div>` : ''}</button>`).join('');
+      return;
+    }
     if (!q) {
-      const freq = new Map(); all.forEach(e => freq.set(e.m, (freq.get(e.m)||0) + 1));
-      const tops = [...freq].sort((a,b) => b[1]-a[1]).slice(0,24);
-      $('#mres').innerHTML = `<div class="sec" style="margin-top:18px"><h3>자주 먹은 메뉴</h3><div class="tagpick">${tops.map(([m,n]) => `<button class="chip" data-m="${esc(m)}">${esc(m)} <span style="opacity:.6">${n}</span></button>`).join('')}</div></div>`;
+      // 같은 종류는 하나로 묶고(예: 루이보스·페퍼민트 루이보스 → 루이보스), 안 묶이는 메뉴는 그대로
+      const freq = new Map(); all.forEach(e => { const k = 'g:' + menuGroup(e.m); freq.set(k, (freq.get(k)||0) + 1); });
+      MENU_USER.custom.forEach(g => { if (!freq.has('g:' + g)) freq.set('g:' + g, 0); });
+      if (freq.has('g:기타')) { const n = freq.get('g:기타'); freq.delete('g:기타'); freq.set('g:기타', n); }
+      const tops = [...freq].sort((a,b) => (a[0] === 'g:기타') - (b[0] === 'g:기타') || b[1]-a[1] || (a[0] < b[0] ? -1 : 1));
+      $('#mres').innerHTML = `<div class="sec" style="margin-top:18px"><h3>자주 먹은 메뉴 <small>종류를 누르면 메뉴를 옮길 수 있어요</small></h3><div class="tagpick">${tops.map(([k,n]) => k.startsWith('g:') ? `<button class="chip on" data-g="${esc(k.slice(2))}">${esc(k.slice(2))} <span style="opacity:.75">${n}</span></button>` : `<button class="chip" data-m="${esc(k.slice(2))}">${esc(k.slice(2))} <span style="opacity:.6">${n}</span></button>`).join('')}</div></div>`;
       return;
     }
     const hits = all.filter(e => e.m.toLowerCase().includes(q)).sort((a,b) => (b.v.rating||0) - (a.v.rating||0) || (b.v.date||'').localeCompare(a.v.date||''));
@@ -2385,9 +2438,24 @@ function renderMenu(){
         <div class="s">${esc(h.m)}${h.v.price ? ' · ' + won(h.v.price) : ''}${h.v.date ? ' · ' + fmtDate(h.v.date) : ''}</div>
         ${h.v.review ? `<div class="r">${esc(h.v.review)}</div>` : ''}</button>`).join('');
   };
-  let mt; $('#mq').oninput = () => { clearTimeout(mt); mt = setTimeout(draw, 120); };
+  let mt; $('#mq').oninput = () => { menuGrp = ''; clearTimeout(mt); mt = setTimeout(draw, 120); };
+  body.onchange = e => {
+    const sel = e.target.closest('[data-mmove]'); if (!sel) return;
+    const m = sel.dataset.mmove; let g = sel.value;
+    if (g === '__new') {
+      g = (prompt('새 종류 이름 (예: 시즌 음료)') || '').trim().slice(0, 20);
+      if (!g) { draw(); return; }
+      if (!menuGroupNames().includes(g)) MENU_USER.custom.push(g);
+    }
+    if (g === menuAuto(m) || (g === '기타' && !menuAuto(m))) delete MENU_USER.map[m]; else MENU_USER.map[m] = g;
+    menuUserSave(); toast(`'${m}' → ${g}`); draw();
+  };
   body.onclick = e => {
-    const m = e.target.closest('[data-m]'); if (m) { $('#mq').value = m.dataset.m; draw(); return; }
+    const g = e.target.closest('[data-g]'); if (g) { menuGrp = g.dataset.g; menuEdit = false; $('#mq').value = ''; draw(); return; }
+    if (e.target.closest('[data-mback]')) { menuGrp = ''; menuEdit = false; draw(); return; }
+    if (e.target.closest('[data-medit]')) { menuEdit = !menuEdit; draw(); return; }
+    const dg = e.target.closest('[data-mdelg]'); if (dg) { MENU_USER.custom = MENU_USER.custom.filter(x => x !== dg.dataset.mdelg); menuUserSave(); menuGrp = ''; menuEdit = false; draw(); return; }
+    const m = e.target.closest('[data-m]'); if (m) { menuGrp = ''; $('#mq').value = m.dataset.m; draw(); return; }
     const r = e.target.closest('.mres'); if (r) openDetail(r.dataset.id);
   };
   draw();
@@ -3005,7 +3073,7 @@ async function frLoadInner(force){
   if (!force && Date.now() - FR.loadedAt < 60000) return true;
   const me = session.user.id;
   // 친구 순서는 서버(user_prefs)에 저장된 걸 우선 사용
-  try { const { data: pr, error: prErr } = await sb.from('user_prefs').select('friend_order,friend_names,rec_order').eq('user_id', me).maybeSingle(); if (!prErr) recOrderApply(pr); if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); if (pr && pr.friend_names && typeof pr.friend_names === 'object' && !Array.isArray(pr.friend_names)) localStorage.setItem('frNames', JSON.stringify(pr.friend_names)); } catch {}
+  try { const { data: pr, error: prErr } = await sb.from('user_prefs').select('friend_order,friend_names,rec_order,menu_groups').eq('user_id', me).maybeSingle(); if (!prErr) { recOrderApply(pr); if (pr?.menu_groups) menuUserApply(pr.menu_groups); } if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); if (pr && pr.friend_names && typeof pr.friend_names === 'object' && !Array.isArray(pr.friend_names)) localStorage.setItem('frNames', JSON.stringify(pr.friend_names)); } catch {}
   const [p, f] = await Promise.all([
     sb.from('profiles').select('handle').eq('user_id', me).maybeSingle(),
     sb.from('friendships').select('requester,addressee,status')
@@ -3652,7 +3720,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-37'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-38'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
