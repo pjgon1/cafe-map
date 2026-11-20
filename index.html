@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-Jc1C2NHh1NrGyaNpU5RD+uAe3SAtLh3YgwZAil+X8JM=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-IDnS4l9k4dM5soEn6i+R8ATdbA7pb7suqBmY8/J8B6c=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2151,14 +2151,18 @@ async function renderTop(){
   body.innerHTML = `<div class="rowsb" style="align-items:center;margin:4px 0 6px"><div class="small">${manual ? '내가 정한 순위예요. ≡ 를 끌어서 바꿔요' : '별점·방문 수로 자동으로 매긴 순위예요. ≡ 를 끌어서 바꿔요'}</div>${manual ? '<button class="textbtn" id="topReset">자동 순위로</button>' : ''}</div>
     <div id="topList">${top.map(row).join('')}</div>
     <button class="btn" id="topShare" style="width:100%;margin-top:16px">🏆 이미지로 저장·공유</button>
-    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>올리면 10위로, 원래 10위는 여기 첫 번째로</small></h3>${rest.map((x, i) => `<div class="toprow out"><div class="trk">${i + 11}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button></div>`).join('')}</div>` : ''}`;
+    ${rest.length ? `<div class="sec"><h3>순위 밖 <small>≡ 로 끌어서 순서 바꾸기 · 올리면 10위로</small></h3><div id="topRest">${rest.map((x, i) => `<div class="toprow out" data-id="${esc(x.c.id)}"><div class="trk">${i + 11}</div><div class="tth" data-cid="${esc(x.c.id)}" data-cover="${esc(coverOf(x.c, x.st) || '')}">${coverOf(x.c, x.st) ? '' : cupIcon(x.c.id)}</div><div class="tmain tap" data-open="${esc(x.c.id)}"><div class="tn">${esc(x.c.name)}</div><div class="small">${x.st.rating ? `★ ${x.st.rating.toFixed(1)} · ` : ''}방문 ${x.st.count}번</div></div><button class="chip" data-up="${esc(x.c.id)}">올리기</button><button class="tgrip" aria-label="끌어서 순서 바꾸기">≡</button></div>`).join('')}</div></div>` : ''}`;
   body.querySelectorAll('[data-cover]').forEach(async d => { if (d.dataset.cover) { const u = await getPhotoURL(d.dataset.cover); if (u) d.style.backgroundImage = `url('${u}')`; else d.innerHTML = cupIcon(d.dataset.cid); } });
   topDrag();
 }
-function topIds(){ return [...document.querySelectorAll('#topList .toprow')].map(r => r.dataset.id); }
-function topRenumber(){ document.querySelectorAll('#topList .toprow').forEach((r, i) => { const k = r.querySelector('.trk'); k.textContent = i + 1; k.className = 'trk r' + (i + 1); }); }
-function topDrag(){
-  const list = $('#topList'); if (!list) return;
+function topIds(){ return [...document.querySelectorAll('#topList .toprow, #topRest .toprow')].map(r => r.dataset.id); }
+function topRenumber(){
+  document.querySelectorAll('#topList .toprow').forEach((r, i) => { const k = r.querySelector('.trk'); k.textContent = i + 1; k.className = 'trk r' + (i + 1); });
+  document.querySelectorAll('#topRest .toprow').forEach((r, i) => { r.querySelector('.trk').textContent = i + 11; });
+}
+function topDrag(){ topDragList($('#topList')); topDragList($('#topRest')); }
+function topDragList(list){
+  if (!list) return;
   list.querySelectorAll('.tgrip').forEach(g => g.addEventListener('pointerdown', e => {
     e.preventDefault();
     // 줄을 옮기면(DOM 이동) 손가락 추적이 끊겨서 한 칸만 움직이던 문제 → 문서 전체에서 손가락을 따라감
@@ -2174,7 +2178,7 @@ function topDrag(){
       if (ev.pointerId !== pid) return;
       document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
       row.classList.remove('drag'); const t = topIds(); topFull = [...t, ...topFull.filter(id => !t.includes(id))]; await saveTop(topFull);
-      const s = list.previousElementSibling?.querySelector('.small'); if (s) s.textContent = '내가 정한 순위예요. ≡ 를 끌어서 바꿔요';
+      const s = $('#topList')?.previousElementSibling?.querySelector('.small'); if (s) s.textContent = '내가 정한 순위예요. ≡ 를 끌어서 바꿔요';
     };
     document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
   }));
@@ -3633,7 +3637,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-34'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-35'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
