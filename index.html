@@ -11,11 +11,14 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-YWIjhFW9gs/r6P5OLG55umwUzuU7eFxFGzhcbepVUSA=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
 <script>
+if (window.top !== window.self) { try { window.top.location.replace(window.location.href); } catch (e) { document.documentElement.style.display = 'none'; } }
 /* 아이패드 사파리는 자기를 맥(컴퓨터)이라고 알려서 카카오 지도가 컴퓨터용 확대·축소(단계별)로 동작함.
    지도 불러오기 전에 아이패드라고 알려줘서 손가락 확대·축소가 폰처럼 부드럽게 되게 함 */
 (() => { try {
@@ -2961,7 +2964,7 @@ async function frLoadInner(force){
   // 친구 순서는 서버(user_prefs)에 저장된 걸 우선 사용
   try { const { data: pr, error: prErr } = await sb.from('user_prefs').select('friend_order,friend_names,rec_order').eq('user_id', me).maybeSingle(); if (!prErr) recOrderApply(pr); if (pr && Array.isArray(pr.friend_order)) localStorage.setItem('frOrder', JSON.stringify(pr.friend_order)); if (pr && pr.friend_names && typeof pr.friend_names === 'object' && !Array.isArray(pr.friend_names)) localStorage.setItem('frNames', JSON.stringify(pr.friend_names)); } catch {}
   const [p, f] = await Promise.all([
-    sb.from('profiles').select('handle,name').eq('user_id', me).maybeSingle(),
+    sb.from('profiles').select('handle').eq('user_id', me).maybeSingle(),
     sb.from('friendships').select('requester,addressee,status')
   ]);
   if (p.error || f.error) { console.warn(p.error || f.error); return false; }
@@ -2978,7 +2981,7 @@ async function frLoadInner(force){
   FR.incoming = [...inc].filter(u => !acc.has(u));
   FR.outgoing = [...out].filter(u => !acc.has(u) && !inc.has(u));
   const ids = [...new Set([...FR.list, ...FR.incoming, ...FR.outgoing])];
-  if (ids.length) { const { data } = await sb.from('profiles').select('user_id,handle,name').in('user_id', ids); (data || []).forEach(x => FR.prof.set(x.user_id, x)); }
+  if (ids.length) { const { data } = await sb.from('profiles').select('user_id,handle').in('user_id', ids); (data || []).forEach(x => FR.prof.set(x.user_id, x)); }
   FR.loadedAt = Date.now();
   return true;
 }
@@ -3120,7 +3123,7 @@ async function drawFeed(){
 async function frSetHandle(h){
   h = (h || '').trim().toLowerCase();
   if (!HANDLE_RE.test(h)) { toast('한글·영문 소문자·숫자·_ 2~20자로 해주세요'); return false; }
-  const { error } = await sb.from('profiles').upsert({ user_id: session.user.id, handle: h, name: myName() });
+  const { error } = await sb.from('profiles').upsert({ user_id: session.user.id, handle: h });
   if (error) { toast(error.code === '23505' ? '이미 누가 쓰는 이름이에요' : '저장하지 못했어요'); return false; }
   FR.me = { handle: h }; toast('내 이름을 정했어요'); return true;
 }
@@ -3597,7 +3600,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-32'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-33'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
