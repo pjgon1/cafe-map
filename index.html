@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="app-version" content="2026.11.20-50">
+<meta name="app-version" content="2026.11.20-51">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#FFFDF9">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-M7UPeLCcyfHDr2JvHIyXAhg8DU1sxjbVDC2kun+nzo4=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-kUlSzaqkjAYRJUV3gnLR4ypGb6DIO1ODR1tu0XYC/z8=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2228,6 +2228,9 @@ async function pullPages(client, store, cur, size, onRow, saveCur){
 const svKey = (store, id) => store + ':' + id;
 const confOf = row => ({ ver: +row.ver || 0, data: row.data || {}, deleted: !!row.deleted, at: row.updated_at || '' });
 const sameEdit = (local, row) => !row.deleted && local && (row.data?.updatedAt || 0) === (local.updatedAt || 0) && (local.updatedAt || 0) > 0;
+// 앱이 알아서 저장하는 값(TOP 10 순위, 날씨, 시각)만 다르면 사람이 고른 내용은 같은 것 → 충돌로 띄우지 않음
+const AUTO_KEYS = new Set(['rank', 'wx', 'updatedAt', 'createdAt', 'dirty']);
+const onlyAutoDiff = (a, b) => { for (const k of new Set([...Object.keys(a || {}), ...Object.keys(b || {})])) { if (AUTO_KEYS.has(k)) continue; if (JSON.stringify(a?.[k] ?? null) !== JSON.stringify(b?.[k] ?? null)) return false; } return true; };
 async function dropLocalPhotos(v){ for (const p of v?.photoIds || []) { await DB.del('photos', p); photoURL.delete(p); } }
 // 서버 기록 하나를 이 기기에 반영. 바뀐 게 있으면 true, 새 충돌이면 'conf'
 async function applyRemote(store, row){
@@ -2250,6 +2253,11 @@ async function applyRemote(store, row){
   if (local && local.dirty !== false) { // 이 기기에 안 올린 수정이 있음
     if (s && (s.force || s.v === ver)) return false;
     if (sameEdit(local, row)) { await DB.put('sver', { k, v: ver }); local.dirty = false; await DB.put(store, local); return false; }
+    if (!row.deleted && onlyAutoDiff(local, row.data)) { // 서버 것을 받고, 날씨는 서버에 없으면 내 것 유지
+      const n = { ...row.data, id: row.id, dirty: false };
+      if (!n.wx && local.wx) { n.wx = local.wx; n.dirty = true; n.updatedAt = Date.now(); }
+      await DB.put(store, n); await DB.put('sver', { k, v: ver }); return true;
+    }
     await DB.put('sver', { k, v: s?.v, conf: confOf(row) });
     return 'conf';
   }
@@ -2557,7 +2565,8 @@ async function saveTop(ids){
     const r = ids.indexOf(c.id) + 1, want = r > 0 ? r : 0;
     if ((+c.rank || 0) !== want) { if (want) c.rank = want; else delete c.rank; c.updatedAt = Date.now(); c.dirty = true; changed.push(c); }
   }
-  for (const c of changed) await DB.put('cafes', c);
+  // 화면에 들고 있던 옛 내용으로 덮지 않게, 저장본을 새로 읽어 순위만 바꿔 저장
+  for (const c of changed) { const cur = await DB.get('cafes', c.id); if (!cur) continue; if (c.rank) cur.rank = c.rank; else delete cur.rank; cur.updatedAt = c.updatedAt; cur.dirty = true; await DB.put('cafes', cur); Object.assign(c, cur); }
   if (changed.length) Sync.soon();
 }
 async function renderTop(){
@@ -4164,7 +4173,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-50'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-51'; // 고칠 때마다 올림
 // 새 버전 확인: 파일 맨 앞 2KB만 받아서 버전 표시만 읽음 (안 되면 전체를 받아 확인)
 async function latestVersion(){
   try {
