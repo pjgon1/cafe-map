@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- 보안: 아래 script-src 의 sha256 두 개는 이 파일 안 인라인 스크립트 두 덩어리의 해시. 스크립트를 고치면 해시도 다시 계산해서 바꿔야 앱이 열림 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-l8iceQOqbkcNuBNSIRjqdqWqfrMpjMw32Ky1YGN0Px0=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IPTHRSGmeYrNSOO3QK4KY36tTY/VnE+Mx7/hZB8FcZs=' 'sha256-/UEDSV8eB38Rg9mOUO+FCygZFnUl+gNPc+KuKjMcrBU=' https://dapi.kakao.com https://*.kakaocdn.net https://*.daumcdn.net https://cdn.jsdelivr.net; connect-src 'self' https://wqzndhwuylzpgauoldpv.supabase.co wss://wqzndhwuylzpgauoldpv.supabase.co https://*.kakao.com https://*.kakaocdn.net https://*.daum.net https://*.daumcdn.net https://api.open-meteo.com https://archive-api.open-meteo.com https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>커피로그</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2369,13 +2369,13 @@ function menuEntries(){
 }
 /* 메뉴 종류 자동 묶기: 이름에 들어간 낱말로 판단 (위에서부터 먼저 맞는 종류) */
 const MENU_GROUPS = [
-  ['루이보스', /루이보스/], ['밀크티', /밀크\s*티|버블\s*티|흑당/], ['아메리카노', /아메리카노|롱\s*블랙|^아아$|^뜨아$/],
+  ['밀크티', /밀크\s*티|버블\s*티|흑당/], ['아메리카노', /아메리카노|롱\s*블랙|^아아$|^뜨아$/],
   ['콜드브루', /콜드\s*브루|더치/], ['핸드드립', /핸드\s*드립|드립\s*커피|^드립|필터\s*커피|브루잉|싱글\s*오리진|푸어\s*오버/],
   ['에스프레소', /에스프레소|콘파냐|리스트레토|피에노/], ['아인슈페너', /아인슈페너|슈페너|크림\s*라떼|비엔나/],
   ['라떼', /라떼|라테|카푸치노|플랫\s*화이트|마끼아또|마키아토|모카|코르타도/],
   ['초코', /핫\s*초코|초코\s*(음료|우유)?$|쇼콜라\s*쇼|코코아/],
   ['에이드', /에이드/], ['스무디·쉐이크', /스무디|쉐이크|셰이크|프라페|프라푸치노/], ['주스', /주스|쥬스|착즙/],
-  ['차', /티$|티\s|차$|캐모마일|카모마일|페퍼민트|얼그레이|녹차|홍차|허브|자스민|쟈스민|보이차|우롱|히비스커스|레몬\s*밤/],
+  ['차', /루이보스|티$|티\s|차$|캐모마일|카모마일|페퍼민트|얼그레이|녹차|홍차|허브|자스민|쟈스민|보이차|우롱|히비스커스|레몬\s*밤/],
   ['탄산·음료', /콜라|사이다|탄산|토닉|스파클링/], ['술', /맥주|와인|하이볼|칵테일|위스키|막걸리|비어/],
   ['팬케이크', /팬케이크|팬케익|수플레/], ['크레이프', /크레이프|크레페/],
   ['케이크', /케이크|케잌|케익|티라미수|치즈\s*케/], ['샌드위치', /샌드위치|샌드$|토스트|베이글|파니니|핫도그|버거/],
@@ -3720,7 +3720,7 @@ async function refreshAll(){
 /* =========================================================
    앱 업데이트 (홈 화면에 깔린 앱이 옛 화면을 붙잡고 있을 때)
    ========================================================= */
-const APP_VERSION = '2026.11.20-38'; // 고칠 때마다 올림
+const APP_VERSION = '2026.11.20-39'; // 고칠 때마다 올림
 async function latestVersion(){
   try { const t = await (await fetch('index.html?v=' + Date.now(), { cache: 'no-store' })).text(); return (t.match(/const APP_VERSION = '([^']+)'/) || [])[1] || ''; }
   catch { return ''; }
